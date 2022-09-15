@@ -7,7 +7,7 @@ on:
   push:
     tags:
       - 'v*.*.*'
-    branches: [ test-release, docker ]
+    branches: [ test-release ]
 
 jobs:
   release:
