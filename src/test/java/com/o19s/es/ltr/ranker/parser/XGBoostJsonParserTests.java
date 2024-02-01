@@ -25,8 +25,8 @@ import com.o19s.es.ltr.ranker.LtrRanker.FeatureVector;
 import com.o19s.es.ltr.ranker.dectree.NaiveAdditiveDecisionTree;
 import com.o19s.es.ltr.ranker.linear.LinearRankerTests;
 import org.apache.lucene.tests.util.LuceneTestCase;
-import org.opensearch.common.ParsingException;
-import org.opensearch.core.internal.io.Streams;
+import org.opensearch.core.common.ParsingException;
+import org.opensearch.common.io.Streams;
 import org.hamcrest.CoreMatchers;
 
 import java.io.ByteArrayOutputStream;
@@ -278,7 +278,7 @@ public class XGBoostJsonParserTests extends LuceneTestCase {
     private String readModel(String model) throws IOException {
         try (InputStream is = this.getClass().getResourceAsStream(model)) {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            Streams.copy(is,  bos);
+            is.transferTo(bos);
             return bos.toString(StandardCharsets.UTF_8.name());
         }
     }
