@@ -72,7 +72,7 @@ dependencies {
   //testImplementation 'org.apache.lucene:lucene-test-framework:${luceneVersion}'
   runtimeOnly 'org.locationtech.spatial4j:spatial4j:0.7'
   runtimeOnly 'org.locationtech.jts:jts-core:1.15.0'
-  runtimeOnly 'org.apache.logging.log4j:log4j-core:2.17.1'
+  runtimeOnly 'org.apache.logging.log4j:log4j-core:2.20.0'
 }
 
 
@@ -141,5 +141,11 @@ githubRelease.doFirst {
     tagName = currentVersion
     assets = [ filename ]
     targetCommitish = 'main'
+  }
+}
+
+tasks.withType(Test) { task ->
+  if (JavaVersion.current().compareTo(JavaVersion.VERSION_17) > 0) {
+    task.jvmArgs += ["-Djava.security.manager=allow"]
   }
 }
