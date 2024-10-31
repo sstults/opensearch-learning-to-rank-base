@@ -72,7 +72,7 @@ dependencies {
   //testImplementation 'org.apache.lucene:lucene-test-framework:${luceneVersion}'
   runtimeOnly 'org.locationtech.spatial4j:spatial4j:0.7'
   runtimeOnly 'org.locationtech.jts:jts-core:1.15.0'
-  runtimeOnly 'org.apache.logging.log4j:log4j-core:2.20.0'
+  runtimeOnly 'org.apache.logging.log4j:log4j-core:2.21.0'
 }
 
 
@@ -106,7 +106,6 @@ java {
 
 // FIXME dependency license check needs to be enabled
 // dependencyLicenses.enabled = false
-
 // FIXME thirdparty audit needs to be enabled
 // thirdPartyAudit.enabled = false
 
@@ -144,8 +143,13 @@ githubRelease.doFirst {
   }
 }
 
-tasks.withType(Test) { task ->
-  if (JavaVersion.current().compareTo(JavaVersion.VERSION_17) > 0) {
-    task.jvmArgs += ["-Djava.security.manager=allow"]
-  }
+tasks.withType(Test).configureEach { task ->
+    if (JavaVersion.current().compareTo(JavaVersion.VERSION_17) > 0 && JavaVersion.current().compareTo(JavaVersion.VERSION_21) < 0) {
+        def policyFile = file("${projectDir}/src/main/plugin-metadata/plugin-security.policy").absolutePath
+        task.jvmArgs += [
+            "--add-opens", "java.base/java.lang=ALL-UNNAMED",
+            "-Djava.security.manager",
+            "-Djava.security.policy=" + policyFile
+        ]
+    }
 }
