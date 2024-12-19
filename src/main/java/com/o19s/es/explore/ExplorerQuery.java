@@ -16,12 +16,15 @@
 
 package com.o19s.es.explore;
 
+import org.apache.lucene.search.QueryVisitor;
+import org.opensearch.ltr.settings.LTRSettings;
+import org.opensearch.ltr.stats.LTRStats;
+import org.opensearch.ltr.stats.StatName;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.TermStates;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.search.QueryVisitor;
 import org.apache.lucene.search.ScoreMode;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Weight;
@@ -44,10 +47,12 @@ import java.util.Set;
 public class ExplorerQuery extends Query {
     private final Query query;
     private final String type;
+    private final LTRStats ltrStats;
 
-    public ExplorerQuery(Query query, String type) {
+    public ExplorerQuery(Query query, String type, LTRStats ltrStats) {
         this.query = query;
         this.type = type;
+        this.ltrStats = ltrStats;
     }
 
     private boolean isCollectionScoped() {
@@ -61,6 +66,7 @@ public class ExplorerQuery extends Query {
 
     public String getType() { return this.type; }
 
+    @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
     @Override
     public boolean equals(Object other) {
         return sameClassAs(other) &&
@@ -77,7 +83,7 @@ public class ExplorerQuery extends Query {
         Query rewritten = query.rewrite(reader);
 
         if (rewritten != query) {
-            return new ExplorerQuery(rewritten, type);
+            return new ExplorerQuery(rewritten, type, ltrStats);
         }
 
         return this;
@@ -89,8 +95,20 @@ public class ExplorerQuery extends Query {
     }
 
     @Override
-    public Weight createWeight(IndexSearcher searcher, ScoreMode scoreMode, float boost)
-            throws IOException {
+    public Weight createWeight(IndexSearcher searcher, ScoreMode scoreMode, float boost) throws IOException {
+        if (!LTRSettings.isLTRPluginEnabled()) {
+            throw new IllegalStateException("LTR plugin is disabled. To enable, update ltr.plugin.enabled to true");
+        }
+
+        try {
+            return createWeightInternal(searcher, scoreMode, boost);
+        } catch (Exception e) {
+            ltrStats.getStats().get(StatName.LTR_REQUEST_ERROR_COUNT.getName()).increment();
+            throw e;
+        }
+    }
+
+    private Weight createWeightInternal(IndexSearcher searcher, ScoreMode scoreMode, float boost) throws IOException {
         if (!scoreMode.needsScores()) {
             return searcher.createWeight(query, scoreMode, boost);
         }

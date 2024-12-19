@@ -16,6 +16,9 @@
 
 package com.o19s.es.ltr.action;
 
+import org.opensearch.ltr.breaker.LTRCircuitBreakerService;
+import org.opensearch.ltr.exception.LimitExceededException;
+import org.opensearch.ltr.stats.LTRStats;
 import com.o19s.es.ltr.action.ClearCachesAction.ClearCachesNodesRequest;
 import com.o19s.es.ltr.action.FeatureStoreAction.FeatureStoreRequest;
 import com.o19s.es.ltr.action.FeatureStoreAction.FeatureStoreResponse;
@@ -55,18 +58,25 @@ public class TransportFeatureStoreAction extends HandledTransportAction<FeatureS
     private final TransportClearCachesAction clearCachesAction;
     private final Client client;
     private final Logger logger = LogManager.getLogger(getClass());
+    private final LTRCircuitBreakerService ltrCircuitBreakerService;
+    private final LTRStats ltrStats;
+
 
     @Inject
     public TransportFeatureStoreAction(TransportService transportService,
                                        ActionFilters actionFilters,
                                        ClusterService clusterService, Client client,
                                        LtrRankerParserFactory factory,
-                                       TransportClearCachesAction clearCachesAction) {
+                                       TransportClearCachesAction clearCachesAction,
+                                       LTRCircuitBreakerService ltrCircuitBreakerService,
+                                       LTRStats ltrStats) {
         super(FeatureStoreAction.NAME, false, transportService, actionFilters, FeatureStoreRequest::new);
         this.factory = factory;
         this.clusterService = clusterService;
         this.clearCachesAction = clearCachesAction;
         this.client = client;
+        this.ltrCircuitBreakerService = ltrCircuitBreakerService;
+        this.ltrStats = ltrStats;
     }
 
     @Override
@@ -75,12 +85,16 @@ public class TransportFeatureStoreAction extends HandledTransportAction<FeatureS
             // To prevent index auto creation
             throw new IllegalArgumentException("Store [" + request.getStore() + "] does not exist, please create it first.");
         }
+        if (this.ltrCircuitBreakerService.isOpen()) {
+            throw new LimitExceededException("Store [" + request.getStore() + "] creating/updating features " +
+                    "through simple CRUD is not allowed as memory circuit is broken.");
+        }
         // some synchronous pre-checks that require the parser factory
         precheck(request);
         if (request.getValidation() != null) {
             // validate and then store
             validate(request.getValidation(), request.getStorableElement(), task, listener,
-                    () -> store(request, task, listener));
+                    () -> store(request, task, listener), ltrStats);
         } else {
             store(request, task, listener);
         }
@@ -144,14 +158,16 @@ public class TransportFeatureStoreAction extends HandledTransportAction<FeatureS
      * @param task the parent task
      * @param listener the action listener to write to
      * @param onSuccess action ro run when the validation is successfull
+     * @param ltrStats LTR stats
      */
     private void validate(FeatureValidation validation,
                           StorableElement element,
                           Task task,
                           ActionListener<FeatureStoreResponse> listener,
-                          Runnable onSuccess) {
+                          Runnable onSuccess,
+                          LTRStats ltrStats) {
         ValidatingLtrQueryBuilder ltrBuilder = new ValidatingLtrQueryBuilder(element,
-                validation, factory);
+                validation, factory, ltrStats);
         SearchRequestBuilder builder = new SearchRequestBuilder(client, SearchAction.INSTANCE);
         builder.setIndices(validation.getIndex());
         builder.setQuery(ltrBuilder);

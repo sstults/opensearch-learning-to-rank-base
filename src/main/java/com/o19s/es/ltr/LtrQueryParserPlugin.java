@@ -17,20 +17,27 @@
 package com.o19s.es.ltr;
 
 import ciir.umass.edu.learning.RankerFactory;
+import org.opensearch.ltr.breaker.LTRCircuitBreakerService;
+import org.opensearch.ltr.settings.LTRSettings;
+import org.opensearch.ltr.stats.LTRStat;
+import org.opensearch.ltr.stats.LTRStats;
+import org.opensearch.ltr.stats.StatName;
+import org.opensearch.ltr.stats.suppliers.CacheStatsOnNodeSupplier;
+import org.opensearch.ltr.stats.suppliers.PluginHealthStatusSupplier;
+import org.opensearch.ltr.stats.suppliers.StoreStatsSupplier;
+import org.opensearch.ltr.stats.suppliers.CounterSupplier;
 import com.o19s.es.explore.ExplorerQueryBuilder;
 import com.o19s.es.ltr.action.AddFeaturesToSetAction;
 import com.o19s.es.ltr.action.CachesStatsAction;
 import com.o19s.es.ltr.action.ClearCachesAction;
 import com.o19s.es.ltr.action.CreateModelFromSetAction;
 import com.o19s.es.ltr.action.FeatureStoreAction;
-import com.o19s.es.ltr.action.LTRStatsAction;
 import com.o19s.es.ltr.action.ListStoresAction;
 import com.o19s.es.ltr.action.TransportAddFeatureToSetAction;
 import com.o19s.es.ltr.action.TransportCacheStatsAction;
 import com.o19s.es.ltr.action.TransportClearCachesAction;
 import com.o19s.es.ltr.action.TransportCreateModelFromSetAction;
 import com.o19s.es.ltr.action.TransportFeatureStoreAction;
-import com.o19s.es.ltr.action.TransportLTRStatsAction;
 import com.o19s.es.ltr.action.TransportListStoresAction;
 import com.o19s.es.ltr.feature.store.StorableElement;
 import com.o19s.es.ltr.feature.store.StoredFeature;
@@ -55,13 +62,6 @@ import com.o19s.es.ltr.rest.RestSearchStoreElements;
 import com.o19s.es.ltr.rest.RestStoreManager;
 import com.o19s.es.ltr.rest.RestAddFeatureToSet;
 import com.o19s.es.ltr.rest.RestFeatureStoreCaches;
-import com.o19s.es.ltr.rest.RestLTRStats;
-import com.o19s.es.ltr.stats.LTRStat;
-import com.o19s.es.ltr.stats.LTRStats;
-import com.o19s.es.ltr.stats.StatName;
-import com.o19s.es.ltr.stats.suppliers.CacheStatsOnNodeSupplier;
-import com.o19s.es.ltr.stats.suppliers.PluginHealthStatusSupplier;
-import com.o19s.es.ltr.stats.suppliers.StoreStatsSupplier;
 import com.o19s.es.ltr.utils.FeatureStoreLoader;
 import com.o19s.es.ltr.utils.Suppliers;
 import com.o19s.es.termstat.TermStatQueryBuilder;
@@ -90,6 +90,7 @@ import org.opensearch.env.NodeEnvironment;
 import org.opensearch.core.index.Index;
 import org.opensearch.index.analysis.PreConfiguredTokenFilter;
 import org.opensearch.index.analysis.PreConfiguredTokenizer;
+import org.opensearch.monitor.jvm.JvmService;
 import org.opensearch.plugins.ActionPlugin;
 import org.opensearch.plugins.AnalysisPlugin;
 import org.opensearch.plugins.Plugin;
@@ -114,15 +115,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.unmodifiableList;
-import static java.util.Collections.unmodifiableMap;
 
 public class LtrQueryParserPlugin extends Plugin implements SearchPlugin, ScriptPlugin, ActionPlugin, AnalysisPlugin {
+    public static final String LTR_BASE_URI = "/_plugins/_ltr";
+    public static final String LTR_LEGACY_BASE_URI = "/_opendistro/_ltr";
     private final LtrRankerParserFactory parserFactory;
     private final Caches caches;
+    private final LTRStats ltrStats;
 
     public LtrQueryParserPlugin(Settings settings) {
         caches = new Caches(settings);
@@ -133,21 +138,35 @@ public class LtrQueryParserPlugin extends Plugin implements SearchPlugin, Script
                 .register(LinearRankerParser.TYPE, LinearRankerParser::new)
                 .register(XGBoostJsonParser.TYPE, XGBoostJsonParser::new)
                 .build();
+        ltrStats = getInitialStats();
     }
 
     @Override
     public List<QuerySpec<?>> getQueries() {
 
         return asList(
-                new QuerySpec<>(ExplorerQueryBuilder.NAME, ExplorerQueryBuilder::new, ExplorerQueryBuilder::fromXContent),
-                new QuerySpec<>(LtrQueryBuilder.NAME, LtrQueryBuilder::new, LtrQueryBuilder::fromXContent),
-                new QuerySpec<>(StoredLtrQueryBuilder.NAME,
-                        (input) -> new StoredLtrQueryBuilder(getFeatureStoreLoader(), input),
-                        (ctx) -> StoredLtrQueryBuilder.fromXContent(getFeatureStoreLoader(), ctx)),
+                new QuerySpec<>(
+                        ExplorerQueryBuilder.NAME,
+                        (input) -> new ExplorerQueryBuilder(input, ltrStats),
+                        (ctx) -> ExplorerQueryBuilder.fromXContent(ctx, ltrStats)
+                ),
+                new QuerySpec<>(
+                        LtrQueryBuilder.NAME,
+                        (input) -> new LtrQueryBuilder(input, ltrStats),
+                        (ctx) -> LtrQueryBuilder.fromXContent(ctx, ltrStats)
+                ),
+                new QuerySpec<>(
+                        StoredLtrQueryBuilder.NAME,
+                        (input) -> new StoredLtrQueryBuilder(getFeatureStoreLoader(), input, ltrStats),
+                        (ctx) -> StoredLtrQueryBuilder.fromXContent(getFeatureStoreLoader(), ctx, ltrStats)
+                ),
                 new QuerySpec<>(TermStatQueryBuilder.NAME, TermStatQueryBuilder::new, TermStatQueryBuilder::fromXContent),
-                new QuerySpec<>(ValidatingLtrQueryBuilder.NAME,
-                        (input) -> new ValidatingLtrQueryBuilder(input, parserFactory),
-                        (ctx) -> ValidatingLtrQueryBuilder.fromXContent(ctx, parserFactory)));
+                new QuerySpec<>(
+                        ValidatingLtrQueryBuilder.NAME,
+                        (input) -> new ValidatingLtrQueryBuilder(input, parserFactory, ltrStats),
+                        (ctx) -> ValidatingLtrQueryBuilder.fromXContent(ctx, parserFactory, ltrStats)
+                )
+        );
     }
 
     @Override
@@ -182,7 +201,6 @@ public class LtrQueryParserPlugin extends Plugin implements SearchPlugin, Script
         list.add(new RestFeatureStoreCaches());
         list.add(new RestCreateModelFromSet());
         list.add(new RestAddFeatureToSet());
-        list.add(new RestLTRStats());
         return unmodifiableList(list);
     }
 
@@ -194,8 +212,7 @@ public class LtrQueryParserPlugin extends Plugin implements SearchPlugin, Script
                 new ActionHandler<>(ClearCachesAction.INSTANCE, TransportClearCachesAction.class),
                 new ActionHandler<>(AddFeaturesToSetAction.INSTANCE, TransportAddFeatureToSetAction.class),
                 new ActionHandler<>(CreateModelFromSetAction.INSTANCE, TransportCreateModelFromSetAction.class),
-                new ActionHandler<>(ListStoresAction.INSTANCE, TransportListStoresAction.class),
-                new ActionHandler<>(LTRStatsAction.INSTANCE, TransportLTRStatsAction.class)));
+                new ActionHandler<>(ListStoresAction.INSTANCE, TransportListStoresAction.class)));
     }
 
     @Override
@@ -230,11 +247,15 @@ public class LtrQueryParserPlugin extends Plugin implements SearchPlugin, Script
 
     @Override
     public List<Setting<?>> getSettings() {
-        return unmodifiableList(asList(
+
+        List<Setting<?>> list1 = LTRSettings.getInstance().getSettings();
+        List<Setting<?>> list2 = asList(
                 IndexFeatureStore.STORE_VERSION_PROP,
                 Caches.LTR_CACHE_MEM_SETTING,
                 Caches.LTR_CACHE_EXPIRE_AFTER_READ,
-                Caches.LTR_CACHE_EXPIRE_AFTER_WRITE));
+                Caches.LTR_CACHE_EXPIRE_AFTER_WRITE);
+
+        return unmodifiableList(Stream.concat(list1.stream(), list2.stream()).collect(Collectors.toList()));
     }
 
     @Override
@@ -256,23 +277,43 @@ public class LtrQueryParserPlugin extends Plugin implements SearchPlugin, Script
                 }
             }
         });
-        return asList(caches, parserFactory, getStats(client, clusterService, indexNameExpressionResolver));
+
+        LTRSettings.getInstance().init(clusterService);
+
+        final JvmService jvmService = new JvmService(environment.settings());
+        final LTRCircuitBreakerService ltrCircuitBreakerService = new LTRCircuitBreakerService(jvmService).init();
+
+        addStats(client, clusterService, ltrCircuitBreakerService);
+        return asList(caches, parserFactory, ltrCircuitBreakerService, ltrStats);
     }
 
-    private LTRStats getStats(Client client, ClusterService clusterService, IndexNameExpressionResolver indexNameExpressionResolver) {
-        Map<String, LTRStat> stats = new HashMap<>();
-        stats.put(StatName.CACHE.getName(),
-                new LTRStat(false, new CacheStatsOnNodeSupplier(caches)));
-        stats.put(StatName.STORES.getName(),
-                new LTRStat(true, new StoreStatsSupplier(client, clusterService, indexNameExpressionResolver)));
-        stats.put(StatName.PLUGIN_STATUS.getName(),
-                new LTRStat(true, new PluginHealthStatusSupplier(clusterService, indexNameExpressionResolver)));
-        return new LTRStats(unmodifiableMap(stats));
+    private void addStats(
+            final Client client,
+            final ClusterService clusterService,
+            final LTRCircuitBreakerService ltrCircuitBreakerService
+    ) {
+        final StoreStatsSupplier storeStatsSupplier = StoreStatsSupplier.create(client, clusterService);
+        ltrStats.addStats(StatName.LTR_STORES_STATS.getName(), new LTRStat<>(true, storeStatsSupplier));
+
+        final PluginHealthStatusSupplier pluginHealthStatusSupplier = PluginHealthStatusSupplier.create(
+                client, clusterService, ltrCircuitBreakerService);
+        ltrStats.addStats(StatName.LTR_PLUGIN_STATUS.getName(), new LTRStat<>(true, pluginHealthStatusSupplier));
+    }
+
+    private LTRStats getInitialStats() {
+        Map<String, LTRStat<?>> stats = new HashMap<>();
+        stats.put(StatName.LTR_CACHE_STATS.getName(),
+                new LTRStat<>(false, new CacheStatsOnNodeSupplier(caches)));
+        stats.put(StatName.LTR_REQUEST_TOTAL_COUNT.getName(),
+                new LTRStat<>(false, new CounterSupplier()));
+        stats.put(StatName.LTR_REQUEST_ERROR_COUNT.getName(),
+                new LTRStat<>(false, new CounterSupplier()));
+        return new LTRStats((stats));
     }
 
     protected FeatureStoreLoader getFeatureStoreLoader() {
         return (storeName, clientSupplier) ->
-            new CachedFeatureStore(new IndexFeatureStore(storeName, clientSupplier, parserFactory), caches);
+                new CachedFeatureStore(new IndexFeatureStore(storeName, clientSupplier, parserFactory), caches);
     }
 
     // A simplified version of some token filters needed by the feature stores.
