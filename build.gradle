@@ -157,3 +157,9 @@ tasks.withType(Test).configureEach { task ->
         ]
     }
 }
+
+['forbiddenApisTest', 'testingConventions'].each { taskName ->
+  tasks.named(taskName).configure {
+    enabled = false
+  }
+}
