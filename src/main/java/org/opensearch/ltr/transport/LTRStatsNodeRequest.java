@@ -15,6 +15,7 @@
 
 package org.opensearch.ltr.transport;
 
+import org.opensearch.action.support.nodes.BaseNodeRequest;
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.io.stream.StreamOutput;
 import org.opensearch.transport.TransportRequest;
@@ -24,7 +25,7 @@ import java.io.IOException;
 /**
  * LTRStatsNodeRequest to get a node stat
  */
-public class LTRStatsNodeRequest extends TransportRequest {
+public class LTRStatsNodeRequest extends BaseNodeRequest {
     private final LTRStatsRequest ltrStatsRequest;
 
     public LTRStatsNodeRequest(final LTRStatsRequest ltrStatsRequest) {

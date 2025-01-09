@@ -19,6 +19,7 @@ package com.o19s.es.ltr.action;
 import org.opensearch.action.ActionRequestBuilder;
 import org.opensearch.action.ActionType;
 import org.opensearch.action.FailedNodeException;
+import org.opensearch.action.support.nodes.BaseNodeRequest;
 import org.opensearch.action.support.nodes.BaseNodeResponse;
 import org.opensearch.action.support.nodes.BaseNodesRequest;
 import org.opensearch.action.support.nodes.BaseNodesResponse;
@@ -55,7 +56,7 @@ public class LTRStatsAction extends ActionType<LTRStatsAction.LTRStatsNodesRespo
         }
     }
 
-    public static class LTRStatsNodeRequest extends TransportRequest {
+    public static class LTRStatsNodeRequest extends BaseNodeRequest {
         private final LTRStatsNodesRequest nodesRequest;
 
         public LTRStatsNodeRequest(LTRStatsNodesRequest nodesRequest) {

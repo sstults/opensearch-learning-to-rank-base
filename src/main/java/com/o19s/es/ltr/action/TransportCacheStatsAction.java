@@ -22,6 +22,7 @@ import com.o19s.es.ltr.action.CachesStatsAction.CachesStatsNodesResponse;
 import com.o19s.es.ltr.feature.store.index.Caches;
 import org.opensearch.action.FailedNodeException;
 import org.opensearch.action.support.ActionFilters;
+import org.opensearch.action.support.nodes.BaseNodeRequest;
 import org.opensearch.action.support.nodes.TransportNodesAction;
 import org.opensearch.cluster.metadata.IndexNameExpressionResolver;
 import org.opensearch.cluster.service.ClusterService;
@@ -71,7 +72,7 @@ public class TransportCacheStatsAction extends TransportNodesAction<CachesStatsN
         return new CachesStatsNodeResponse(clusterService.localNode()).initFromCaches(caches);
     }
 
-    public static class CachesStatsNodeRequest extends TransportRequest {
+    public static class CachesStatsNodeRequest extends BaseNodeRequest {
         public CachesStatsNodeRequest() {}
 
         public CachesStatsNodeRequest(StreamInput in) throws IOException {

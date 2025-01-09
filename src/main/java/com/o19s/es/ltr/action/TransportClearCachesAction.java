@@ -22,6 +22,7 @@ import com.o19s.es.ltr.action.ClearCachesAction.ClearCachesNodesResponse;
 import com.o19s.es.ltr.feature.store.index.Caches;
 import org.opensearch.action.FailedNodeException;
 import org.opensearch.action.support.ActionFilters;
+import org.opensearch.action.support.nodes.BaseNodeRequest;
 import org.opensearch.action.support.nodes.TransportNodesAction;
 import org.opensearch.cluster.metadata.IndexNameExpressionResolver;
 import org.opensearch.cluster.service.ClusterService;
@@ -88,7 +89,7 @@ public class TransportClearCachesAction extends TransportNodesAction<ClearCaches
         return new ClearCachesNodeResponse(clusterService.localNode());
     }
 
-    public static class ClearCachesNodeRequest extends TransportRequest {
+    public static class ClearCachesNodeRequest extends BaseNodeRequest {
         private ClearCachesNodesRequest request;
 
         public ClearCachesNodeRequest() {}
