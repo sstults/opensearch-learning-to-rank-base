@@ -1,2 +1,2 @@
-rootProject.name = 'ltr'
+rootProject.name = 'opensearch-ltr'
 include ':rest-api-spec'
