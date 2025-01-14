@@ -14,9 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: 
-          - 11
-          - 17
+        java:
           # We need 2.12.0 at minimum for JDK 21.0.2
           - 21.0.1 
     steps:
