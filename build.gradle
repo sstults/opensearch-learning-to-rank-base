@@ -7,7 +7,7 @@ buildscript {
     build_version_qualifier = System.getProperty("build.version_qualifier", "")
 
     version_tokens = opensearch_version.tokenize('-')
-    opensearch_build = version_tokens[0]
+    opensearch_build = version_tokens[0] + '.0'
     if (build_version_qualifier) {
       opensearch_build += "-${build_version_qualifier}"
     }
@@ -21,7 +21,6 @@ buildscript {
     maven { url "https://aws.oss.sonatype.org/content/repositories/snapshots" }
     mavenCentral()
     maven { url "https://plugins.gradle.org/m2/" }
-    maven { url "https://artifacts.opensearch.org/releases/" }
   }
 
   dependencies {
@@ -114,7 +113,6 @@ repositories {
   maven { url "https://aws.oss.sonatype.org/content/repositories/snapshots" }
   mavenCentral()
   maven { url "https://plugins.gradle.org/m2/" }
-  maven { url "https://artifacts.opensearch.org/releases/" }
 }
 
 dependencies {
@@ -166,7 +164,7 @@ java {
 // thirdPartyAudit.enabled = false
 
 // Uncomment this to skip license header checks
- licenseHeaders.enabled = false
+// licenseHeaders.enabled = false
 
 // No need to validate POM, as we do not upload to sonatype
 validateNebulaPom.enabled = false
