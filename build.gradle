@@ -1,4 +1,5 @@
 import java.nio.file.Files
+import org.opensearch.gradle.test.RestIntegTestTask
 
 buildscript {
   ext {
@@ -172,6 +173,19 @@ validateNebulaPom.enabled = false
 // Elastic tried to remove the logging requirement for plugins, but didn't get it quite right so this is a short term fix until 7.11
 // https://github.com/elastic/opensearch/issues/65247
 loggerUsageCheck.enabled = false
+
+// Custom task for running integration tests
+task integTest(type: RestIntegTestTask) {
+  description = "Run integration tests from src/javaRestTest"
+  // Specify the classpath for integration tests
+  testClassesDirs = sourceSets.javaRestTest.output.classesDirs
+  classpath = sourceSets.javaRestTest.runtimeClasspath
+}
+
+testClusters.integTest {
+  // adds LTR as a plugin to the OS build
+  plugin(project.tasks.bundlePlugin.archiveFile)
+}
 
 tasks.withType(Test).configureEach { task ->
     if (JavaVersion.current().compareTo(JavaVersion.VERSION_17) > 0 && JavaVersion.current().compareTo(JavaVersion.VERSION_21) < 0) {
