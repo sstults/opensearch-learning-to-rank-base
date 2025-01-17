@@ -2,7 +2,7 @@ name: Apply 'untriaged' label during issue lifecycle
 
 on:
   issues:
-    types: [opened, transferred]
+    types: [opened, reopened, transferred]
 
 jobs:
   apply-label:
