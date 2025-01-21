@@ -50,7 +50,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Build LTR Plugin
+      - name: Build and Run Tests
         run: |
           chown -R 1000:1000 `pwd`
           su `id -un 1000` -c 'whoami && java -version && 
