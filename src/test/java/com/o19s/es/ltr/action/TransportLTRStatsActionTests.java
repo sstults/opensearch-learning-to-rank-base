@@ -20,9 +20,9 @@ import com.o19s.es.ltr.action.LTRStatsAction.LTRStatsNodeRequest;
 import com.o19s.es.ltr.action.LTRStatsAction.LTRStatsNodeResponse;
 import com.o19s.es.ltr.action.LTRStatsAction.LTRStatsNodesRequest;
 import com.o19s.es.ltr.action.LTRStatsAction.LTRStatsNodesResponse;
-import com.o19s.es.ltr.stats.LTRStat;
-import com.o19s.es.ltr.stats.LTRStats;
-import com.o19s.es.ltr.stats.StatName;
+import org.opensearch.ltr.stats.LTRStat;
+import org.opensearch.ltr.stats.LTRStats;
+import org.opensearch.ltr.stats.StatName;
 import org.opensearch.action.FailedNodeException;
 import org.opensearch.action.support.ActionFilters;
 import org.opensearch.test.OpenSearchIntegTestCase;
@@ -40,15 +40,15 @@ public class TransportLTRStatsActionTests extends OpenSearchIntegTestCase {
 
     private TransportLTRStatsAction action;
     private LTRStats ltrStats;
-    private Map<String, LTRStat> statsMap;
+    private Map<String, LTRStat<?>> statsMap;
 
     @Before
     public void setup() throws Exception {
         super.setUp();
 
         statsMap = new HashMap<>();
-        statsMap.put(StatName.PLUGIN_STATUS.getName(), new LTRStat(false, () -> "cluster_stat"));
-        statsMap.put(StatName.CACHE.getName(), new LTRStat(true, () -> "node_stat"));
+        statsMap.put(StatName.LTR_PLUGIN_STATUS.getName(), new LTRStat(false, () -> "cluster_stat"));
+        statsMap.put(StatName.LTR_CACHE_STATS.getName(), new LTRStat(true, () -> "node_stat"));
 
         ltrStats = new LTRStats(statsMap);
 
