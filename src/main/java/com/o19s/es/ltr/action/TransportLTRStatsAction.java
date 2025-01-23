@@ -20,7 +20,7 @@ import com.o19s.es.ltr.action.LTRStatsAction.LTRStatsNodeRequest;
 import com.o19s.es.ltr.action.LTRStatsAction.LTRStatsNodeResponse;
 import com.o19s.es.ltr.action.LTRStatsAction.LTRStatsNodesRequest;
 import com.o19s.es.ltr.action.LTRStatsAction.LTRStatsNodesResponse;
-import com.o19s.es.ltr.stats.LTRStats;
+import org.opensearch.ltr.stats.LTRStats;
 import org.opensearch.action.FailedNodeException;
 import org.opensearch.action.support.ActionFilters;
 import org.opensearch.action.support.nodes.TransportNodesAction;
@@ -63,7 +63,7 @@ public class TransportLTRStatsAction extends
                         .entrySet()
                         .stream()
                         .filter(e -> statsToBeRetrieved.contains(e.getKey()))
-                        .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getStatValue()));
+                        .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getValue()));
 
         return new LTRStatsNodesResponse(clusterService.getClusterName(), nodeResponses, failures, clusterStats);
     }
@@ -88,7 +88,7 @@ public class TransportLTRStatsAction extends
                         .entrySet()
                         .stream()
                         .filter(e -> statsToBeRetrieved.contains(e.getKey()))
-                        .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getStatValue()));
+                        .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getValue()));
         return new LTRStatsNodeResponse(clusterService.localNode(), statValues);
     }
 }
