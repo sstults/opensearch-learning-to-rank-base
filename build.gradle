@@ -46,10 +46,10 @@ apply plugin: 'opensearch.rest-resources'
 apply plugin: 'opensearch.pluginzip'
 
 idea {
-    module {
-        downloadJavadoc = true
-        downloadSources = true
-    }
+  module {
+    downloadJavadoc = true
+    downloadSources = true
+  }
 }
 
 // license of this project
@@ -130,13 +130,20 @@ dependencies {
   implementation "org.apache.httpcomponents.core5:httpcore5:5.3"
   implementation "org.apache.httpcomponents.core5:httpcore5-h2:5.3"
   implementation "org.conscrypt:conscrypt-openjdk-uber:2.5.2"
-  implementation 'org.slf4j:slf4j-api:1.7.32'
-  implementation 'org.slf4j:slf4j-simple:1.7.32'
+  implementation 'org.slf4j:slf4j-api:1.7.36'
+  implementation 'org.slf4j:slf4j-simple:1.7.36'
   implementation "org.opensearch:common-utils:${common_utils_version}"
 
   runtimeOnly 'org.locationtech.spatial4j:spatial4j:0.7'
   runtimeOnly 'org.locationtech.jts:jts-core:1.15.0'
   runtimeOnly 'org.apache.logging.log4j:log4j-core:2.21.0'
+}
+
+configurations.all {
+  resolutionStrategy.force "org.apache.httpcomponents.client5:httpclient5:5.3.1"
+  resolutionStrategy.force "org.apache.httpcomponents.core5:httpcore5:5.3"
+  resolutionStrategy.force "org.apache.httpcomponents.core5:httpcore5-h2:5.3"
+  resolutionStrategy.force 'org.apache.httpcomponents:httpclient:4.5.14'
 }
 
 // see https://github.com/opensearch-project/OpenSearch/blob/0ba0e7cc26060f964fcbf6ee45bae53b3a9941d0/buildSrc/src/main/java/org/opensearch/gradle/precommit/DependencyLicensesTask.java
@@ -245,4 +252,13 @@ tasks.named('dependencyLicenses') {
 
 thirdPartyAudit {
   ignoreViolations('org.conscrypt.Platform')
+}
+
+spotless {
+  java {
+    removeUnusedImports()
+    importOrder 'java', 'javax', 'org', 'com'
+
+    eclipse().configFile rootProject.file('.eclipseformat.xml')
+  }
 }
