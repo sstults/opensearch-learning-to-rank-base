@@ -23,7 +23,7 @@ jobs:
     if: github.repository == 'opensearch-project/opensearch-learning-to-rank-base'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout MLCommons
+      - name: Checkout LTR
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
