@@ -1,10 +1,10 @@
 package com.o19s.es.ltr;
 
-import org.apache.lucene.tests.util.LuceneTestCase;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+
+import org.apache.lucene.tests.util.LuceneTestCase;
 
 /*
  * Copyright [2017] Wikimedia Foundation
@@ -56,4 +56,3 @@ public class LtrQueryContextTests extends LuceneTestCase {
     }
 
 }
-

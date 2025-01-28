@@ -16,8 +16,11 @@
 
 package com.o19s.es.ltr.action;
 
-import com.o19s.es.ltr.action.CachesStatsAction.CachesStatsNodesResponse;
-import com.o19s.es.ltr.feature.store.index.Caches;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.opensearch.action.ActionRequestBuilder;
 import org.opensearch.action.ActionType;
 import org.opensearch.action.FailedNodeException;
@@ -33,10 +36,8 @@ import org.opensearch.core.common.io.stream.Writeable;
 import org.opensearch.core.xcontent.ToXContent;
 import org.opensearch.core.xcontent.XContentBuilder;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.o19s.es.ltr.action.CachesStatsAction.CachesStatsNodesResponse;
+import com.o19s.es.ltr.feature.store.index.Caches;
 
 public class CachesStatsAction extends ActionType<CachesStatsNodesResponse> {
     public static final String NAME = "cluster:admin/ltr/caches/stats";
@@ -117,6 +118,7 @@ public class CachesStatsAction extends ActionType<CachesStatsNodesResponse> {
             return allStores;
         }
     }
+
     public static class CachesStatsNodeResponse extends BaseNodeResponse {
         private StatDetails allStores;
         private Map<String, StatDetails> byStore;
@@ -159,6 +161,7 @@ public class CachesStatsAction extends ActionType<CachesStatsNodesResponse> {
             return allStores;
         }
     }
+
     public static class StatDetails implements Writeable, ToXContent {
         private Stat total;
         private Stat features;
@@ -223,12 +226,13 @@ public class CachesStatsAction extends ActionType<CachesStatsNodesResponse> {
 
         @Override
         public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-            return builder.startObject()
-                    .field("total", total)
-                    .field("features", features)
-                    .field("featuresets", featuresets)
-                    .field("models", models)
-                    .endObject();
+            return builder
+                .startObject()
+                .field("total", total)
+                .field("features", features)
+                .field("featuresets", featuresets)
+                .field("models", models)
+                .endObject();
         }
 
         public Stat getTotal() {
@@ -282,17 +286,13 @@ public class CachesStatsAction extends ActionType<CachesStatsNodesResponse> {
 
             @Override
             public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-                return builder.startObject()
-                        .field("ram", ram)
-                        .field("count", count)
-                        .endObject();
+                return builder.startObject().field("ram", ram).field("count", count).endObject();
             }
         }
     }
 
-    public static class CachesStatsActionBuilder extends
-        ActionRequestBuilder<CachesStatsNodesRequest, CachesStatsNodesResponse> {
-        public CachesStatsActionBuilder(OpenSearchClient client){
+    public static class CachesStatsActionBuilder extends ActionRequestBuilder<CachesStatsNodesRequest, CachesStatsNodesResponse> {
+        public CachesStatsActionBuilder(OpenSearchClient client) {
             super(client, INSTANCE, new CachesStatsNodesRequest());
         }
     }

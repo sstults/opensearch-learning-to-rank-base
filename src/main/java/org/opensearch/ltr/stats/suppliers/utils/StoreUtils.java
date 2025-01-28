@@ -15,9 +15,13 @@
 
 package org.opensearch.ltr.stats.suppliers.utils;
 
-import com.o19s.es.ltr.feature.store.StoredFeatureSet;
-import com.o19s.es.ltr.feature.store.StoredLtrModel;
-import com.o19s.es.ltr.feature.store.index.IndexFeatureStore;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+
 import org.opensearch.action.admin.cluster.state.ClusterStateRequest;
 import org.opensearch.action.search.SearchType;
 import org.opensearch.client.Client;
@@ -30,12 +34,9 @@ import org.opensearch.index.query.QueryBuilders;
 import org.opensearch.search.SearchHit;
 import org.opensearch.search.SearchHits;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
+import com.o19s.es.ltr.feature.store.StoredFeatureSet;
+import com.o19s.es.ltr.feature.store.StoredLtrModel;
+import com.o19s.es.ltr.feature.store.index.IndexFeatureStore;
 
 /**
  * A utility class to provide details on the LTR stores. It queries the underlying
@@ -61,9 +62,11 @@ public class StoreUtils {
     }
 
     public List<String> getAllLtrStoreNames() {
-        String[] names = indexNameExpressionResolver.concreteIndexNames(clusterService.state(),
-                new ClusterStateRequest().indices(
-                        IndexFeatureStore.DEFAULT_STORE, IndexFeatureStore.STORE_PREFIX + "*"));
+        String[] names = indexNameExpressionResolver
+            .concreteIndexNames(
+                clusterService.state(),
+                new ClusterStateRequest().indices(IndexFeatureStore.DEFAULT_STORE, IndexFeatureStore.STORE_PREFIX + "*")
+            );
         return Arrays.asList(names);
     }
 
@@ -72,8 +75,8 @@ public class StoreUtils {
             throw new IndexNotFoundException(storeName);
         }
         ClusterIndexHealth indexHealth = new ClusterIndexHealth(
-                clusterService.state().metadata().index(storeName),
-                clusterService.state().getRoutingTable().index(storeName)
+            clusterService.state().metadata().index(storeName),
+            clusterService.state().getRoutingTable().index(storeName)
         );
 
         return indexHealth.getStatus().name().toLowerCase(Locale.getDefault());
@@ -118,10 +121,11 @@ public class StoreUtils {
     }
 
     private SearchHits searchStore(String storeName, String docType) {
-        return client.prepareSearch(storeName)
-                .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-                .setQuery(QueryBuilders.termQuery("type", docType))
-                .get()
-                .getHits();
+        return client
+            .prepareSearch(storeName)
+            .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+            .setQuery(QueryBuilders.termQuery("type", docType))
+            .get()
+            .getHits();
     }
 }

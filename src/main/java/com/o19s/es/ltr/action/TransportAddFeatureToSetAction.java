@@ -16,17 +16,14 @@
 
 package com.o19s.es.ltr.action;
 
-import org.opensearch.ltr.breaker.LTRCircuitBreakerService;
-import org.opensearch.ltr.exception.LimitExceededException;
-import com.o19s.es.ltr.action.AddFeaturesToSetAction.AddFeaturesToSetRequest;
-import com.o19s.es.ltr.action.AddFeaturesToSetAction.AddFeaturesToSetResponse;
-import com.o19s.es.ltr.action.FeatureStoreAction.FeatureStoreRequest;
-import com.o19s.es.ltr.feature.FeatureValidation;
-import com.o19s.es.ltr.feature.store.StorableElement;
-import com.o19s.es.ltr.feature.store.StoredFeature;
-import com.o19s.es.ltr.feature.store.StoredFeatureSet;
-import com.o19s.es.ltr.feature.store.index.IndexFeatureStore;
-import org.opensearch.core.action.ActionListener;
+import static org.opensearch.core.action.ActionListener.wrap;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.opensearch.action.get.GetRequest;
 import org.opensearch.action.get.GetResponse;
 import org.opensearch.action.get.TransportGetAction;
@@ -40,21 +37,25 @@ import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.inject.Inject;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.util.concurrent.CountDown;
+import org.opensearch.core.action.ActionListener;
 import org.opensearch.index.query.BoolQueryBuilder;
 import org.opensearch.index.query.QueryBuilder;
 import org.opensearch.index.query.QueryBuilders;
+import org.opensearch.ltr.breaker.LTRCircuitBreakerService;
+import org.opensearch.ltr.exception.LimitExceededException;
 import org.opensearch.search.SearchHit;
 import org.opensearch.tasks.Task;
 import org.opensearch.threadpool.ThreadPool;
 import org.opensearch.transport.TransportService;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
-
-import static org.opensearch.core.action.ActionListener.wrap;
+import com.o19s.es.ltr.action.AddFeaturesToSetAction.AddFeaturesToSetRequest;
+import com.o19s.es.ltr.action.AddFeaturesToSetAction.AddFeaturesToSetResponse;
+import com.o19s.es.ltr.action.FeatureStoreAction.FeatureStoreRequest;
+import com.o19s.es.ltr.feature.FeatureValidation;
+import com.o19s.es.ltr.feature.store.StorableElement;
+import com.o19s.es.ltr.feature.store.StoredFeature;
+import com.o19s.es.ltr.feature.store.StoredFeatureSet;
+import com.o19s.es.ltr.feature.store.index.IndexFeatureStore;
 
 public class TransportAddFeatureToSetAction extends HandledTransportAction<AddFeaturesToSetRequest, AddFeaturesToSetResponse> {
     private final ClusterService clusterService;
@@ -64,12 +65,18 @@ public class TransportAddFeatureToSetAction extends HandledTransportAction<AddFe
     private final LTRCircuitBreakerService ltrCircuitBreakerService;
 
     @Inject
-    public TransportAddFeatureToSetAction(Settings settings, ThreadPool threadPool,
-                                             TransportService transportService, ActionFilters actionFilters,
-                                             IndexNameExpressionResolver indexNameExpressionResolver,
-                                             ClusterService clusterService, TransportSearchAction searchAction,
-                                             TransportGetAction getAction, TransportFeatureStoreAction featureStoreAction,
-                                             LTRCircuitBreakerService ltrCircuitBreakerService) {
+    public TransportAddFeatureToSetAction(
+        Settings settings,
+        ThreadPool threadPool,
+        TransportService transportService,
+        ActionFilters actionFilters,
+        IndexNameExpressionResolver indexNameExpressionResolver,
+        ClusterService clusterService,
+        TransportSearchAction searchAction,
+        TransportGetAction getAction,
+        TransportFeatureStoreAction featureStoreAction,
+        LTRCircuitBreakerService ltrCircuitBreakerService
+    ) {
         super(AddFeaturesToSetAction.NAME, transportService, actionFilters, AddFeaturesToSetRequest::new);
         this.clusterService = clusterService;
         this.searchAction = searchAction;
@@ -84,8 +91,9 @@ public class TransportAddFeatureToSetAction extends HandledTransportAction<AddFe
             throw new IllegalArgumentException("Store [" + request.getStore() + "] does not exist, please create it first.");
         }
         if (this.ltrCircuitBreakerService.isOpen()) {
-            throw new LimitExceededException("Store [" + request.getStore() + "] adding feature set is not allowed " +
-                    "as memory circuit is broken.");
+            throw new LimitExceededException(
+                "Store [" + request.getStore() + "] adding feature set is not allowed " + "as memory circuit is broken."
+            );
         }
         new AsyncAction(task, request, listener, clusterService, searchAction, getAction, featureStoreAction).start();
     }
@@ -119,9 +127,15 @@ public class TransportAddFeatureToSetAction extends HandledTransportAction<AddFe
         private final TransportFeatureStoreAction featureStoreAction;
         private final FeatureValidation validation;
 
-        AsyncAction(Task task, AddFeaturesToSetRequest request, ActionListener<AddFeaturesToSetResponse> listener,
-                           ClusterService clusterService, TransportSearchAction searchAction, TransportGetAction getAction,
-                           TransportFeatureStoreAction featureStoreAction) {
+        AsyncAction(
+            Task task,
+            AddFeaturesToSetRequest request,
+            ActionListener<AddFeaturesToSetResponse> listener,
+            ClusterService clusterService,
+            TransportSearchAction searchAction,
+            TransportGetAction getAction,
+            TransportFeatureStoreAction featureStoreAction
+        ) {
             this.task = task;
             this.listener = listener;
             this.featureSetName = request.getFeatureSet();
@@ -153,8 +167,8 @@ public class TransportAddFeatureToSetAction extends HandledTransportAction<AddFe
                 featuresRef.set(features);
             }
             GetRequest getRequest = new GetRequest(store)
-                    .id(StorableElement.generateId(StoredFeatureSet.TYPE, featureSetName))
-                    .routing(routing);
+                .id(StorableElement.generateId(StoredFeatureSet.TYPE, featureSetName))
+                .routing(routing);
 
             getRequest.setParentTask(clusterService.localNode().getId(), task.getId());
             getAction.execute(getRequest, wrap(this::onGetResponse, this::onGetFailure));
@@ -178,7 +192,7 @@ public class TransportAddFeatureToSetAction extends HandledTransportAction<AddFe
             BoolQueryBuilder bq = QueryBuilders.boolQuery();
             bq.must(nameQuery);
             bq.must(QueryBuilders.matchQuery("type", StoredFeature.TYPE));
-            //srequest.types(IndexFeatureStore.ES_TYPE);
+            // srequest.types(IndexFeatureStore.ES_TYPE);
             srequest.source().query(bq);
             srequest.source().fetchSource(true);
             srequest.source().size(StoredFeatureSet.MAX_FEATURES);
@@ -280,16 +294,15 @@ public class TransportAddFeatureToSetAction extends HandledTransportAction<AddFe
             long version = this.version.get();
             final FeatureStoreRequest frequest;
             if (version > 0) {
-                 frequest = new FeatureStoreRequest(store, set, version);
+                frequest = new FeatureStoreRequest(store, set, version);
             } else {
                 frequest = new FeatureStoreRequest(store, set, FeatureStoreRequest.Action.CREATE);
             }
             frequest.setRouting(routing);
             frequest.setParentTask(clusterService.localNode().getId(), task.getId());
             frequest.setValidation(validation);
-            featureStoreAction.execute(frequest, wrap(
-                    (r) -> listener.onResponse(new AddFeaturesToSetResponse(r.getResponse())),
-                    listener::onFailure));
+            featureStoreAction
+                .execute(frequest, wrap((r) -> listener.onResponse(new AddFeaturesToSetResponse(r.getResponse())), listener::onFailure));
         }
     }
 

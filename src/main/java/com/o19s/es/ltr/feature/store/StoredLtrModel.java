@@ -16,29 +16,30 @@
 
 package com.o19s.es.ltr.feature.store;
 
-import com.o19s.es.ltr.feature.FeatureSet;
-import com.o19s.es.ltr.ranker.LtrRanker;
-import com.o19s.es.ltr.ranker.normalizer.FeatureNormalizingRanker;
-import com.o19s.es.ltr.ranker.normalizer.Normalizer;
-import com.o19s.es.ltr.ranker.parser.LtrRankerParser;
-import com.o19s.es.ltr.ranker.parser.LtrRankerParserFactory;
-import org.opensearch.core.ParseField;
-import org.opensearch.core.common.ParsingException;
-import org.opensearch.core.common.io.stream.StreamInput;
-import org.opensearch.core.common.io.stream.StreamOutput;
-import org.opensearch.core.common.io.stream.Writeable;
-import org.opensearch.common.xcontent.LoggingDeprecationHandler;
-import org.opensearch.core.xcontent.ObjectParser;
-import org.opensearch.core.xcontent.XContentBuilder;
-import org.opensearch.core.xcontent.XContentParser;
-import org.opensearch.common.xcontent.json.JsonXContent;
+import static org.opensearch.core.xcontent.NamedXContentRegistry.EMPTY;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static org.opensearch.core.xcontent.NamedXContentRegistry.EMPTY;
+import org.opensearch.common.xcontent.LoggingDeprecationHandler;
+import org.opensearch.common.xcontent.json.JsonXContent;
+import org.opensearch.core.ParseField;
+import org.opensearch.core.common.ParsingException;
+import org.opensearch.core.common.io.stream.StreamInput;
+import org.opensearch.core.common.io.stream.StreamOutput;
+import org.opensearch.core.common.io.stream.Writeable;
+import org.opensearch.core.xcontent.ObjectParser;
+import org.opensearch.core.xcontent.XContentBuilder;
+import org.opensearch.core.xcontent.XContentParser;
+
+import com.o19s.es.ltr.feature.FeatureSet;
+import com.o19s.es.ltr.ranker.LtrRanker;
+import com.o19s.es.ltr.ranker.normalizer.FeatureNormalizingRanker;
+import com.o19s.es.ltr.ranker.normalizer.Normalizer;
+import com.o19s.es.ltr.ranker.parser.LtrRankerParser;
+import com.o19s.es.ltr.ranker.parser.LtrRankerParserFactory;
 
 public class StoredLtrModel implements StorableElement {
     public static final String TYPE = "model";
@@ -58,19 +59,22 @@ public class StoredLtrModel implements StorableElement {
     static {
         PARSER = new ObjectParser<>(TYPE, ParsingState::new);
         PARSER.declareString(ParsingState::setName, NAME);
-        PARSER.declareObject(ParsingState::setFeatureSet,
-                (parser, ctx) -> StoredFeatureSet.parse(parser),
-                FEATURE_SET);
-        PARSER.declareObject(ParsingState::setRankingModel, LtrModelDefinition.PARSER,
-                MODEL);
+        PARSER.declareObject(ParsingState::setFeatureSet, (parser, ctx) -> StoredFeatureSet.parse(parser), FEATURE_SET);
+        PARSER.declareObject(ParsingState::setRankingModel, LtrModelDefinition.PARSER, MODEL);
     }
 
     public StoredLtrModel(String name, StoredFeatureSet featureSet, LtrModelDefinition definition) {
         this(name, featureSet, definition.type, definition.definition, definition.modelAsString, definition.featureNormalizers);
     }
 
-    public StoredLtrModel(String name, StoredFeatureSet featureSet, String rankingModelType, String rankingModel,
-                          boolean modelAsString, StoredFeatureNormalizers featureNormalizerSet) {
+    public StoredLtrModel(
+        String name,
+        StoredFeatureSet featureSet,
+        String rankingModelType,
+        String rankingModel,
+        boolean modelAsString,
+        StoredFeatureNormalizers featureNormalizerSet
+    ) {
         this.name = Objects.requireNonNull(name);
         this.featureSet = Objects.requireNonNull(featureSet);
         this.rankingModelType = Objects.requireNonNull(rankingModelType);
@@ -168,7 +172,9 @@ public class StoredLtrModel implements StorableElement {
     /**
      * @return the stored set of feature normalizers
      */
-    public StoredFeatureNormalizers getFeatureNormalizers() { return this.parsedFtrNorms; }
+    public StoredFeatureNormalizers getFeatureNormalizers() {
+        return this.parsedFtrNorms;
+    }
 
     @Override
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
@@ -182,9 +188,7 @@ public class StoredLtrModel implements StorableElement {
         if (modelAsString) {
             builder.value(rankingModel);
         } else {
-            try (XContentParser parser = JsonXContent.jsonXContent.createParser(EMPTY,
-                    LoggingDeprecationHandler.INSTANCE, rankingModel)
-            ) {
+            try (XContentParser parser = JsonXContent.jsonXContent.createParser(EMPTY, LoggingDeprecationHandler.INSTANCE, rankingModel)) {
                 builder.copyCurrentStructure(parser);
             }
         }
@@ -197,15 +201,21 @@ public class StoredLtrModel implements StorableElement {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof StoredLtrModel)) return false;
+        if (this == o)
+            return true;
+        if (!(o instanceof StoredLtrModel))
+            return false;
 
         StoredLtrModel that = (StoredLtrModel) o;
 
-        if (!name.equals(that.name)) return false;
-        if (!featureSet.equals(that.featureSet)) return false;
-        if (!rankingModelType.equals(that.rankingModelType)) return false;
-        if (!parsedFtrNorms.equals(that.parsedFtrNorms)) return false;
+        if (!name.equals(that.name))
+            return false;
+        if (!featureSet.equals(that.featureSet))
+            return false;
+        if (!rankingModelType.equals(that.rankingModelType))
+            return false;
+        if (!parsedFtrNorms.equals(that.parsedFtrNorms))
+            return false;
         return rankingModel.equals(that.rankingModel);
     }
 
@@ -246,17 +256,12 @@ public class StoredLtrModel implements StorableElement {
 
         static {
             PARSER = new ObjectParser<>("model", LtrModelDefinition::new);
-            PARSER.declareString(LtrModelDefinition::setType,
-                    MODEL_TYPE);
-            PARSER.declareField((p, d, c) -> d.parseModel(p),
-                    MODEL_DEFINITION,
-                    ObjectParser.ValueType.OBJECT_ARRAY_OR_STRING);
+            PARSER.declareString(LtrModelDefinition::setType, MODEL_TYPE);
+            PARSER.declareField((p, d, c) -> d.parseModel(p), MODEL_DEFINITION, ObjectParser.ValueType.OBJECT_ARRAY_OR_STRING);
 
-            PARSER.declareNamedObjects(LtrModelDefinition::setNamedFeatureNormalizers,
-                    StoredFeatureNormalizers.PARSER,
-                    FEATURE_NORMALIZERS);
+            PARSER
+                .declareNamedObjects(LtrModelDefinition::setNamedFeatureNormalizers, StoredFeatureNormalizers.PARSER, FEATURE_NORMALIZERS);
         }
-
 
         private LtrModelDefinition() {
             this.featureNormalizers = new StoredFeatureNormalizers();
@@ -284,7 +289,6 @@ public class StoredLtrModel implements StorableElement {
             this.featureNormalizers.writeTo(out);
         }
 
-
         private void setType(String type) {
             this.type = type;
         }
@@ -305,7 +309,9 @@ public class StoredLtrModel implements StorableElement {
             return modelAsString;
         }
 
-        public StoredFeatureNormalizers getFtrNorms() {return this.featureNormalizers;}
+        public StoredFeatureNormalizers getFtrNorms() {
+            return this.featureNormalizers;
+        }
 
         public static LtrModelDefinition parse(XContentParser parser, Void ctx) throws IOException {
             LtrModelDefinition def = PARSER.parse(parser, ctx);
@@ -319,16 +325,16 @@ public class StoredLtrModel implements StorableElement {
         }
 
         private void parseModel(XContentParser parser) throws IOException {
-                if (parser.currentToken() == XContentParser.Token.VALUE_STRING) {
-                    modelAsString = true;
-                    definition = parser.text();
-                } else {
-                    try (XContentBuilder builder = JsonXContent.contentBuilder()) {
-                        builder.copyCurrentStructure(parser);
-                        modelAsString = false;
-                        definition = builder.toString();
-                    }
+            if (parser.currentToken() == XContentParser.Token.VALUE_STRING) {
+                modelAsString = true;
+                definition = parser.text();
+            } else {
+                try (XContentBuilder builder = JsonXContent.contentBuilder()) {
+                    builder.copyCurrentStructure(parser);
+                    modelAsString = false;
+                    definition = builder.toString();
                 }
+            }
         }
     }
 }

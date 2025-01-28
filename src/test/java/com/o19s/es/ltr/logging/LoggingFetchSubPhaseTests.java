@@ -16,17 +16,18 @@
 
 package com.o19s.es.ltr.logging;
 
-import org.opensearch.ltr.stats.LTRStat;
-import org.opensearch.ltr.stats.LTRStats;
-import org.opensearch.ltr.stats.StatName;
-import org.opensearch.ltr.stats.suppliers.CounterSupplier;
-import com.o19s.es.ltr.feature.PrebuiltFeature;
-import com.o19s.es.ltr.feature.PrebuiltFeatureSet;
-import com.o19s.es.ltr.feature.PrebuiltLtrModel;
-import com.o19s.es.ltr.logging.LoggingFetchSubPhase.LoggingFetchSubPhaseProcessor;
-import com.o19s.es.ltr.query.RankerQuery;
-import com.o19s.es.ltr.ranker.LtrRanker;
-import com.o19s.es.ltr.ranker.linear.LinearRankerTests;
+import static java.util.Collections.unmodifiableMap;
+import static org.opensearch.common.lucene.search.function.FieldValueFactorFunction.Modifier.LN2P;
+import static org.opensearch.index.fielddata.IndexNumericFieldData.NumericType.FLOAT;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -48,47 +49,46 @@ import org.apache.lucene.search.Weight;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.tests.util.LuceneTestCase;
 import org.apache.lucene.tests.util.TestUtil;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.opensearch.common.lucene.search.function.CombineFunction;
 import org.opensearch.common.lucene.search.function.FieldValueFactorFunction;
 import org.opensearch.common.lucene.search.function.FunctionScoreQuery;
-import org.opensearch.core.common.text.Text;
 import org.opensearch.index.fielddata.plain.SortedNumericIndexFieldData;
+import org.opensearch.ltr.stats.LTRStat;
+import org.opensearch.ltr.stats.LTRStats;
+import org.opensearch.ltr.stats.StatName;
+import org.opensearch.ltr.stats.suppliers.CounterSupplier;
 import org.opensearch.search.SearchHit;
 import org.opensearch.search.fetch.FetchSubPhase;
 import org.opensearch.search.fetch.FetchSubPhaseProcessor;
 import org.opensearch.search.lookup.SourceLookup;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import static java.util.Collections.unmodifiableMap;
-import static org.opensearch.common.lucene.search.function.FieldValueFactorFunction.Modifier.LN2P;
-import static org.opensearch.index.fielddata.IndexNumericFieldData.NumericType.FLOAT;
+import com.o19s.es.ltr.feature.PrebuiltFeature;
+import com.o19s.es.ltr.feature.PrebuiltFeatureSet;
+import com.o19s.es.ltr.feature.PrebuiltLtrModel;
+import com.o19s.es.ltr.logging.LoggingFetchSubPhase.LoggingFetchSubPhaseProcessor;
+import com.o19s.es.ltr.query.RankerQuery;
+import com.o19s.es.ltr.ranker.LtrRanker;
+import com.o19s.es.ltr.ranker.linear.LinearRankerTests;
 
 public class LoggingFetchSubPhaseTests extends LuceneTestCase {
     public static final float FACTOR = 1.2F;
     private static Directory directory;
     private static IndexSearcher searcher;
-    private static Map<String,Document> docs;
-    private LTRStats ltrStats = new LTRStats(unmodifiableMap(new HashMap<String, LTRStat<?>>() {{
-        put(StatName.LTR_REQUEST_TOTAL_COUNT.getName(),
-                new LTRStat<>(false, new CounterSupplier()));
-        put(StatName.LTR_REQUEST_ERROR_COUNT.getName(),
-                new LTRStat<>(false, new CounterSupplier()));
-    }}));
+    private static Map<String, Document> docs;
+    private LTRStats ltrStats = new LTRStats(unmodifiableMap(new HashMap<String, LTRStat<?>>() {
+        {
+            put(StatName.LTR_REQUEST_TOTAL_COUNT.getName(), new LTRStat<>(false, new CounterSupplier()));
+            put(StatName.LTR_REQUEST_ERROR_COUNT.getName(), new LTRStat<>(false, new CounterSupplier()));
+        }
+    }));
 
     @BeforeClass
     public static void init() throws Exception {
         directory = newDirectory(random());
 
-        try(IndexWriter writer = new IndexWriter(directory, newIndexWriterConfig(new StandardAnalyzer()))) {
+        try (IndexWriter writer = new IndexWriter(directory, newIndexWriterConfig(new StandardAnalyzer()))) {
             int nDoc = TestUtil.nextInt(random(), 20, 100);
             docs = new HashMap<>();
             for (int i = 0; i < nDoc; i++) {
@@ -122,9 +122,9 @@ public class LoggingFetchSubPhaseTests extends LuceneTestCase {
         query1 = query1.toLoggerQuery(logger1);
         query2 = query2.toLoggerQuery(logger2);
         BooleanQuery query = new BooleanQuery.Builder()
-                .add(new BooleanClause(query1, BooleanClause.Occur.MUST))
-                .add(new BooleanClause(query2, BooleanClause.Occur.MUST))
-                .build();
+            .add(new BooleanClause(query1, BooleanClause.Occur.MUST))
+            .add(new BooleanClause(query2, BooleanClause.Occur.MUST))
+            .build();
         LoggingFetchSubPhase subPhase = new LoggingFetchSubPhase();
         Weight weight = searcher.createWeight(query, ScoreMode.COMPLETE, 1.0F);
         List<LoggingFetchSubPhase.HitLogConsumer> loggers = Arrays.asList(logger1, logger2);
@@ -151,20 +151,20 @@ public class LoggingFetchSubPhaseTests extends LuceneTestCase {
                 assertTrue(log1.get(0).containsKey("value"));
                 assertEquals((Float) 0.0F, log1.get(0).get("value"));
                 assertTrue(log2.get(0).containsKey("value"));
-                assertTrue((Float)log2.get(0).get("value") > 0F);
+                assertTrue((Float) log2.get(0).get("value") > 0F);
             }
-            int bits = (int)(long) d.getField("score").numericValue();
+            int bits = (int) (long) d.getField("score").numericValue();
             float rawScore = Float.intBitsToFloat(bits);
-            double expectedScore = rawScore*FACTOR;
-            expectedScore = Math.log1p(expectedScore+1);
-            assertEquals((float) expectedScore, (Float)log1.get(1).get("value"), Math.ulp((float)expectedScore));
-            assertEquals((float) expectedScore, (Float)log1.get(1).get("value"), Math.ulp((float)expectedScore));
+            double expectedScore = rawScore * FACTOR;
+            expectedScore = Math.log1p(expectedScore + 1);
+            assertEquals((float) expectedScore, (Float) log1.get(1).get("value"), Math.ulp((float) expectedScore));
+            assertEquals((float) expectedScore, (Float) log1.get(1).get("value"), Math.ulp((float) expectedScore));
         }
     }
 
     public SearchHit[] preprocessRandomHits(FetchSubPhaseProcessor processor) throws IOException {
         int minHits = TestUtil.nextInt(random(), 5, 10);
-        int maxHits = TestUtil.nextInt(random(), minHits, minHits+10);
+        int maxHits = TestUtil.nextInt(random(), minHits, minHits + 10);
         List<SearchHit> hits = new ArrayList<>(maxHits);
         searcher.search(new MatchAllDocsQuery(), new SimpleCollector() {
             /**
@@ -189,12 +189,7 @@ public class LoggingFetchSubPhaseTests extends LuceneTestCase {
                 if (hits.size() < minHits || (random().nextBoolean() && hits.size() < maxHits)) {
                     Document d = context.reader().document(doc);
                     String id = d.get("id");
-                    SearchHit hit = new SearchHit(
-                        doc,
-                        id,
-                        random().nextBoolean() ? new HashMap<>() : null,
-                        null
-                    );
+                    SearchHit hit = new SearchHit(doc, id, random().nextBoolean() ? new HashMap<>() : null, null);
                     processor.process(new FetchSubPhase.HitContext(hit, context, doc, new SourceLookup()));
                     hits.add(hit);
                 }
@@ -225,9 +220,13 @@ public class LoggingFetchSubPhaseTests extends LuceneTestCase {
     }
 
     public Query buildFunctionScore() {
-        FieldValueFactorFunction fieldValueFactorFunction = new FieldValueFactorFunction("score", FACTOR, LN2P, 0D,
-                new SortedNumericIndexFieldData("score", FLOAT));
-        return new FunctionScoreQuery(new MatchAllDocsQuery(),
-                fieldValueFactorFunction, CombineFunction.MULTIPLY, 0F, Float.MAX_VALUE);
+        FieldValueFactorFunction fieldValueFactorFunction = new FieldValueFactorFunction(
+            "score",
+            FACTOR,
+            LN2P,
+            0D,
+            new SortedNumericIndexFieldData("score", FLOAT)
+        );
+        return new FunctionScoreQuery(new MatchAllDocsQuery(), fieldValueFactorFunction, CombineFunction.MULTIPLY, 0F, Float.MAX_VALUE);
     }
 }

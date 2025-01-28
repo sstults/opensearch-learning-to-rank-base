@@ -15,6 +15,11 @@
 
 package org.opensearch.ltr.stats.suppliers;
 
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.when;
+
+import java.util.Arrays;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -22,11 +27,6 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.opensearch.ltr.breaker.LTRCircuitBreakerService;
 import org.opensearch.ltr.stats.suppliers.utils.StoreUtils;
-
-import java.util.Arrays;
-
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.when;
 
 public class PluginHealthStatusSupplierTests {
     private PluginHealthStatusSupplier pluginHealthStatusSupplier;
@@ -40,8 +40,7 @@ public class PluginHealthStatusSupplierTests {
     @Before
     public void setup() {
         MockitoAnnotations.openMocks(this);
-        pluginHealthStatusSupplier =
-                new PluginHealthStatusSupplier(storeUtils, ltrCircuitBreakerService);
+        pluginHealthStatusSupplier = new PluginHealthStatusSupplier(storeUtils, ltrCircuitBreakerService);
     }
 
     @Test

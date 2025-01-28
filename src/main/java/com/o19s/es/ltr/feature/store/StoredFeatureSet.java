@@ -16,9 +16,19 @@
 
 package com.o19s.es.ltr.feature.store;
 
-import com.o19s.es.ltr.LtrQueryContext;
-import com.o19s.es.ltr.feature.Feature;
-import com.o19s.es.ltr.feature.FeatureSet;
+import static org.apache.lucene.util.RamUsageEstimator.NUM_BYTES_ARRAY_HEADER;
+import static org.apache.lucene.util.RamUsageEstimator.NUM_BYTES_OBJECT_HEADER;
+import static org.apache.lucene.util.RamUsageEstimator.NUM_BYTES_OBJECT_REF;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.RandomAccess;
+
 import org.apache.lucene.search.MatchNoDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.util.Accountable;
@@ -31,18 +41,9 @@ import org.opensearch.core.xcontent.ObjectParser;
 import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.core.xcontent.XContentParser;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.RandomAccess;
-
-import static org.apache.lucene.util.RamUsageEstimator.NUM_BYTES_ARRAY_HEADER;
-import static org.apache.lucene.util.RamUsageEstimator.NUM_BYTES_OBJECT_HEADER;
-import static org.apache.lucene.util.RamUsageEstimator.NUM_BYTES_OBJECT_REF;
+import com.o19s.es.ltr.LtrQueryContext;
+import com.o19s.es.ltr.feature.Feature;
+import com.o19s.es.ltr.feature.FeatureSet;
 
 public class StoredFeatureSet implements FeatureSet, Accountable, StorableElement {
     public static final int MAX_FEATURES = 10000;
@@ -60,9 +61,7 @@ public class StoredFeatureSet implements FeatureSet, Accountable, StorableElemen
     static {
         PARSER = new ObjectParser<>(TYPE, ParsingState::new);
         PARSER.declareString(ParsingState::setName, NAME);
-        PARSER.declareObjectArray(ParsingState::setFeatures,
-                (p, c) -> StoredFeature.parse(p),
-                FEATURES);
+        PARSER.declareObjectArray(ParsingState::setFeatures, (p, c) -> StoredFeature.parse(p), FEATURES);
     }
 
     public static StoredFeatureSet parse(XContentParser parser) {
@@ -94,8 +93,9 @@ public class StoredFeatureSet implements FeatureSet, Accountable, StorableElemen
         for (StoredFeature feature : features) {
             ordinal++;
             if (featureMap.put(feature.name(), ordinal) != null) {
-                throw new IllegalArgumentException("Feature [" + feature.name() + "] defined twice in this set: " +
-                        "feature names must be unique in a set.");
+                throw new IllegalArgumentException(
+                    "Feature [" + feature.name() + "] defined twice in this set: " + "feature names must be unique in a set."
+                );
             }
         }
     }
@@ -185,10 +185,7 @@ public class StoredFeatureSet implements FeatureSet, Accountable, StorableElemen
      * @throws IllegalArgumentException if the resulting size of the set exceed MAX_FEATURES
      */
     public StoredFeatureSet merge(List<StoredFeature> mergedFeatures) {
-        int merged = (int) mergedFeatures.stream()
-                .map(StoredFeature::name)
-                .filter(this::hasFeature)
-                .count();
+        int merged = (int) mergedFeatures.stream().map(StoredFeature::name).filter(this::hasFeature).count();
 
         if (size() + (mergedFeatures.size() - merged) > MAX_FEATURES) {
             throw new IllegalArgumentException("The resulting feature set would be too large");
@@ -250,9 +247,10 @@ public class StoredFeatureSet implements FeatureSet, Accountable, StorableElemen
 
     @Override
     public long ramBytesUsed() {
-        return BASE_RAM_USED +
-                featureMap.size() * NUM_BYTES_OBJECT_REF + NUM_BYTES_OBJECT_HEADER + NUM_BYTES_ARRAY_HEADER +
-                features.stream().mapToLong(StoredFeature::ramBytesUsed).sum();
+        return BASE_RAM_USED + featureMap.size() * NUM_BYTES_OBJECT_REF + NUM_BYTES_OBJECT_HEADER + NUM_BYTES_ARRAY_HEADER + features
+            .stream()
+            .mapToLong(StoredFeature::ramBytesUsed)
+            .sum();
     }
 
     @Override

@@ -15,6 +15,11 @@
 
 package org.opensearch.ltr;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+
 import org.opensearch.client.Request;
 import org.opensearch.client.Response;
 import org.opensearch.common.util.io.Streams;
@@ -24,27 +29,23 @@ import org.opensearch.core.rest.RestStatus;
 import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.test.rest.OpenSearchRestTestCase;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-
 public class LTRRestTestCase extends OpenSearchRestTestCase {
 
     /**
      * Utility to update  settings
      */
     public void updateClusterSettings(String settingKey, Object value) throws Exception {
-        XContentBuilder builder = XContentFactory.jsonBuilder()
-                .startObject()
-                .startObject("persistent")
-                .field(settingKey, value)
-                .endObject()
-                .endObject();
+        XContentBuilder builder = XContentFactory
+            .jsonBuilder()
+            .startObject()
+            .startObject("persistent")
+            .field(settingKey, value)
+            .endObject()
+            .endObject();
         Request request = new Request("PUT", "_cluster/settings");
         request.setJsonEntity(BytesReference.bytes(builder).utf8ToString());
         Response response = client().performRequest(request);
-        assertEquals(RestStatus.OK,  RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+        assertEquals(RestStatus.OK, RestStatus.fromCode(response.getStatusLine().getStatusCode()));
     }
 
     /**
@@ -52,16 +53,14 @@ public class LTRRestTestCase extends OpenSearchRestTestCase {
      * @param name suffix of index name
      */
     public void createLTRStore(String name) throws IOException {
-        String path = "_ltr";;
+        String path = "_ltr";
+        ;
 
         if (name != null && !name.isEmpty()) {
             path = path + "/" + name;
         }
 
-        Request request = new Request(
-                "PUT",
-                "/" + path
-        );
+        Request request = new Request("PUT", "/" + path);
 
         Response response = client().performRequest(request);
         assertEquals(request.getEndpoint() + ": failed", RestStatus.OK, RestStatus.fromCode(response.getStatusLine().getStatusCode()));
@@ -79,16 +78,14 @@ public class LTRRestTestCase extends OpenSearchRestTestCase {
      * @param name suffix of index name
      */
     public void deleteLTRStore(String name) throws IOException {
-        String path = "_ltr";;
+        String path = "_ltr";
+        ;
 
         if (name != null && !name.isEmpty()) {
             path = path + "/" + name;
         }
 
-        Request request = new Request(
-                "DELETE",
-                "/" + path
-        );
+        Request request = new Request("DELETE", "/" + path);
 
         Response response = client().performRequest(request);
         assertEquals(request.getEndpoint() + ": failed", RestStatus.OK, RestStatus.fromCode(response.getStatusLine().getStatusCode()));
@@ -106,28 +103,27 @@ public class LTRRestTestCase extends OpenSearchRestTestCase {
      * @param name feature set
      */
     public void createFeatureSet(String name) throws IOException {
-        Request request = new Request(
-                "POST",
-                "/_ltr/_featureset/" + name
-        );
+        Request request = new Request("POST", "/_ltr/_featureset/" + name);
 
-        XContentBuilder xb = XContentFactory.jsonBuilder()
+        XContentBuilder xb = XContentFactory
+            .jsonBuilder()
+            .startObject()
+            .startObject("featureset")
+            .field("name", name)
+            .startArray("features");
+
+        for (int i = 1; i < 3; ++i) {
+            xb
                 .startObject()
-                .startObject("featureset")
-                .field("name", name)
-                .startArray("features");
-
-        for (int i=1; i<3; ++i) {
-            xb.startObject()
-                    .field("name", String.valueOf(i))
-                    .array("params", "keywords")
-                    .field("template_language", "mustache")
-                    .startObject("template")
-                    .startObject("match")
-                    .field("field"+i, "{{keywords}}")
-                    .endObject()
-                    .endObject()
-                    .endObject();
+                .field("name", String.valueOf(i))
+                .array("params", "keywords")
+                .field("template_language", "mustache")
+                .startObject("template")
+                .startObject("match")
+                .field("field" + i, "{{keywords}}")
+                .endObject()
+                .endObject()
+                .endObject();
         }
         xb.endArray().endObject().endObject();
 
@@ -148,10 +144,7 @@ public class LTRRestTestCase extends OpenSearchRestTestCase {
      * @param name feature set
      */
     public void deleteFeatureSet(String name) throws IOException {
-        Request request = new Request(
-                "DELETE",
-                "/_ltr/_featureset/" + name
-        );
+        Request request = new Request("DELETE", "/_ltr/_featureset/" + name);
 
         Response response = client().performRequest(request);
         assertEquals(request.getEndpoint() + ": failed", RestStatus.OK, RestStatus.fromCode(response.getStatusLine().getStatusCode()));
@@ -169,10 +162,7 @@ public class LTRRestTestCase extends OpenSearchRestTestCase {
      * @param name feature set
      */
     public void getFeatureSet(String name) throws IOException {
-        Request request = new Request(
-                "GET",
-                "/_ltr/_featureset/" + name
-        );
+        Request request = new Request("GET", "/_ltr/_featureset/" + name);
 
         Response response = client().performRequest(request);
         assertEquals(request.getEndpoint() + ": failed", RestStatus.OK, RestStatus.fromCode(response.getStatusLine().getStatusCode()));
@@ -193,21 +183,19 @@ public class LTRRestTestCase extends OpenSearchRestTestCase {
 
         String defaultJsonModel = readSourceModel("/models/default-xgb-model.json");
 
-        Request request = new Request(
-                "POST",
-                "/_ltr/_featureset/default_features/_createmodel"
-        );
+        Request request = new Request("POST", "/_ltr/_featureset/default_features/_createmodel");
 
-        XContentBuilder xb = XContentFactory.jsonBuilder()
-                .startObject()
-                .startObject("model")
-                .field("name", name)
-                .startObject("model")
-                .field("type", "model/xgboost+json")
-                .field("definition", defaultJsonModel)
-                .endObject()
-                .endObject()
-                .endObject();
+        XContentBuilder xb = XContentFactory
+            .jsonBuilder()
+            .startObject()
+            .startObject("model")
+            .field("name", name)
+            .startObject("model")
+            .field("type", "model/xgboost+json")
+            .field("definition", defaultJsonModel)
+            .endObject()
+            .endObject()
+            .endObject();
 
         request.setJsonEntity(BytesReference.bytes(xb).utf8ToString());
         Response response = client().performRequest(request);
@@ -226,10 +214,7 @@ public class LTRRestTestCase extends OpenSearchRestTestCase {
      * @param name feature set
      */
     public void deleteModel(String name) throws IOException {
-        Request request = new Request(
-                "DELETE",
-                "/_ltr/_model/" + name
-        );
+        Request request = new Request("DELETE", "/_ltr/_model/" + name);
 
         Response response = client().performRequest(request);
         assertEquals(request.getEndpoint() + ": failed", RestStatus.OK, RestStatus.fromCode(response.getStatusLine().getStatusCode()));
@@ -247,10 +232,7 @@ public class LTRRestTestCase extends OpenSearchRestTestCase {
      * @param name feature set
      */
     public void getModel(String name) throws IOException {
-        Request request = new Request(
-                "GET",
-                "/_ltr/_model/" + name
-        );
+        Request request = new Request("GET", "/_ltr/_model/" + name);
 
         Response response = client().performRequest(request);
         assertEquals(request.getEndpoint() + ": failed", RestStatus.OK, RestStatus.fromCode(response.getStatusLine().getStatusCode()));
@@ -266,7 +248,7 @@ public class LTRRestTestCase extends OpenSearchRestTestCase {
     private String readSource(String path) throws IOException {
         try (InputStream is = this.getClass().getResourceAsStream(path)) {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            Streams.copy(is,  bos);
+            Streams.copy(is, bos);
             return bos.toString(StandardCharsets.UTF_8.name());
         }
     }

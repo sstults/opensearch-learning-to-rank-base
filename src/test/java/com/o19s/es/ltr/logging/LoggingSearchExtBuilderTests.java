@@ -16,21 +16,21 @@
 
 package com.o19s.es.ltr.logging;
 
-import org.opensearch.core.common.ParsingException;
-import org.opensearch.common.io.stream.BytesStreamOutput;
-import org.opensearch.core.xcontent.ToXContent;
-import org.opensearch.core.xcontent.XContentBuilder;
-import org.opensearch.common.xcontent.XContentFactory;
-import org.opensearch.core.xcontent.XContentParser;
-import org.opensearch.common.xcontent.json.JsonXContent;
-import org.opensearch.test.OpenSearchTestCase;
+import static com.o19s.es.ltr.logging.LoggingSearchExtBuilder.parse;
+import static org.hamcrest.CoreMatchers.containsString;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.o19s.es.ltr.logging.LoggingSearchExtBuilder.parse;
-import static org.hamcrest.CoreMatchers.containsString;
+import org.opensearch.common.io.stream.BytesStreamOutput;
+import org.opensearch.common.xcontent.XContentFactory;
+import org.opensearch.common.xcontent.json.JsonXContent;
+import org.opensearch.core.common.ParsingException;
+import org.opensearch.core.xcontent.ToXContent;
+import org.opensearch.core.xcontent.XContentBuilder;
+import org.opensearch.core.xcontent.XContentParser;
+import org.opensearch.test.OpenSearchTestCase;
 
 public class LoggingSearchExtBuilderTests extends OpenSearchTestCase {
     public LoggingSearchExtBuilder buildTestExt() {
@@ -43,11 +43,11 @@ public class LoggingSearchExtBuilderTests extends OpenSearchTestCase {
     }
 
     public String getTestExtAsString() {
-        return "{\"log_specs\":[" +
-                "{\"name\":\"name1\",\"named_query\":\"query1\",\"missing_as_zero\":true}," +
-                "{\"named_query\":\"query2\"}," +
-                "{\"name\":\"rescore0\",\"rescore_index\":0,\"missing_as_zero\":true}," +
-                "{\"rescore_index\":1}]}";
+        return "{\"log_specs\":["
+            + "{\"name\":\"name1\",\"named_query\":\"query1\",\"missing_as_zero\":true},"
+            + "{\"named_query\":\"query2\"},"
+            + "{\"name\":\"rescore0\",\"rescore_index\":0,\"missing_as_zero\":true},"
+            + "{\"rescore_index\":1}]}";
     }
 
     public void testEquals() {
@@ -83,38 +83,26 @@ public class LoggingSearchExtBuilderTests extends OpenSearchTestCase {
 
     public void testFailOnNoLogSpecs() throws IOException {
         String data = "{}";
-        ParsingException exc = expectThrows(ParsingException.class,
-                () ->parse(createParser(JsonXContent.jsonXContent, data)));
-        assertThat(exc.getMessage(),
-            containsString("should define at least one [log_specs]"));
+        ParsingException exc = expectThrows(ParsingException.class, () -> parse(createParser(JsonXContent.jsonXContent, data)));
+        assertThat(exc.getMessage(), containsString("should define at least one [log_specs]"));
     }
 
     public void testFailOnEmptyLogSpecs() throws IOException {
         String data = "{\"log_specs\":[]}";
-        ParsingException exc = expectThrows(ParsingException.class,
-                () ->parse(createParser(JsonXContent.jsonXContent, data)));
-        assertThat(exc.getMessage(),
-                containsString("should define at least one [log_specs]"));
+        ParsingException exc = expectThrows(ParsingException.class, () -> parse(createParser(JsonXContent.jsonXContent, data)));
+        assertThat(exc.getMessage(), containsString("should define at least one [log_specs]"));
     }
 
     public void testFailOnBadLogSpec() throws IOException {
-        String data = "{\"log_specs\":[" +
-                "{\"name\":\"name1\",\"missing_as_zero\":true}," +
-                "]}";
-        ParsingException exc = expectThrows(ParsingException.class,
-                () ->parse(createParser(JsonXContent.jsonXContent, data)));
-        assertThat(exc.getCause().getCause().getMessage(),
-                containsString("Either [named_query] or [rescore_index] must be set"));
+        String data = "{\"log_specs\":[" + "{\"name\":\"name1\",\"missing_as_zero\":true}," + "]}";
+        ParsingException exc = expectThrows(ParsingException.class, () -> parse(createParser(JsonXContent.jsonXContent, data)));
+        assertThat(exc.getCause().getCause().getMessage(), containsString("Either [named_query] or [rescore_index] must be set"));
     }
 
     public void testFailOnNegativeRescoreIndex() throws IOException {
-        String data = "{\"log_specs\":[" +
-                "{\"name\":\"name1\",\"rescore_index\":-1, \"missing_as_zero\":true}," +
-                "]}";
-        ParsingException exc = expectThrows(ParsingException.class,
-                () ->parse(createParser(JsonXContent.jsonXContent, data)));
-        assertThat(exc.getCause().getCause().getMessage(),
-                containsString("non-negative"));
+        String data = "{\"log_specs\":[" + "{\"name\":\"name1\",\"rescore_index\":-1, \"missing_as_zero\":true}," + "]}";
+        ParsingException exc = expectThrows(ParsingException.class, () -> parse(createParser(JsonXContent.jsonXContent, data)));
+        assertThat(exc.getCause().getCause().getMessage(), containsString("non-negative"));
     }
 
     public void assertTestExt(LoggingSearchExtBuilder actual) {

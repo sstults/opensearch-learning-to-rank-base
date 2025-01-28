@@ -16,9 +16,6 @@
 
 package com.o19s.es.template.mustache;
 
-import com.github.mustachejava.reflect.ReflectionObjectHandler;
-import org.opensearch.common.util.iterable.Iterables;
-
 import java.lang.reflect.Array;
 import java.util.AbstractMap;
 import java.util.Collection;
@@ -26,6 +23,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+
+import org.opensearch.common.util.iterable.Iterables;
+
+import com.github.mustachejava.reflect.ReflectionObjectHandler;
 
 /**
  * XXX: shamelessly copied from the mustache module

@@ -16,15 +16,16 @@
 
 package com.o19s.es.ltr.feature;
 
-import com.o19s.es.ltr.LtrQueryContext;
-import org.apache.lucene.search.Query;
-import org.opensearch.common.Nullable;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.IntStream;
+
+import org.apache.lucene.search.Query;
+import org.opensearch.common.Nullable;
+
+import com.o19s.es.ltr.LtrQueryContext;
 
 public class PrebuiltFeatureSet implements FeatureSet {
     private final List<Query> features;
@@ -81,9 +82,10 @@ public class PrebuiltFeatureSet implements FeatureSet {
         // slow, not meant for runtime usage, mostly needed for tests
         // would make sense to implement a Map to do this once
         // feature names are mandatory and unique.
-        return IntStream.range(0, features.size())
-                .filter(i -> Objects.equals(((PrebuiltFeature)features.get(i)).name(), featureName))
-                .findFirst()
-                .orElse(-1);
+        return IntStream
+            .range(0, features.size())
+            .filter(i -> Objects.equals(((PrebuiltFeature) features.get(i)).name(), featureName))
+            .findFirst()
+            .orElse(-1);
     }
 }

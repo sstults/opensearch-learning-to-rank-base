@@ -16,36 +16,33 @@
 
 package com.o19s.es.ltr.query;
 
-import com.o19s.es.ltr.feature.FeatureSet;
-import com.o19s.es.ltr.ranker.LtrRanker;
-import org.apache.lucene.expressions.Bindings;
-import org.apache.lucene.expressions.Expression;
-import org.apache.lucene.index.LeafReaderContext;
-import org.apache.lucene.index.Term;
-import org.apache.lucene.search.BooleanClause;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.QueryVisitor;
-import org.apache.lucene.search.Weight;
-import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.ScoreMode;
-import org.apache.lucene.search.Scorer;
-import org.apache.lucene.search.Explanation;
-import org.apache.lucene.search.DocIdSetIterator;
-import org.apache.lucene.search.ConstantScoreWeight;
-import org.apache.lucene.search.ConstantScoreScorer;
-import org.apache.lucene.search.DoubleValuesSource;
-import org.apache.lucene.search.DoubleValues;
-import org.apache.lucene.search.ConstantScoreWeight;
-import org.apache.lucene.search.ConstantScoreWeight;
-import org.apache.lucene.search.ConstantScoreWeight;
-import org.opensearch.ltr.settings.LTRSettings;
-
-
 import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
+
+import org.apache.lucene.expressions.Bindings;
+import org.apache.lucene.expressions.Expression;
+import org.apache.lucene.index.LeafReaderContext;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.ConstantScoreScorer;
+import org.apache.lucene.search.ConstantScoreWeight;
+import org.apache.lucene.search.DocIdSetIterator;
+import org.apache.lucene.search.DoubleValues;
+import org.apache.lucene.search.DoubleValuesSource;
+import org.apache.lucene.search.Explanation;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.QueryVisitor;
+import org.apache.lucene.search.ScoreMode;
+import org.apache.lucene.search.Scorer;
+import org.apache.lucene.search.Weight;
+import org.opensearch.ltr.settings.LTRSettings;
+
+import com.o19s.es.ltr.feature.FeatureSet;
+import com.o19s.es.ltr.ranker.LtrRanker;
 
 public class DerivedExpressionQuery extends Query implements LtrRewritableQuery {
     private final FeatureSet features;
@@ -68,8 +65,8 @@ public class DerivedExpressionQuery extends Query implements LtrRewritableQuery 
         }
         DerivedExpressionQuery that = (DerivedExpressionQuery) obj;
         return Objects.deepEquals(expression, that.expression)
-                && Objects.deepEquals(features, that.features)
-                && Objects.deepEquals(queryParamValues, that.queryParamValues);
+            && Objects.deepEquals(features, that.features)
+            && Objects.deepEquals(queryParamValues, that.queryParamValues);
     }
 
     @Override
@@ -117,8 +114,7 @@ public class DerivedExpressionQuery extends Query implements LtrRewritableQuery 
 
                     @Override
                     public Scorer scorer(LeafReaderContext context) throws IOException {
-                        return new ConstantScoreScorer(this, score(),
-                            scoreMode, DocIdSetIterator.all(context.reader().maxDoc()));
+                        return new ConstantScoreScorer(this, score(), scoreMode, DocIdSetIterator.all(context.reader().maxDoc()));
                     }
                 };
             }
@@ -130,9 +126,9 @@ public class DerivedExpressionQuery extends Query implements LtrRewritableQuery 
         public boolean equals(Object obj) {
             assert false;
             // Should not be called as it is likely an indication that it'll be cached but should not...
-            return sameClassAs(obj) &&
-                    Objects.equals(this.query, ((FVDerivedExpressionQuery)obj).query) &&
-                    Objects.equals(this.fvSupplier, ((FVDerivedExpressionQuery)obj).fvSupplier);
+            return sameClassAs(obj)
+                && Objects.equals(this.query, ((FVDerivedExpressionQuery) obj).query)
+                && Objects.equals(this.fvSupplier, ((FVDerivedExpressionQuery) obj).fvSupplier);
         }
 
         @Override
@@ -168,10 +164,10 @@ public class DerivedExpressionQuery extends Query implements LtrRewritableQuery 
 
         @Override
         public Scorer scorer(LeafReaderContext context) throws IOException {
-            Bindings bindings = new Bindings(){
+            Bindings bindings = new Bindings() {
                 @Override
                 public DoubleValuesSource getDoubleValuesSource(String name) {
-                    Double queryParamValue  = queryParamValues.get(name);
+                    Double queryParamValue = queryParamValues.get(name);
                     if (queryParamValue != null) {
                         return DoubleValuesSource.constant(queryParamValue);
                     }
@@ -188,7 +184,7 @@ public class DerivedExpressionQuery extends Query implements LtrRewritableQuery 
 
         @Override
         public Explanation explain(LeafReaderContext context, int doc) throws IOException {
-            Bindings bindings = new Bindings(){
+            Bindings bindings = new Bindings() {
                 @Override
                 public DoubleValuesSource getDoubleValuesSource(String name) {
                     return new FVDoubleValuesSource(vectorSupplier, features.featureOrdinal(name));
@@ -291,8 +287,7 @@ public class DerivedExpressionQuery extends Query implements LtrRewritableQuery 
                 return false;
             }
             FVDoubleValuesSource that = (FVDoubleValuesSource) o;
-            return ordinal == that.ordinal &&
-                    Objects.equals(vectorSupplier, that.vectorSupplier);
+            return ordinal == that.ordinal && Objects.equals(vectorSupplier, that.vectorSupplier);
         }
 
         @Override
@@ -302,10 +297,7 @@ public class DerivedExpressionQuery extends Query implements LtrRewritableQuery 
 
         @Override
         public String toString() {
-            return "FVDoubleValuesSource{" +
-                    "ordinal=" + ordinal +
-                    ", vectorSupplier=" + vectorSupplier +
-                    '}';
+            return "FVDoubleValuesSource{" + "ordinal=" + ordinal + ", vectorSupplier=" + vectorSupplier + '}';
         }
 
         @Override

@@ -16,22 +16,8 @@
  */
 package com.o19s.es.ltr.query;
 
-import org.opensearch.ltr.stats.LTRStat;
-import org.opensearch.ltr.stats.LTRStats;
-import org.opensearch.ltr.stats.StatName;
-import org.opensearch.ltr.stats.suppliers.CounterSupplier;
-import com.o19s.es.ltr.LtrQueryParserPlugin;
-import org.apache.lucene.search.Query;
-import org.opensearch.index.query.MatchAllQueryBuilder;
-import org.opensearch.index.query.QueryBuilder;
-import org.opensearch.index.query.MatchQueryBuilder;
-import org.opensearch.index.query.QueryShardContext;
-import org.opensearch.index.query.WrapperQueryBuilder;
-import org.opensearch.plugins.Plugin;
-import org.opensearch.script.Script;
-import org.opensearch.script.ScriptType;
-import org.opensearch.test.AbstractQueryTestCase;
-import org.opensearch.test.TestGeoShapeFieldMapperPlugin;
+import static java.util.Collections.unmodifiableMap;
+import static org.hamcrest.CoreMatchers.instanceOf;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -41,8 +27,23 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
-import static java.util.Collections.unmodifiableMap;
-import static org.hamcrest.CoreMatchers.instanceOf;
+import org.apache.lucene.search.Query;
+import org.opensearch.index.query.MatchAllQueryBuilder;
+import org.opensearch.index.query.MatchQueryBuilder;
+import org.opensearch.index.query.QueryBuilder;
+import org.opensearch.index.query.QueryShardContext;
+import org.opensearch.index.query.WrapperQueryBuilder;
+import org.opensearch.ltr.stats.LTRStat;
+import org.opensearch.ltr.stats.LTRStats;
+import org.opensearch.ltr.stats.StatName;
+import org.opensearch.ltr.stats.suppliers.CounterSupplier;
+import org.opensearch.plugins.Plugin;
+import org.opensearch.script.Script;
+import org.opensearch.script.ScriptType;
+import org.opensearch.test.AbstractQueryTestCase;
+import org.opensearch.test.TestGeoShapeFieldMapperPlugin;
+
+import com.o19s.es.ltr.LtrQueryParserPlugin;
 
 /**
  * Created by doug on 12/27/16.
@@ -53,93 +54,98 @@ public class LtrQueryBuilderTests extends AbstractQueryTestCase<LtrQueryBuilder>
     protected Collection<Class<? extends Plugin>> getPlugins() {
         return Arrays.asList(LtrQueryParserPlugin.class, TestGeoShapeFieldMapperPlugin.class);
     }
-    private LTRStats ltrStats = new LTRStats(unmodifiableMap(new HashMap<String, LTRStat<?>>() {{
-        put(StatName.LTR_REQUEST_TOTAL_COUNT.getName(),
-                new LTRStat<>(false, new CounterSupplier()));
-        put(StatName.LTR_REQUEST_ERROR_COUNT.getName(),
-                new LTRStat<>(false, new CounterSupplier()));
-    }}));
 
-    private static final String simpleModel = "## LambdaMART\\n" +
-            "## name:foo\\n" +
-            "## No. of trees = 1\\n" +
-            "## No. of leaves = 10\\n" +
-            "## No. of threshold candidates = 256\\n" +
-            "## Learning rate = 0.1\\n" +
-            "## Stop early = 100\\n" +
-            "\\n" +
-            "<ensemble>\\n" +
-            " <tree id=\\\"1\\\" weight=\\\"0.1\\\">\\n" +
-            "  <split>\\n" +
-            "   <feature> 1 </feature>\\n" +
-            "   <threshold> 0.45867884 </threshold>\\n" +
-            "   <split pos=\\\"left\\\">\\n" +
-            "    <feature> 1 </feature>\\n" +
-            "    <threshold> 0.0 </threshold>\\n" +
-            "    <split pos=\\\"left\\\">\\n" +
-            "     <output> -2.0 </output>\\n" +
-            "    </split>\\n" +
-            "    <split pos=\\\"right\\\">\\n" +
-            "     <output> -1.3413081169128418 </output>\\n" +
-            "    </split>\\n" +
-            "   </split>\\n" +
-            "   <split pos=\\\"right\\\">\\n" +
-            "    <feature> 1 </feature>\\n" +
-            "    <threshold> 0.6115718 </threshold>\\n" +
-            "    <split pos=\\\"left\\\">\\n" +
-            "     <output> 0.3089442849159241 </output>\\n" +
-            "    </split>\\n" +
-            "    <split pos=\\\"right\\\">\\n" +
-            "     <output> 2.0 </output>\\n" +
-            "    </split>\\n" +
-            "   </split>\\n" +
-            "  </split>\\n" +
-            " </tree>\\n" +
-            "</ensemble>";
+    private LTRStats ltrStats = new LTRStats(unmodifiableMap(new HashMap<String, LTRStat<?>>() {
+        {
+            put(StatName.LTR_REQUEST_TOTAL_COUNT.getName(), new LTRStat<>(false, new CounterSupplier()));
+            put(StatName.LTR_REQUEST_ERROR_COUNT.getName(), new LTRStat<>(false, new CounterSupplier()));
+        }
+    }));
+
+    private static final String simpleModel = "## LambdaMART\\n"
+        + "## name:foo\\n"
+        + "## No. of trees = 1\\n"
+        + "## No. of leaves = 10\\n"
+        + "## No. of threshold candidates = 256\\n"
+        + "## Learning rate = 0.1\\n"
+        + "## Stop early = 100\\n"
+        + "\\n"
+        + "<ensemble>\\n"
+        + " <tree id=\\\"1\\\" weight=\\\"0.1\\\">\\n"
+        + "  <split>\\n"
+        + "   <feature> 1 </feature>\\n"
+        + "   <threshold> 0.45867884 </threshold>\\n"
+        + "   <split pos=\\\"left\\\">\\n"
+        + "    <feature> 1 </feature>\\n"
+        + "    <threshold> 0.0 </threshold>\\n"
+        + "    <split pos=\\\"left\\\">\\n"
+        + "     <output> -2.0 </output>\\n"
+        + "    </split>\\n"
+        + "    <split pos=\\\"right\\\">\\n"
+        + "     <output> -1.3413081169128418 </output>\\n"
+        + "    </split>\\n"
+        + "   </split>\\n"
+        + "   <split pos=\\\"right\\\">\\n"
+        + "    <feature> 1 </feature>\\n"
+        + "    <threshold> 0.6115718 </threshold>\\n"
+        + "    <split pos=\\\"left\\\">\\n"
+        + "     <output> 0.3089442849159241 </output>\\n"
+        + "    </split>\\n"
+        + "    <split pos=\\\"right\\\">\\n"
+        + "     <output> 2.0 </output>\\n"
+        + "    </split>\\n"
+        + "   </split>\\n"
+        + "  </split>\\n"
+        + " </tree>\\n"
+        + "</ensemble>";
 
     public void testCachedQueryParsing() throws IOException {
         String scriptSpec = "{\"source\": \"" + simpleModel + "\"}";
 
-        String ltrQuery =       "{  " +
-                                "   \"ltr\": {" +
-                                "      \"model\": " + scriptSpec + ",        " +
-                                "      \"features\": [        " +
-                                "         {\"match\": {         " +
-                                "            \"foo\": \"bar\"     " +
-                                "         }},                   " +
-                                "         {\"match\": {         " +
-                                "            \"baz\": \"sham\"     " +
-                                "         }}                   " +
-                                "      ]                      " +
-                                "   } " +
-                                "}";
-        LtrQueryBuilder queryBuilder = (LtrQueryBuilder)parseQuery(ltrQuery);
+        String ltrQuery = "{  "
+            + "   \"ltr\": {"
+            + "      \"model\": "
+            + scriptSpec
+            + ",        "
+            + "      \"features\": [        "
+            + "         {\"match\": {         "
+            + "            \"foo\": \"bar\"     "
+            + "         }},                   "
+            + "         {\"match\": {         "
+            + "            \"baz\": \"sham\"     "
+            + "         }}                   "
+            + "      ]                      "
+            + "   } "
+            + "}";
+        LtrQueryBuilder queryBuilder = (LtrQueryBuilder) parseQuery(ltrQuery);
     }
 
     public void testNamedFeatures() throws IOException {
         String scriptSpec = "{\"source\": \"" + simpleModel + "\"}";
 
-        String ltrQuery =       "{  " +
-                "   \"ltr\": {" +
-                "      \"model\": " + scriptSpec + ",        " +
-                "      \"features\": [        " +
-                "         {\"match\": {         " +
-                "            \"foo\": {     " +
-                "              \"query\": \"bar\", " +
-                "              \"_name\": \"bar_query\" " +
-                "         }}},                   " +
-                "         {\"match\": {         " +
-                "            \"baz\": {" +
-                "            \"query\": \"sham\"," +
-                "            \"_name\": \"sham_query\" " +
-                "         }}}                   " +
-                "      ]                      " +
-                "   } " +
-                "}";
-        LtrQueryBuilder queryBuilder = (LtrQueryBuilder)parseQuery(ltrQuery);
+        String ltrQuery = "{  "
+            + "   \"ltr\": {"
+            + "      \"model\": "
+            + scriptSpec
+            + ",        "
+            + "      \"features\": [        "
+            + "         {\"match\": {         "
+            + "            \"foo\": {     "
+            + "              \"query\": \"bar\", "
+            + "              \"_name\": \"bar_query\" "
+            + "         }}},                   "
+            + "         {\"match\": {         "
+            + "            \"baz\": {"
+            + "            \"query\": \"sham\","
+            + "            \"_name\": \"sham_query\" "
+            + "         }}}                   "
+            + "      ]                      "
+            + "   } "
+            + "}";
+        LtrQueryBuilder queryBuilder = (LtrQueryBuilder) parseQuery(ltrQuery);
         queryBuilder.ltrStats(ltrStats);
         QueryShardContext context = createShardContext();
-        RankerQuery query = (RankerQuery)queryBuilder.toQuery(context);
+        RankerQuery query = (RankerQuery) queryBuilder.toQuery(context);
         assertEquals(query.getFeature(0).name(), "bar_query");
         assertEquals(query.getFeature(1).name(), "sham_query");
 
@@ -148,26 +154,28 @@ public class LtrQueryBuilderTests extends AbstractQueryTestCase<LtrQueryBuilder>
     public void testUnnamedFeatures() throws IOException {
         String scriptSpec = "{\"source\": \"" + simpleModel + "\"}";
 
-        String ltrQuery =       "{  " +
-                "   \"ltr\": {" +
-                "      \"model\": " + scriptSpec + ",        " +
-                "      \"features\": [        " +
-                "         {\"match\": {         " +
-                "            \"foo\": {     " +
-                "              \"query\": \"bar\" " +
-                "         }}},                   " +
-                "         {\"match\": {         " +
-                "            \"baz\": {" +
-                "            \"query\": \"sham\"," +
-                "            \"_name\": \"\" " +
-                "         }}}                   " +
-                "      ]                      " +
-                "   } " +
-                "}";
-        LtrQueryBuilder queryBuilder = (LtrQueryBuilder)parseQuery(ltrQuery);
+        String ltrQuery = "{  "
+            + "   \"ltr\": {"
+            + "      \"model\": "
+            + scriptSpec
+            + ",        "
+            + "      \"features\": [        "
+            + "         {\"match\": {         "
+            + "            \"foo\": {     "
+            + "              \"query\": \"bar\" "
+            + "         }}},                   "
+            + "         {\"match\": {         "
+            + "            \"baz\": {"
+            + "            \"query\": \"sham\","
+            + "            \"_name\": \"\" "
+            + "         }}}                   "
+            + "      ]                      "
+            + "   } "
+            + "}";
+        LtrQueryBuilder queryBuilder = (LtrQueryBuilder) parseQuery(ltrQuery);
         queryBuilder.ltrStats(ltrStats);
         QueryShardContext context = createShardContext();
-        RankerQuery query = (RankerQuery)queryBuilder.toQuery(context);
+        RankerQuery query = (RankerQuery) queryBuilder.toQuery(context);
         assertNull(query.getFeature(0).name());
         assertEquals(query.getFeature(1).name(), "");
 
@@ -191,15 +199,17 @@ public class LtrQueryBuilderTests extends AbstractQueryTestCase<LtrQueryBuilder>
     @Override
     protected LtrQueryBuilder doCreateTestQueryBuilder() {
         LtrQueryBuilder builder = new LtrQueryBuilder();
-        builder.features(Arrays.asList(
-                new MatchQueryBuilder("foo", "bar"),
-                new MatchQueryBuilder("baz", "sham")
-        ));
-        builder.rankerScript(new Script(ScriptType.INLINE, "ranklib",
-                // Remove escape sequences
-                simpleModel.replace("\\\"", "\"")
-                        .replace("\\n", "\n"),
-                Collections.emptyMap()));
+        builder.features(Arrays.asList(new MatchQueryBuilder("foo", "bar"), new MatchQueryBuilder("baz", "sham")));
+        builder
+            .rankerScript(
+                new Script(
+                    ScriptType.INLINE,
+                    "ranklib",
+                    // Remove escape sequences
+                    simpleModel.replace("\\\"", "\"").replace("\\n", "\n"),
+                    Collections.emptyMap()
+                )
+            );
         builder.ltrStats(ltrStats);
         return builder;
     }

@@ -16,28 +16,10 @@
 
 package com.o19s.es.ltr.query;
 
-import org.opensearch.ltr.stats.LTRStat;
-import org.opensearch.ltr.stats.LTRStats;
-import org.opensearch.ltr.stats.StatName;
-import org.opensearch.ltr.stats.suppliers.CounterSupplier;
-import com.carrotsearch.randomizedtesting.RandomizedRunner;
-import com.o19s.es.ltr.LtrQueryParserPlugin;
-import com.o19s.es.ltr.feature.FeatureValidation;
-import com.o19s.es.ltr.feature.store.StorableElement;
-import com.o19s.es.ltr.feature.store.StoredFeature;
-import com.o19s.es.ltr.feature.store.StoredFeatureNormalizers;
-import com.o19s.es.ltr.feature.store.StoredFeatureSet;
-import com.o19s.es.ltr.feature.store.StoredLtrModel;
-import com.o19s.es.ltr.ranker.parser.LinearRankerParser;
-import com.o19s.es.ltr.ranker.parser.LtrRankerParserFactory;
-import org.apache.lucene.search.MatchNoDocsQuery;
-import org.apache.lucene.search.Query;
-import org.opensearch.index.query.QueryBuilders;
-import org.opensearch.index.query.QueryShardContext;
-import org.opensearch.plugins.Plugin;
-import org.opensearch.test.AbstractQueryTestCase;
-import org.opensearch.test.TestGeoShapeFieldMapperPlugin;
-import org.junit.runner.RunWith;
+import static java.util.Arrays.asList;
+import static java.util.Collections.unmodifiableMap;
+import static java.util.stream.Collectors.joining;
+import static org.hamcrest.CoreMatchers.instanceOf;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -51,23 +33,42 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static java.util.Arrays.asList;
-import static java.util.Collections.unmodifiableMap;
-import static java.util.stream.Collectors.joining;
-import static org.hamcrest.CoreMatchers.instanceOf;
+import org.apache.lucene.search.MatchNoDocsQuery;
+import org.apache.lucene.search.Query;
+import org.junit.runner.RunWith;
+import org.opensearch.index.query.QueryBuilders;
+import org.opensearch.index.query.QueryShardContext;
+import org.opensearch.ltr.stats.LTRStat;
+import org.opensearch.ltr.stats.LTRStats;
+import org.opensearch.ltr.stats.StatName;
+import org.opensearch.ltr.stats.suppliers.CounterSupplier;
+import org.opensearch.plugins.Plugin;
+import org.opensearch.test.AbstractQueryTestCase;
+import org.opensearch.test.TestGeoShapeFieldMapperPlugin;
+
+import com.carrotsearch.randomizedtesting.RandomizedRunner;
+import com.o19s.es.ltr.LtrQueryParserPlugin;
+import com.o19s.es.ltr.feature.FeatureValidation;
+import com.o19s.es.ltr.feature.store.StorableElement;
+import com.o19s.es.ltr.feature.store.StoredFeature;
+import com.o19s.es.ltr.feature.store.StoredFeatureNormalizers;
+import com.o19s.es.ltr.feature.store.StoredFeatureSet;
+import com.o19s.es.ltr.feature.store.StoredLtrModel;
+import com.o19s.es.ltr.ranker.parser.LinearRankerParser;
+import com.o19s.es.ltr.ranker.parser.LtrRankerParserFactory;
 
 @RunWith(RandomizedRunner.class)
 public class ValidatingLtrQueryBuilderTests extends AbstractQueryTestCase<ValidatingLtrQueryBuilder> {
     private final LtrRankerParserFactory factory = new LtrRankerParserFactory.Builder()
-            .register(LinearRankerParser.TYPE, LinearRankerParser::new)
-            .build();
+        .register(LinearRankerParser.TYPE, LinearRankerParser::new)
+        .build();
 
-    private LTRStats ltrStats = new LTRStats(unmodifiableMap(new HashMap<String, LTRStat<?>>() {{
-        put(StatName.LTR_REQUEST_TOTAL_COUNT.getName(),
-                new LTRStat<>(false, new CounterSupplier()));
-        put(StatName.LTR_REQUEST_ERROR_COUNT.getName(),
-                new LTRStat<>(false, new CounterSupplier()));
-    }}));
+    private LTRStats ltrStats = new LTRStats(unmodifiableMap(new HashMap<String, LTRStat<?>>() {
+        {
+            put(StatName.LTR_REQUEST_TOTAL_COUNT.getName(), new LTRStat<>(false, new CounterSupplier()));
+            put(StatName.LTR_REQUEST_ERROR_COUNT.getName(), new LTRStat<>(false, new CounterSupplier()));
+        }
+    }));
 
     // TODO: Remove the TestGeoShapeFieldMapperPlugin once upstream has completed the migration.
     protected Collection<Class<? extends Plugin>> getPlugins() {
@@ -76,8 +77,7 @@ public class ValidatingLtrQueryBuilderTests extends AbstractQueryTestCase<Valida
 
     @Override
     protected Set<String> getObjectsHoldingArbitraryContent() {
-        return new HashSet<>(asList(FeatureValidation.PARAMS.getPreferredName(),
-                StoredFeature.TEMPLATE.getPreferredName()));
+        return new HashSet<>(asList(FeatureValidation.PARAMS.getPreferredName(), StoredFeature.TEMPLATE.getPreferredName()));
     }
 
     /**
@@ -86,20 +86,24 @@ public class ValidatingLtrQueryBuilderTests extends AbstractQueryTestCase<Valida
     @Override
     protected ValidatingLtrQueryBuilder doCreateTestQueryBuilder() {
         StorableElement element;
-        Function<String, StoredFeature> buildFeature = (n) -> new StoredFeature(n,
-                Collections.singletonList("query_string"), "mustache",
-                QueryBuilders.matchQuery("test", "{{query_string}}").toString());
-        BiFunction<Integer, String, StoredFeatureSet> buildFeatureSet = (i, name) -> new StoredFeatureSet(name, IntStream.range(0, i)
-                .mapToObj((idx) -> buildFeature.apply("feature" + idx))
-                .collect(Collectors.toList()));
-        Function<String, StoredLtrModel> buildModel = (name) -> new StoredLtrModel(name,
-                buildFeatureSet.apply(5, "the_feature_set"),
-                "model/linear",
-                IntStream.range(0, 5)
-                        .mapToObj((i) -> "\"feature" + i + "\": " + random().nextFloat())
-                        .collect(joining(",", "{", "}")),
-                true,
-                new StoredFeatureNormalizers());
+        Function<String, StoredFeature> buildFeature = (n) -> new StoredFeature(
+            n,
+            Collections.singletonList("query_string"),
+            "mustache",
+            QueryBuilders.matchQuery("test", "{{query_string}}").toString()
+        );
+        BiFunction<Integer, String, StoredFeatureSet> buildFeatureSet = (i, name) -> new StoredFeatureSet(
+            name,
+            IntStream.range(0, i).mapToObj((idx) -> buildFeature.apply("feature" + idx)).collect(Collectors.toList())
+        );
+        Function<String, StoredLtrModel> buildModel = (name) -> new StoredLtrModel(
+            name,
+            buildFeatureSet.apply(5, "the_feature_set"),
+            "model/linear",
+            IntStream.range(0, 5).mapToObj((i) -> "\"feature" + i + "\": " + random().nextFloat()).collect(joining(",", "{", "}")),
+            true,
+            new StoredFeatureNormalizers()
+        );
 
         int type = randomInt(2);
         switch (type) {

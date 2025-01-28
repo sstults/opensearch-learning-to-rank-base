@@ -66,10 +66,13 @@ public interface StorableElement extends ToXContent, NamedWriteable {
         void resolveName(XContentParser parser, String name) {
             if (this.name == null && name != null) {
                 this.name = name;
-            } else if ( this.name == null /* && name == null */) {
+            } else if (this.name == null /* && name == null */) {
                 throw new ParsingException(parser.getTokenLocation(), "Field [name] is mandatory");
             } else if ( /* this.name != null && */ name != null && !this.name.equals(name)) {
-                throw new ParsingException(parser.getTokenLocation(), "Invalid [name], expected ["+name+"] but got [" + this.name+"]");
+                throw new ParsingException(
+                    parser.getTokenLocation(),
+                    "Invalid [name], expected [" + name + "] but got [" + this.name + "]"
+                );
             }
         }
     }

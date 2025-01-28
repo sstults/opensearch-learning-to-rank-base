@@ -16,20 +16,20 @@
 
 package com.o19s.es.template.mustache;
 
-import com.github.mustachejava.Mustache;
-import com.github.mustachejava.MustacheException;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ParameterizedMessage;
-import org.apache.logging.log4j.util.Supplier;
-import org.opensearch.SpecialPermission;
-import org.apache.logging.log4j.LogManager;
-
-
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Map;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ParameterizedMessage;
+import org.apache.logging.log4j.util.Supplier;
+import org.opensearch.SpecialPermission;
+
+import com.github.mustachejava.Mustache;
+import com.github.mustachejava.MustacheException;
 
 public class MustacheUtils {
     public static final String TEMPLATE_LANGUAGE = "mustache";

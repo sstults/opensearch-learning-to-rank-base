@@ -16,18 +16,9 @@
 
 package com.o19s.es.ltr.ranker.parser;
 
-import com.o19s.es.ltr.LtrTestUtils;
-import com.o19s.es.ltr.feature.FeatureSet;
-import com.o19s.es.ltr.feature.store.StoredFeature;
-import com.o19s.es.ltr.feature.store.StoredFeatureSet;
-import com.o19s.es.ltr.ranker.DenseFeatureVector;
-import com.o19s.es.ltr.ranker.LtrRanker.FeatureVector;
-import com.o19s.es.ltr.ranker.dectree.NaiveAdditiveDecisionTree;
-import com.o19s.es.ltr.ranker.linear.LinearRankerTests;
-import org.apache.lucene.tests.util.LuceneTestCase;
-import org.opensearch.core.common.ParsingException;
-import org.opensearch.common.io.Streams;
-import org.hamcrest.CoreMatchers;
+import static com.o19s.es.ltr.LtrTestUtils.randomFeature;
+import static com.o19s.es.ltr.LtrTestUtils.randomFeatureSet;
+import static java.util.Collections.singletonList;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -37,12 +28,22 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.o19s.es.ltr.LtrTestUtils.randomFeature;
-import static com.o19s.es.ltr.LtrTestUtils.randomFeatureSet;
-import static java.util.Collections.singletonList;
+import org.apache.lucene.tests.util.LuceneTestCase;
+import org.hamcrest.CoreMatchers;
+import org.opensearch.core.common.ParsingException;
+
+import com.o19s.es.ltr.LtrTestUtils;
+import com.o19s.es.ltr.feature.FeatureSet;
+import com.o19s.es.ltr.feature.store.StoredFeature;
+import com.o19s.es.ltr.feature.store.StoredFeatureSet;
+import com.o19s.es.ltr.ranker.DenseFeatureVector;
+import com.o19s.es.ltr.ranker.LtrRanker.FeatureVector;
+import com.o19s.es.ltr.ranker.dectree.NaiveAdditiveDecisionTree;
+import com.o19s.es.ltr.ranker.linear.LinearRankerTests;
 
 public class XGBoostJsonParserTests extends LuceneTestCase {
     private final XGBoostJsonParser parser = new XGBoostJsonParser();
+
     public void testReadLeaf() throws IOException {
         String model = "[ {\"nodeid\": 0, \"leaf\": 0.234}]";
         FeatureSet set = randomFeatureSet();
@@ -51,18 +52,18 @@ public class XGBoostJsonParserTests extends LuceneTestCase {
     }
 
     public void testReadSimpleSplit() throws IOException {
-        String model = "[{" +
-                "\"nodeid\": 0," +
-                "\"split\":\"feat1\"," +
-                "\"depth\":0," +
-                "\"split_condition\":0.123," +
-                "\"yes\":1," +
-                "\"no\": 2," +
-                "\"missing\":2,"+
-                "\"children\": [" +
-                "   {\"nodeid\": 1, \"depth\": 1, \"leaf\": 0.5}," +
-                "   {\"nodeid\": 2, \"depth\": 1, \"leaf\": 0.2}" +
-                "]}]";
+        String model = "[{"
+            + "\"nodeid\": 0,"
+            + "\"split\":\"feat1\","
+            + "\"depth\":0,"
+            + "\"split_condition\":0.123,"
+            + "\"yes\":1,"
+            + "\"no\": 2,"
+            + "\"missing\":2,"
+            + "\"children\": ["
+            + "   {\"nodeid\": 1, \"depth\": 1, \"leaf\": 0.5},"
+            + "   {\"nodeid\": 2, \"depth\": 1, \"leaf\": 0.2}"
+            + "]}]";
 
         FeatureSet set = new StoredFeatureSet("set", singletonList(randomFeature("feat1")));
         NaiveAdditiveDecisionTree tree = parser.parse(set, model);
@@ -76,19 +77,19 @@ public class XGBoostJsonParserTests extends LuceneTestCase {
     }
 
     public void testReadSimpleSplitInObject() throws IOException {
-        String model = "{" +
-                "\"splits\": [{" +
-                "   \"nodeid\": 0," +
-                "   \"split\":\"feat1\"," +
-                "   \"depth\":0," +
-                "   \"split_condition\":0.123," +
-                "   \"yes\":1," +
-                "   \"no\": 2," +
-                "   \"missing\":2,"+
-                "   \"children\": [" +
-                "      {\"nodeid\": 1, \"depth\": 1, \"leaf\": 0.5}," +
-                "      {\"nodeid\": 2, \"depth\": 1, \"leaf\": 0.2}" +
-                "]}]}";
+        String model = "{"
+            + "\"splits\": [{"
+            + "   \"nodeid\": 0,"
+            + "   \"split\":\"feat1\","
+            + "   \"depth\":0,"
+            + "   \"split_condition\":0.123,"
+            + "   \"yes\":1,"
+            + "   \"no\": 2,"
+            + "   \"missing\":2,"
+            + "   \"children\": ["
+            + "      {\"nodeid\": 1, \"depth\": 1, \"leaf\": 0.5},"
+            + "      {\"nodeid\": 2, \"depth\": 1, \"leaf\": 0.2}"
+            + "]}]}";
 
         FeatureSet set = new StoredFeatureSet("set", singletonList(randomFeature("feat1")));
         NaiveAdditiveDecisionTree tree = parser.parse(set, model);
@@ -102,20 +103,20 @@ public class XGBoostJsonParserTests extends LuceneTestCase {
     }
 
     public void testReadSimpleSplitWithObjective() throws IOException {
-        String model = "{" +
-                "\"objective\": \"reg:linear\"," +
-                "\"splits\": [{" +
-                "   \"nodeid\": 0," +
-                "   \"split\":\"feat1\"," +
-                "   \"depth\":0," +
-                "   \"split_condition\":0.123," +
-                "   \"yes\":1," +
-                "   \"no\": 2," +
-                "   \"missing\":2,"+
-                "   \"children\": [" +
-                "      {\"nodeid\": 1, \"depth\": 1, \"leaf\": 0.5}," +
-                "      {\"nodeid\": 2, \"depth\": 1, \"leaf\": 0.2}" +
-                "]}]}";
+        String model = "{"
+            + "\"objective\": \"reg:linear\","
+            + "\"splits\": [{"
+            + "   \"nodeid\": 0,"
+            + "   \"split\":\"feat1\","
+            + "   \"depth\":0,"
+            + "   \"split_condition\":0.123,"
+            + "   \"yes\":1,"
+            + "   \"no\": 2,"
+            + "   \"missing\":2,"
+            + "   \"children\": ["
+            + "      {\"nodeid\": 1, \"depth\": 1, \"leaf\": 0.5},"
+            + "      {\"nodeid\": 2, \"depth\": 1, \"leaf\": 0.2}"
+            + "]}]}";
 
         FeatureSet set = new StoredFeatureSet("set", singletonList(randomFeature("feat1")));
         NaiveAdditiveDecisionTree tree = parser.parse(set, model);
@@ -129,62 +130,66 @@ public class XGBoostJsonParserTests extends LuceneTestCase {
     }
 
     public void testReadSplitWithUnknownParams() throws IOException {
-        String model = "{" +
-                "\"not_param\": \"value\"," +
-                "\"splits\": [{" +
-                "   \"nodeid\": 0," +
-                "   \"split\":\"feat1\"," +
-                "   \"depth\":0," +
-                "   \"split_condition\":0.123," +
-                "   \"yes\":1," +
-                "   \"no\": 2," +
-                "   \"missing\":2,"+
-                "   \"children\": [" +
-                "      {\"nodeid\": 1, \"depth\": 1, \"leaf\": 0.5}," +
-                "      {\"nodeid\": 2, \"depth\": 1, \"leaf\": 0.2}" +
-                "]}]}";
+        String model = "{"
+            + "\"not_param\": \"value\","
+            + "\"splits\": [{"
+            + "   \"nodeid\": 0,"
+            + "   \"split\":\"feat1\","
+            + "   \"depth\":0,"
+            + "   \"split_condition\":0.123,"
+            + "   \"yes\":1,"
+            + "   \"no\": 2,"
+            + "   \"missing\":2,"
+            + "   \"children\": ["
+            + "      {\"nodeid\": 1, \"depth\": 1, \"leaf\": 0.5},"
+            + "      {\"nodeid\": 2, \"depth\": 1, \"leaf\": 0.2}"
+            + "]}]}";
 
         FeatureSet set = new StoredFeatureSet("set", singletonList(randomFeature("feat1")));
-        assertThat(expectThrows(ParsingException.class, () -> parser.parse(set, model)).getMessage(),
-                CoreMatchers.containsString("Unable to parse XGBoost object"));
+        assertThat(
+            expectThrows(ParsingException.class, () -> parser.parse(set, model)).getMessage(),
+            CoreMatchers.containsString("Unable to parse XGBoost object")
+        );
     }
 
     public void testBadObjectiveParam() throws IOException {
-        String model = "{" +
-                "\"objective\": \"reg:invalid\"," +
-                "\"splits\": [{" +
-                "   \"nodeid\": 0," +
-                "   \"split\":\"feat1\"," +
-                "   \"depth\":0," +
-                "   \"split_condition\":0.123," +
-                "   \"yes\":1," +
-                "   \"no\": 2," +
-                "   \"missing\":2,"+
-                "   \"children\": [" +
-                "      {\"nodeid\": 1, \"depth\": 1, \"leaf\": 0.5}," +
-                "      {\"nodeid\": 2, \"depth\": 1, \"leaf\": 0.2}" +
-                "]}]}";
+        String model = "{"
+            + "\"objective\": \"reg:invalid\","
+            + "\"splits\": [{"
+            + "   \"nodeid\": 0,"
+            + "   \"split\":\"feat1\","
+            + "   \"depth\":0,"
+            + "   \"split_condition\":0.123,"
+            + "   \"yes\":1,"
+            + "   \"no\": 2,"
+            + "   \"missing\":2,"
+            + "   \"children\": ["
+            + "      {\"nodeid\": 1, \"depth\": 1, \"leaf\": 0.5},"
+            + "      {\"nodeid\": 2, \"depth\": 1, \"leaf\": 0.2}"
+            + "]}]}";
 
         FeatureSet set = new StoredFeatureSet("set", singletonList(randomFeature("feat1")));
-        assertThat(expectThrows(ParsingException.class, () -> parser.parse(set, model)).getMessage(),
-                CoreMatchers.containsString("Unable to parse XGBoost object"));
+        assertThat(
+            expectThrows(ParsingException.class, () -> parser.parse(set, model)).getMessage(),
+            CoreMatchers.containsString("Unable to parse XGBoost object")
+        );
     }
 
     public void testReadWithLogisticObjective() throws IOException {
-        String model = "{" +
-                "\"objective\": \"reg:logistic\"," +
-                "\"splits\": [{" +
-                "   \"nodeid\": 0," +
-                "   \"split\":\"feat1\"," +
-                "   \"depth\":0," +
-                "   \"split_condition\":0.123," +
-                "   \"yes\":1," +
-                "   \"no\": 2," +
-                "   \"missing\":2,"+
-                "   \"children\": [" +
-                "      {\"nodeid\": 1, \"depth\": 1, \"leaf\": 0.5}," +
-                "      {\"nodeid\": 2, \"depth\": 1, \"leaf\": -0.2}" +
-                "]}]}";
+        String model = "{"
+            + "\"objective\": \"reg:logistic\","
+            + "\"splits\": [{"
+            + "   \"nodeid\": 0,"
+            + "   \"split\":\"feat1\","
+            + "   \"depth\":0,"
+            + "   \"split_condition\":0.123,"
+            + "   \"yes\":1,"
+            + "   \"no\": 2,"
+            + "   \"missing\":2,"
+            + "   \"children\": ["
+            + "      {\"nodeid\": 1, \"depth\": 1, \"leaf\": 0.5},"
+            + "      {\"nodeid\": 2, \"depth\": 1, \"leaf\": -0.2}"
+            + "]}]}";
 
         FeatureSet set = new StoredFeatureSet("set", singletonList(randomFeature("feat1")));
         NaiveAdditiveDecisionTree tree = parser.parse(set, model);
@@ -198,68 +203,77 @@ public class XGBoostJsonParserTests extends LuceneTestCase {
     }
 
     public void testMissingField() throws IOException {
-        String model = "[{" +
-                "\"nodeid\": 0," +
-                "\"split\":\"feat1\"," +
-                "\"depth\":0," +
-                "\"split_condition\":0.123," +
-                "\"no\": 2," +
-                "\"missing\":2,"+
-                "\"children\": [" +
-                "   {\"nodeid\": 1, \"depth\": 1, \"leaf\": 0.5}," +
-                "   {\"nodeid\": 2, \"depth\": 1, \"leaf\": 0.2}" +
-                "]}]";
+        String model = "[{"
+            + "\"nodeid\": 0,"
+            + "\"split\":\"feat1\","
+            + "\"depth\":0,"
+            + "\"split_condition\":0.123,"
+            + "\"no\": 2,"
+            + "\"missing\":2,"
+            + "\"children\": ["
+            + "   {\"nodeid\": 1, \"depth\": 1, \"leaf\": 0.5},"
+            + "   {\"nodeid\": 2, \"depth\": 1, \"leaf\": 0.2}"
+            + "]}]";
         FeatureSet set = new StoredFeatureSet("set", singletonList(randomFeature("feat1")));
-        assertThat(expectThrows(ParsingException.class, () -> parser.parse(set, model)).getMessage(),
-                CoreMatchers.containsString("This split does not have all the required fields"));
+        assertThat(
+            expectThrows(ParsingException.class, () -> parser.parse(set, model)).getMessage(),
+            CoreMatchers.containsString("This split does not have all the required fields")
+        );
     }
 
     public void testBadStruct() throws IOException {
-        String model = "[{" +
-                "\"nodeid\": 0," +
-                "\"split\":\"feat1\"," +
-                "\"depth\":0," +
-                "\"split_condition\":0.123," +
-                "\"yes\":1," +
-                "\"no\": 3," +
-                "\"children\": [" +
-                "   {\"nodeid\": 1, \"depth\": 1, \"leaf\": 0.5}," +
-                "   {\"nodeid\": 2, \"depth\": 1, \"leaf\": 0.2}" +
-                "]}]";
+        String model = "[{"
+            + "\"nodeid\": 0,"
+            + "\"split\":\"feat1\","
+            + "\"depth\":0,"
+            + "\"split_condition\":0.123,"
+            + "\"yes\":1,"
+            + "\"no\": 3,"
+            + "\"children\": ["
+            + "   {\"nodeid\": 1, \"depth\": 1, \"leaf\": 0.5},"
+            + "   {\"nodeid\": 2, \"depth\": 1, \"leaf\": 0.2}"
+            + "]}]";
         FeatureSet set = new StoredFeatureSet("set", singletonList(randomFeature("feat1")));
-        assertThat(expectThrows(ParsingException.class, () -> parser.parse(set, model)).getMessage(),
-                CoreMatchers.containsString("Split structure is invalid, yes, no and/or"));
+        assertThat(
+            expectThrows(ParsingException.class, () -> parser.parse(set, model)).getMessage(),
+            CoreMatchers.containsString("Split structure is invalid, yes, no and/or")
+        );
     }
 
     public void testMissingFeat() throws IOException {
-        String model = "[{" +
-                "\"nodeid\": 0," +
-                "\"split\":\"feat2\"," +
-                "\"depth\":0," +
-                "\"split_condition\":0.123," +
-                "\"yes\":1," +
-                "\"no\": 2," +
-                "\"missing\":2,"+
-                "\"children\": [" +
-                "   {\"nodeid\": 1, \"depth\": 1, \"leaf\": 0.5}," +
-                "   {\"nodeid\": 2, \"depth\": 1, \"leaf\": 0.2}" +
-                "]}]";
+        String model = "[{"
+            + "\"nodeid\": 0,"
+            + "\"split\":\"feat2\","
+            + "\"depth\":0,"
+            + "\"split_condition\":0.123,"
+            + "\"yes\":1,"
+            + "\"no\": 2,"
+            + "\"missing\":2,"
+            + "\"children\": ["
+            + "   {\"nodeid\": 1, \"depth\": 1, \"leaf\": 0.5},"
+            + "   {\"nodeid\": 2, \"depth\": 1, \"leaf\": 0.2}"
+            + "]}]";
         FeatureSet set = new StoredFeatureSet("set", singletonList(randomFeature("feat1")));
-        assertThat(expectThrows(ParsingException.class, () -> parser.parse(set, model)).getMessage(),
-                CoreMatchers.containsString("Unknown feature [feat2]"));
+        assertThat(
+            expectThrows(ParsingException.class, () -> parser.parse(set, model)).getMessage(),
+            CoreMatchers.containsString("Unknown feature [feat2]")
+        );
     }
 
     public void testComplexModel() throws Exception {
         String model = readModel("/models/xgboost-wmf.json");
         List<StoredFeature> features = new ArrayList<>();
-        List<String> names = Arrays.asList("all_near_match",
+        List<String> names = Arrays
+            .asList(
+                "all_near_match",
                 "category",
                 "heading",
                 "incoming_links",
                 "popularity_score",
                 "redirect_or_suggest_dismax",
                 "text_or_opening_text_dismax",
-                "title");
+                "title"
+            );
         for (String n : names) {
             features.add(LtrTestUtils.randomFeature(n));
         }

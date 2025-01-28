@@ -16,20 +16,21 @@
 
 package com.o19s.es.ltr.rest;
 
-import com.o19s.es.ltr.feature.FeatureValidation;
-import com.o19s.es.ltr.feature.store.StorableElement;
-import com.o19s.es.ltr.feature.store.StoredFeature;
-import com.o19s.es.ltr.feature.store.StoredFeatureSet;
-import com.o19s.es.ltr.feature.store.StoredLtrModel;
+import static com.o19s.es.ltr.query.ValidatingLtrQueryBuilder.SUPPORTED_TYPES;
+import static java.util.stream.Collectors.joining;
+
+import java.io.IOException;
+
 import org.opensearch.core.ParseField;
 import org.opensearch.core.common.ParsingException;
 import org.opensearch.core.xcontent.ObjectParser;
 import org.opensearch.core.xcontent.XContentParser;
 
-import java.io.IOException;
-
-import static com.o19s.es.ltr.query.ValidatingLtrQueryBuilder.SUPPORTED_TYPES;
-import static java.util.stream.Collectors.joining;
+import com.o19s.es.ltr.feature.FeatureValidation;
+import com.o19s.es.ltr.feature.store.StorableElement;
+import com.o19s.es.ltr.feature.store.StoredFeature;
+import com.o19s.es.ltr.feature.store.StoredFeatureSet;
+import com.o19s.es.ltr.feature.store.StoredLtrModel;
 
 class AutoDetectParser {
     private String expectedName;
@@ -39,18 +40,10 @@ class AutoDetectParser {
     private static final ObjectParser<AutoDetectParser, String> PARSER = new ObjectParser<>("storable_elements");
 
     static {
-        PARSER.declareObject(AutoDetectParser::setElement,
-                StoredFeature::parse,
-                new ParseField(StoredFeature.TYPE));
-        PARSER.declareObject(AutoDetectParser::setElement,
-                StoredFeatureSet::parse,
-                new ParseField(StoredFeatureSet.TYPE));
-        PARSER.declareObject(AutoDetectParser::setElement,
-                StoredLtrModel::parse,
-                new ParseField(StoredLtrModel.TYPE));
-        PARSER.declareObject((b, v) -> b.validation = v,
-                (p, c) -> FeatureValidation.PARSER.apply(p, null),
-                new ParseField("validation"));
+        PARSER.declareObject(AutoDetectParser::setElement, StoredFeature::parse, new ParseField(StoredFeature.TYPE));
+        PARSER.declareObject(AutoDetectParser::setElement, StoredFeatureSet::parse, new ParseField(StoredFeatureSet.TYPE));
+        PARSER.declareObject(AutoDetectParser::setElement, StoredLtrModel::parse, new ParseField(StoredLtrModel.TYPE));
+        PARSER.declareObject((b, v) -> b.validation = v, (p, c) -> FeatureValidation.PARSER.apply(p, null), new ParseField("validation"));
     }
 
     AutoDetectParser(String name) {
@@ -60,8 +53,10 @@ class AutoDetectParser {
     public void parse(XContentParser parser) throws IOException {
         PARSER.parse(parser, this, expectedName);
         if (element == null) {
-            throw new ParsingException(parser.getTokenLocation(), "Element of type [" + SUPPORTED_TYPES.stream().collect(joining(",")) +
-                    "] is mandatory.");
+            throw new ParsingException(
+                parser.getTokenLocation(),
+                "Element of type [" + SUPPORTED_TYPES.stream().collect(joining(",")) + "] is mandatory."
+            );
         }
     }
 
@@ -71,8 +66,13 @@ class AutoDetectParser {
 
     public void setElement(StorableElement element) {
         if (this.element != null) {
-            throw new IllegalArgumentException("[" + element.type() + "] already set, only one element can be set at a time (" +
-                    SUPPORTED_TYPES.stream().collect(joining(",")) + ").");
+            throw new IllegalArgumentException(
+                "["
+                    + element.type()
+                    + "] already set, only one element can be set at a time ("
+                    + SUPPORTED_TYPES.stream().collect(joining(","))
+                    + ")."
+            );
         }
         this.element = element;
     }

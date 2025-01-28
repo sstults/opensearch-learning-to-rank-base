@@ -16,23 +16,24 @@
 
 package com.o19s.es.ltr.rest;
 
-import org.opensearch.ltr.settings.LTRSettings;
-import com.o19s.es.ltr.action.CachesStatsAction;
-import com.o19s.es.ltr.action.ClearCachesAction;
-import com.o19s.es.ltr.action.ClearCachesAction.ClearCachesNodesResponse;
+import static java.util.Arrays.asList;
+import static java.util.Collections.unmodifiableList;
+import static org.opensearch.core.rest.RestStatus.OK;
+
+import java.util.List;
+
 import org.opensearch.client.node.NodeClient;
 import org.opensearch.core.xcontent.XContentBuilder;
+import org.opensearch.ltr.settings.LTRSettings;
 import org.opensearch.rest.BytesRestResponse;
 import org.opensearch.rest.RestRequest;
 import org.opensearch.rest.RestResponse;
 import org.opensearch.rest.action.RestActions.NodesResponseRestListener;
 import org.opensearch.rest.action.RestBuilderListener;
 
-import java.util.List;
-
-import static java.util.Arrays.asList;
-import static java.util.Collections.unmodifiableList;
-import static org.opensearch.core.rest.RestStatus.OK;
+import com.o19s.es.ltr.action.CachesStatsAction;
+import com.o19s.es.ltr.action.ClearCachesAction;
+import com.o19s.es.ltr.action.ClearCachesAction.ClearCachesNodesResponse;
 
 /**
  * Clear cache (default store):
@@ -53,11 +54,13 @@ public class RestFeatureStoreCaches extends FeatureStoreBaseRestHandler {
 
     @Override
     public List<Route> routes() {
-        return unmodifiableList(asList(
-            new Route(RestRequest.Method.POST, "/_ltr/_clearcache"),
-            new Route(RestRequest.Method.POST, "/_ltr/{store}/_clearcache"),
-            new Route(RestRequest.Method.GET, "/_ltr/_cachestats")
-        ));
+        return unmodifiableList(
+            asList(
+                new Route(RestRequest.Method.POST, "/_ltr/_clearcache"),
+                new Route(RestRequest.Method.POST, "/_ltr/{store}/_clearcache"),
+                new Route(RestRequest.Method.GET, "/_ltr/_cachestats")
+            )
+        );
     }
 
     @Override
@@ -73,27 +76,25 @@ public class RestFeatureStoreCaches extends FeatureStoreBaseRestHandler {
         }
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     private RestChannelConsumer getStats(NodeClient client) {
-        return (channel) -> client.execute(CachesStatsAction.INSTANCE, new CachesStatsAction.CachesStatsNodesRequest(),
-        new NodesResponseRestListener(channel));
+        return (channel) -> client
+            .execute(CachesStatsAction.INSTANCE, new CachesStatsAction.CachesStatsNodesRequest(), new NodesResponseRestListener(channel));
     }
 
     private RestChannelConsumer clearCache(RestRequest request, NodeClient client) {
         String storeName = indexName(request);
         ClearCachesAction.ClearCachesNodesRequest cacheRequest = new ClearCachesAction.ClearCachesNodesRequest();
         cacheRequest.clearStore(storeName);
-        return (channel) -> client.execute(ClearCachesAction.INSTANCE, cacheRequest,
-            new RestBuilderListener<ClearCachesNodesResponse>(channel) {
+        return (channel) -> client
+            .execute(ClearCachesAction.INSTANCE, cacheRequest, new RestBuilderListener<ClearCachesNodesResponse>(channel) {
                 @Override
-                public RestResponse buildResponse(ClearCachesNodesResponse clearCachesNodesResponse,
-                                                  XContentBuilder builder) throws Exception {
-                    builder.startObject()
-                            .field("acknowledged", true);
+                public RestResponse buildResponse(ClearCachesNodesResponse clearCachesNodesResponse, XContentBuilder builder)
+                    throws Exception {
+                    builder.startObject().field("acknowledged", true);
                     builder.endObject();
                     return new BytesRestResponse(OK, builder);
                 }
-            }
-        );
+            });
     }
 }

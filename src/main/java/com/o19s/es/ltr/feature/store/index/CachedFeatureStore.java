@@ -16,13 +16,14 @@
 
 package com.o19s.es.ltr.feature.store.index;
 
+import java.io.IOException;
+
+import org.opensearch.common.cache.Cache;
+
 import com.o19s.es.ltr.feature.Feature;
 import com.o19s.es.ltr.feature.FeatureSet;
 import com.o19s.es.ltr.feature.store.CompiledLtrModel;
 import com.o19s.es.ltr.feature.store.FeatureStore;
-import org.opensearch.common.cache.Cache;
-
-import java.io.IOException;
 
 /**
  * Cache layer on top of an {@link IndexFeatureStore}

@@ -16,15 +16,14 @@
 
 package com.o19s.es.ltr.feature.store;
 
-import com.o19s.es.ltr.feature.FeatureSet;
-import com.o19s.es.ltr.ranker.LtrRanker;
-
 import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import com.o19s.es.ltr.feature.FeatureSet;
+import com.o19s.es.ltr.ranker.LtrRanker;
 
 public class FeatureSupplier extends AbstractMap<String, Float> implements Supplier<LtrRanker.FeatureVector> {
     private Supplier<LtrRanker.FeatureVector> vectorSupplier;
@@ -134,4 +133,3 @@ public class FeatureSupplier extends AbstractMap<String, Float> implements Suppl
     }
 
 }
-

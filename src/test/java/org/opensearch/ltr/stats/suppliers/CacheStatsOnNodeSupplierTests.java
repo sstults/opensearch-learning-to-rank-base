@@ -15,10 +15,10 @@
 
 package org.opensearch.ltr.stats.suppliers;
 
-import com.o19s.es.ltr.feature.Feature;
-import com.o19s.es.ltr.feature.FeatureSet;
-import com.o19s.es.ltr.feature.store.CompiledLtrModel;
-import com.o19s.es.ltr.feature.store.index.Caches;
+import static org.mockito.Mockito.when;
+
+import java.util.Map;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -26,9 +26,10 @@ import org.mockito.MockitoAnnotations;
 import org.opensearch.common.cache.Cache;
 import org.opensearch.test.OpenSearchTestCase;
 
-import java.util.Map;
-
-import static org.mockito.Mockito.when;
+import com.o19s.es.ltr.feature.Feature;
+import com.o19s.es.ltr.feature.FeatureSet;
+import com.o19s.es.ltr.feature.store.CompiledLtrModel;
+import com.o19s.es.ltr.feature.store.index.Caches;
 
 public class CacheStatsOnNodeSupplierTests extends OpenSearchTestCase {
     @Mock
@@ -79,8 +80,7 @@ public class CacheStatsOnNodeSupplierTests extends OpenSearchTestCase {
                 1, 1, 0, 1, 800);
     }
 
-    private void assertCacheStats(Map<String, Object> stat, long hits,
-                                  long misses, long evictions, int entries, long memUsage) {
+    private void assertCacheStats(Map<String, Object> stat, long hits, long misses, long evictions, int entries, long memUsage) {
         assertEquals(hits, stat.get("hit_count"));
         assertEquals(misses, stat.get("miss_count"));
         assertEquals(evictions, stat.get("eviction_count"));

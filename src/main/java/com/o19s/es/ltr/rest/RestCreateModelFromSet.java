@@ -16,29 +16,30 @@
 
 package com.o19s.es.ltr.rest;
 
-import org.opensearch.ltr.settings.LTRSettings;
-import com.o19s.es.ltr.action.CreateModelFromSetAction;
-import com.o19s.es.ltr.action.CreateModelFromSetAction.CreateModelFromSetRequestBuilder;
-import com.o19s.es.ltr.feature.FeatureValidation;
-import com.o19s.es.ltr.feature.store.StoredLtrModel;
-import org.opensearch.ExceptionsHelper;
-import org.opensearch.core.action.ActionListener;
-import org.opensearch.client.node.NodeClient;
-import org.opensearch.core.ParseField;
-import org.opensearch.core.common.ParsingException;
-import org.opensearch.core.xcontent.ObjectParser;
-import org.opensearch.core.xcontent.XContentParser;
-import org.opensearch.index.engine.VersionConflictEngineException;
-import org.opensearch.rest.BytesRestResponse;
-import org.opensearch.rest.RestRequest;
-import org.opensearch.core.rest.RestStatus;
-import org.opensearch.rest.action.RestStatusToXContentListener;
+import static java.util.Arrays.asList;
+import static java.util.Collections.unmodifiableList;
 
 import java.io.IOException;
 import java.util.List;
 
-import static java.util.Arrays.asList;
-import static java.util.Collections.unmodifiableList;
+import org.opensearch.ExceptionsHelper;
+import org.opensearch.client.node.NodeClient;
+import org.opensearch.core.ParseField;
+import org.opensearch.core.action.ActionListener;
+import org.opensearch.core.common.ParsingException;
+import org.opensearch.core.rest.RestStatus;
+import org.opensearch.core.xcontent.ObjectParser;
+import org.opensearch.core.xcontent.XContentParser;
+import org.opensearch.index.engine.VersionConflictEngineException;
+import org.opensearch.ltr.settings.LTRSettings;
+import org.opensearch.rest.BytesRestResponse;
+import org.opensearch.rest.RestRequest;
+import org.opensearch.rest.action.RestStatusToXContentListener;
+
+import com.o19s.es.ltr.action.CreateModelFromSetAction;
+import com.o19s.es.ltr.action.CreateModelFromSetAction.CreateModelFromSetRequestBuilder;
+import com.o19s.es.ltr.feature.FeatureValidation;
+import com.o19s.es.ltr.feature.store.StoredLtrModel;
 
 public class RestCreateModelFromSet extends FeatureStoreBaseRestHandler {
 
@@ -49,9 +50,12 @@ public class RestCreateModelFromSet extends FeatureStoreBaseRestHandler {
 
     @Override
     public List<Route> routes() {
-        return unmodifiableList(asList(
-                new Route(RestRequest.Method.POST , "/_ltr/{store}/_featureset/{name}/_createmodel"),
-                new Route(RestRequest.Method.POST, "/_ltr/_featureset/{name}/_createmodel"        )));
+        return unmodifiableList(
+            asList(
+                new Route(RestRequest.Method.POST, "/_ltr/{store}/_featureset/{name}/_createmodel"),
+                new Route(RestRequest.Method.POST, "/_ltr/_featureset/{name}/_createmodel")
+            )
+        );
     }
 
     @Override
@@ -79,30 +83,37 @@ public class RestCreateModelFromSet extends FeatureStoreBaseRestHandler {
         }
         builder.request().setValidation(state.validation);
         builder.routing(routing);
-        return (channel) -> builder.execute(ActionListener.wrap(
-                response -> new RestStatusToXContentListener<CreateModelFromSetAction.CreateModelFromSetResponse>(channel,
-                        (r) -> r.getResponse().getLocation(routing)).onResponse(response),
-                (e) -> {
-                    final Exception exc;
-                    final RestStatus status;
-                    if (ExceptionsHelper.unwrap(e, VersionConflictEngineException.class) != null) {
-                        exc = new IllegalArgumentException("Element of type [" + StoredLtrModel.TYPE +
-                                "] are not updatable, please create a new one instead.");
-                        exc.addSuppressed(e);
-                        status = RestStatus.METHOD_NOT_ALLOWED;
-                    } else {
-                        exc = e;
-                        status = ExceptionsHelper.status(exc);
-                    }
+        return (channel) -> builder
+            .execute(
+                ActionListener
+                    .wrap(
+                        response -> new RestStatusToXContentListener<CreateModelFromSetAction.CreateModelFromSetResponse>(
+                            channel,
+                            (r) -> r.getResponse().getLocation(routing)
+                        ).onResponse(response),
+                        (e) -> {
+                            final Exception exc;
+                            final RestStatus status;
+                            if (ExceptionsHelper.unwrap(e, VersionConflictEngineException.class) != null) {
+                                exc = new IllegalArgumentException(
+                                    "Element of type [" + StoredLtrModel.TYPE + "] are not updatable, please create a new one instead."
+                                );
+                                exc.addSuppressed(e);
+                                status = RestStatus.METHOD_NOT_ALLOWED;
+                            } else {
+                                exc = e;
+                                status = ExceptionsHelper.status(exc);
+                            }
 
-                    try {
-                        channel.sendResponse(new BytesRestResponse(channel, status, exc));
-                    } catch (Exception inner) {
-                        inner.addSuppressed(e);
-                        logger.error("failed to send failure response", inner);
-                    }
-                }
-        ));
+                            try {
+                                channel.sendResponse(new BytesRestResponse(channel, status, exc));
+                            } catch (Exception inner) {
+                                inner.addSuppressed(e);
+                                logger.error("failed to send failure response", inner);
+                            }
+                        }
+                    )
+            );
     }
 
     private static class ParserState {
@@ -143,9 +154,7 @@ public class RestCreateModelFromSet extends FeatureStoreBaseRestHandler {
             private static final ObjectParser<Model, Void> MODEL_PARSER = new ObjectParser<>("model", Model::new);
             static {
                 MODEL_PARSER.declareString(Model::setName, new ParseField("name"));
-                MODEL_PARSER.declareObject(Model::setModel,
-                        StoredLtrModel.LtrModelDefinition::parse,
-                        new ParseField("model"));
+                MODEL_PARSER.declareObject(Model::setModel, StoredLtrModel.LtrModelDefinition::parse, new ParseField("model"));
             }
 
             String name;

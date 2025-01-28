@@ -16,20 +16,21 @@
 
 package com.o19s.es.ltr.feature;
 
-import com.o19s.es.ltr.LtrQueryContext;
-import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.search.BooleanClause;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.QueryVisitor;
-import org.apache.lucene.search.Weight;
-import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.ScoreMode;
-import org.opensearch.common.Nullable;
-import org.opensearch.ltr.settings.LTRSettings;
-
 import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
+
+import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.QueryVisitor;
+import org.apache.lucene.search.ScoreMode;
+import org.apache.lucene.search.Weight;
+import org.opensearch.common.Nullable;
+import org.opensearch.ltr.settings.LTRSettings;
+
+import com.o19s.es.ltr.LtrQueryContext;
 
 /**
  * A prebuilt featured query, needed by query builders
@@ -44,7 +45,8 @@ public class PrebuiltFeature extends Query implements Feature {
         this.query = Objects.requireNonNull(query);
     }
 
-    @Override @Nullable
+    @Override
+    @Nullable
     public String name() {
         return name;
     }
@@ -69,8 +71,7 @@ public class PrebuiltFeature extends Query implements Feature {
             return false;
         }
         PrebuiltFeature other = (PrebuiltFeature) o;
-        return Objects.equals(name, other.name)
-                && Objects.equals(query, other.query);
+        return Objects.equals(name, other.name) && Objects.equals(query, other.query);
     }
 
     @Override

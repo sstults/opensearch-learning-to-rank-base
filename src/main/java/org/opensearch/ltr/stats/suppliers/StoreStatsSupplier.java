@@ -15,15 +15,15 @@
 
 package org.opensearch.ltr.stats.suppliers;
 
-import org.opensearch.client.Client;
-import org.opensearch.cluster.service.ClusterService;
-import org.opensearch.ltr.stats.suppliers.utils.StoreUtils;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
+
+import org.opensearch.client.Client;
+import org.opensearch.cluster.service.ClusterService;
+import org.opensearch.ltr.stats.suppliers.utils.StoreUtils;
 
 /**
  * A supplier to provide stats on the LTR stores. It retrieves basic information

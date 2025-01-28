@@ -16,17 +16,16 @@
 
 package com.o19s.es.ltr.feature.store;
 
-import com.o19s.es.ltr.feature.FeatureSet;
-import com.o19s.es.ltr.query.DerivedExpressionQuery;
-import org.apache.lucene.tests.util.LuceneTestCase;
-import org.opensearch.core.common.ParsingException;
-import org.opensearch.core.common.Strings;
-import org.opensearch.common.xcontent.LoggingDeprecationHandler;
-import org.opensearch.core.xcontent.ToXContent;
-import org.opensearch.core.xcontent.XContentBuilder;
-import org.opensearch.common.xcontent.XContentFactory;
-import org.opensearch.common.xcontent.XContentType;
-import org.opensearch.index.query.MatchQueryBuilder;
+import static org.apache.lucene.tests.util.TestUtil.randomRealisticUnicodeString;
+import static org.apache.lucene.tests.util.TestUtil.randomSimpleString;
+import static org.hamcrest.CoreMatchers.allOf;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.lessThan;
+import static org.opensearch.common.xcontent.json.JsonXContent.jsonXContent;
+import static org.opensearch.core.xcontent.NamedXContentRegistry.EMPTY;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -37,16 +36,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
-import static org.apache.lucene.tests.util.TestUtil.randomRealisticUnicodeString;
-import static org.apache.lucene.tests.util.TestUtil.randomSimpleString;
-import static org.opensearch.core.xcontent.NamedXContentRegistry.EMPTY;
-import static org.opensearch.common.xcontent.json.JsonXContent.jsonXContent;
-import static org.hamcrest.CoreMatchers.allOf;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.lessThan;
+import org.apache.lucene.tests.util.LuceneTestCase;
+import org.opensearch.common.xcontent.LoggingDeprecationHandler;
+import org.opensearch.common.xcontent.XContentType;
+import org.opensearch.core.common.ParsingException;
+import org.opensearch.core.xcontent.ToXContent;
+import org.opensearch.core.xcontent.XContentBuilder;
+import org.opensearch.index.query.MatchQueryBuilder;
+
+import com.o19s.es.ltr.feature.FeatureSet;
+import com.o19s.es.ltr.query.DerivedExpressionQuery;
 
 public class StoredFeatureSetParserTests extends LuceneTestCase {
 
@@ -75,11 +74,12 @@ public class StoredFeatureSetParserTests extends LuceneTestCase {
             ramSize += actual.ramBytesUsed();
         }
         assertFalse(set.hasFeature(unknownName()));
-        assertThat(expectThrows(IllegalArgumentException.class,
-                () -> set.feature(unknownName())).getMessage(),
-                containsString("Unknown feature"));
+        assertThat(
+            expectThrows(IllegalArgumentException.class, () -> set.feature(unknownName())).getMessage(),
+            containsString("Unknown feature")
+        );
 
-        assertThat(set.ramBytesUsed(), allOf(greaterThan((long) (ramSize*0.66)), lessThan((long) (ramSize*1.33))));
+        assertThat(set.ramBytesUsed(), allOf(greaterThan((long) (ramSize * 0.66)), lessThan((long) (ramSize * 1.33))));
     }
 
     public void testToXContent() throws IOException {
@@ -94,22 +94,28 @@ public class StoredFeatureSetParserTests extends LuceneTestCase {
     }
 
     public void testParseErrorOnDups() throws IOException {
-        String set = "{\"name\" : \"my_set\",\n" +
-                "\"features\": [\n" +
-                StoredFeatureParserTests.generateTestFeature() + "," +
-                StoredFeatureParserTests.generateTestFeature() +
-                "]}";
-        assertThat(expectThrows(ParsingException.class,
-                () -> parse(set)).getMessage(),
-                containsString("feature names must be unique in a set"));
+        String set = "{\"name\" : \"my_set\",\n"
+            + "\"features\": [\n"
+            + StoredFeatureParserTests.generateTestFeature()
+            + ","
+            + StoredFeatureParserTests.generateTestFeature()
+            + "]}";
+        assertThat(
+            expectThrows(ParsingException.class, () -> parse(set)).getMessage(),
+            containsString("feature names must be unique in a set")
+        );
     }
 
     public void testExpressionMissingQueryParameter() throws IOException {
         FeatureSet optimizedFeatureSet = getFeatureSet();
         assertThat(optimizedFeatureSet.feature(0), instanceOf(PrecompiledExpressionFeature.class));
-        assertThat(expectThrows(IllegalArgumentException.class,
-                () -> optimizedFeatureSet.feature(0).doToQuery(null, optimizedFeatureSet, new HashMap<>())).getMessage(),
-        containsString("Missing required param(s): [param1]"));
+        assertThat(
+            expectThrows(
+                IllegalArgumentException.class,
+                () -> optimizedFeatureSet.feature(0).doToQuery(null, optimizedFeatureSet, new HashMap<>())
+            ).getMessage(),
+            containsString("Missing required param(s): [param1]")
+        );
     }
 
     public void testExpressionInvalidQueryParameter() throws IOException {
@@ -117,9 +123,11 @@ public class StoredFeatureSetParserTests extends LuceneTestCase {
         assertThat(optimizedFeatureSet.feature(0), instanceOf(PrecompiledExpressionFeature.class));
         Map<String, Object> params = new HashMap<>();
         params.put("param1", "NaN");
-        assertThat(expectThrows(IllegalArgumentException.class,
-                () -> optimizedFeatureSet.feature(0).doToQuery(null, optimizedFeatureSet, params)).getMessage(),
-                containsString("parameter: param1 expected to be of type Double"));
+        assertThat(
+            expectThrows(IllegalArgumentException.class, () -> optimizedFeatureSet.feature(0).doToQuery(null, optimizedFeatureSet, params))
+                .getMessage(),
+            containsString("parameter: param1 expected to be of type Double")
+        );
     }
 
     public void testExpressionIntegerQueryParameter() throws IOException {
@@ -142,49 +150,35 @@ public class StoredFeatureSetParserTests extends LuceneTestCase {
         assertThat(optimizedFeatureSet.feature(0).doToQuery(null, optimizedFeatureSet, params), instanceOf(DerivedExpressionQuery.class));
     }
 
-
     private FeatureSet getFeatureSet() throws IOException {
-        String featureString = "{\n" +
-                "\"name\":\"testFeature\"," +
-                "\"params\":[\"param1\"]," +
-                "\"template_language\":\"derived_expression\",\n" +
-                "\"template\":\"log10(param1)" +
-                "\"}";
-        String set = "{\"name\" : \"my_set\",\n" +
-                "\"features\": [\n" +
-                featureString +
-                "]}";
+        String featureString = "{\n"
+            + "\"name\":\"testFeature\","
+            + "\"params\":[\"param1\"],"
+            + "\"template_language\":\"derived_expression\",\n"
+            + "\"template\":\"log10(param1)"
+            + "\"}";
+        String set = "{\"name\" : \"my_set\",\n" + "\"features\": [\n" + featureString + "]}";
         StoredFeatureSet featureSet = parse(set);
         return featureSet.optimize();
     }
 
     public void testParseErrorOnMissingName() throws IOException {
-        String missingName = "{" +
-                "\"features\": [\n" +
-                StoredFeatureParserTests.generateTestFeature() +
-                "]}";
-        assertThat(expectThrows(ParsingException.class,
-                () -> parse(missingName)).getMessage(),
-                equalTo("Field [name] is mandatory"));
+        String missingName = "{" + "\"features\": [\n" + StoredFeatureParserTests.generateTestFeature() + "]}";
+        assertThat(expectThrows(ParsingException.class, () -> parse(missingName)).getMessage(), equalTo("Field [name] is mandatory"));
     }
 
     public void testParseWithExternalName() throws IOException {
-        String missingName = "{" +
-                "\"features\": [\n" +
-                StoredFeatureParserTests.generateTestFeature() +
-                "]}";
+        String missingName = "{" + "\"features\": [\n" + StoredFeatureParserTests.generateTestFeature() + "]}";
         StoredFeatureSet set = parse(missingName, "my_set");
         assertEquals("my_set", set.name());
     }
 
     public void testParseWithInconsistentExternalName() throws IOException {
-        String set = "{\"name\" : \"my_set\",\n" +
-                "\"features\": [\n" +
-                StoredFeatureParserTests.generateTestFeature() +
-                "]}";
-        assertThat(expectThrows(ParsingException.class,
-                () -> parse(set, "my_set2")).getMessage(),
-                equalTo("Invalid [name], expected [my_set2] but got [my_set]"));
+        String set = "{\"name\" : \"my_set\",\n" + "\"features\": [\n" + StoredFeatureParserTests.generateTestFeature() + "]}";
+        assertThat(
+            expectThrows(ParsingException.class, () -> parse(set, "my_set2")).getMessage(),
+            equalTo("Invalid [name], expected [my_set2] but got [my_set]")
+        );
     }
 
     public void testParseErrorOnMissingSet() throws IOException {
@@ -194,32 +188,30 @@ public class StoredFeatureSetParserTests extends LuceneTestCase {
     }
 
     public void testParseErrorOnEmptySet() throws IOException {
-        String missingList = "{ \"name\": \"my_set\"," +
-                "\"features\": []}";
+        String missingList = "{ \"name\": \"my_set\"," + "\"features\": []}";
 
         StoredFeatureSet set = parse(missingList);
         assertEquals(0, set.size());
     }
 
     public void testParseErrorOnExtraField() throws IOException {
-        String set = "{\"name\" : \"my_set\",\n" +
-                "\"random_field\": \"oops\"," +
-                "\"features\": [\n" +
-                StoredFeatureParserTests.generateTestFeature() +
-                "]}";
-        assertThat(expectThrows(ParsingException.class,
-                () -> parse(set)).getMessage(),
-                containsString("[2:1] [featureset] unknown field [random_field]"));
+        String set = "{\"name\" : \"my_set\",\n"
+            + "\"random_field\": \"oops\","
+            + "\"features\": [\n"
+            + StoredFeatureParserTests.generateTestFeature()
+            + "]}";
+        assertThat(
+            expectThrows(ParsingException.class, () -> parse(set)).getMessage(),
+            containsString("[2:1] [featureset] unknown field [random_field]")
+        );
     }
 
     private static StoredFeatureSet parse(String missingName) throws IOException {
-        return StoredFeatureSet.parse(jsonXContent.createParser(EMPTY,
-                LoggingDeprecationHandler.INSTANCE, missingName));
+        return StoredFeatureSet.parse(jsonXContent.createParser(EMPTY, LoggingDeprecationHandler.INSTANCE, missingName));
     }
 
     private static StoredFeatureSet parse(String missingName, String defaultName) throws IOException {
-        return StoredFeatureSet.parse(jsonXContent.createParser(EMPTY,
-                LoggingDeprecationHandler.INSTANCE, missingName), defaultName);
+        return StoredFeatureSet.parse(jsonXContent.createParser(EMPTY, LoggingDeprecationHandler.INSTANCE, missingName), defaultName);
     }
 
     public static StoredFeature buildRandomFeature() throws IOException {
@@ -229,18 +221,27 @@ public class StoredFeatureSetParserTests extends LuceneTestCase {
     public static StoredFeature buildRandomFeature(String name) throws IOException {
         return StoredFeatureParserTests.parse(generateRandomFeature(name));
     }
+
     private static String generateRandomFeature() {
         return generateRandomFeature(rName());
     }
 
     private static String generateRandomFeature(String name) {
-        return "{\n" +
-                "\"name\": \"" + name + "\",\n" +
-                "\"params\": [\"" + rName() + "\", \"" + rName() + "\"],\n" +
-                "\"template_language\": \"" + rName() + "\",\n" +
-                "\"template\": \n" +
-                new MatchQueryBuilder(rName(), randomRealisticUnicodeString(random())).toString() +
-                "\n}\n";
+        return "{\n"
+            + "\"name\": \""
+            + name
+            + "\",\n"
+            + "\"params\": [\""
+            + rName()
+            + "\", \""
+            + rName()
+            + "\"],\n"
+            + "\"template_language\": \""
+            + rName()
+            + "\",\n"
+            + "\"template\": \n"
+            + new MatchQueryBuilder(rName(), randomRealisticUnicodeString(random())).toString()
+            + "\n}\n";
     }
 
     private static String rName() {
@@ -273,22 +274,20 @@ public class StoredFeatureSetParserTests extends LuceneTestCase {
     }
 
     public static String generateRandomFeatureSet(String name, Consumer<StoredFeature> features) throws IOException {
-        return generateRandomFeatureSet(name, features, random().nextInt(20)+1);
+        return generateRandomFeatureSet(name, features, random().nextInt(20) + 1);
     }
 
     public static String generateRandomFeatureSet(String name, Consumer<StoredFeature> features, int nbFeat) throws IOException {
         StringBuilder sb = new StringBuilder();
-        sb.append("{\"name\" : \"")
-                .append(name)
-                .append("\",\n");
+        sb.append("{\"name\" : \"").append(name).append("\",\n");
         sb.append("\"features\":[");
         boolean first = true;
         // Simply avoid adding the same feature twice because of random string
         Set<String> addedFeatures = new HashSet<>();
-        while(nbFeat-->0) {
+        while (nbFeat-- > 0) {
             String featureString = generateRandomFeature();
-            StoredFeature feature = StoredFeature.parse(jsonXContent.createParser(EMPTY,
-                    LoggingDeprecationHandler.INSTANCE, featureString));
+            StoredFeature feature = StoredFeature
+                .parse(jsonXContent.createParser(EMPTY, LoggingDeprecationHandler.INSTANCE, featureString));
             if (!addedFeatures.add(feature.name())) {
                 continue;
             }

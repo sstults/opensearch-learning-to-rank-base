@@ -15,13 +15,15 @@
  */
 package com.o19s.es.termstat;
 
-import com.o19s.es.explore.StatisticsHelper;
-import com.o19s.es.explore.StatisticsHelper.AggrType;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.lucene.expressions.Bindings;
 import org.apache.lucene.expressions.Expression;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.Term;
-
 import org.apache.lucene.index.TermStates;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.DoubleValues;
@@ -30,10 +32,8 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.ScoreMode;
 import org.apache.lucene.search.Scorer;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import com.o19s.es.explore.StatisticsHelper;
+import com.o19s.es.explore.StatisticsHelper.AggrType;
 
 public class TermStatScorer extends Scorer {
     private final DocIdSetIterator iter;
@@ -48,15 +48,17 @@ public class TermStatScorer extends Scorer {
     private final ScoreMode scoreMode;
     private final Map<Term, TermStates> termContexts;
 
-    public TermStatScorer(TermStatQuery.TermStatWeight weight,
-                          IndexSearcher searcher,
-                          LeafReaderContext context,
-                          Expression compiledExpression,
-                          Set<Term> terms,
-                          ScoreMode scoreMode,
-                          AggrType aggr,
-                          AggrType posAggr,
-                          Map<Term, TermStates> termContexts) {
+    public TermStatScorer(
+        TermStatQuery.TermStatWeight weight,
+        IndexSearcher searcher,
+        LeafReaderContext context,
+        Expression compiledExpression,
+        Set<Term> terms,
+        ScoreMode scoreMode,
+        AggrType aggr,
+        AggrType posAggr,
+        Map<Term, TermStates> termContexts
+    ) {
         super(weight);
         this.context = context;
         this.compiledExpression = compiledExpression;
@@ -69,6 +71,7 @@ public class TermStatScorer extends Scorer {
 
         this.iter = DocIdSetIterator.all(context.reader().maxDoc());
     }
+
     @Override
     public DocIdSetIterator iterator() {
         return iter;
@@ -90,7 +93,7 @@ public class TermStatScorer extends Scorer {
         // Prepare computed statistics
         StatisticsHelper computed = new StatisticsHelper();
         HashMap<String, Float> termStatDict = new HashMap<>();
-        Bindings bindings = new Bindings(){
+        Bindings bindings = new Bindings() {
             @Override
             public DoubleValuesSource getDoubleValuesSource(String name) {
                 return DoubleValuesSource.constant(termStatDict.get(name));
@@ -102,7 +105,7 @@ public class TermStatScorer extends Scorer {
             return 0.0f;
         }
 
-        for(int i = 0; i < tsq.size(); i++) {
+        for (int i = 0; i < tsq.size(); i++) {
             // Update the term stat dictionary for the current term
             termStatDict.put("df", tsq.get("df").get(i));
             termStatDict.put("idf", tsq.get("idf").get(i));

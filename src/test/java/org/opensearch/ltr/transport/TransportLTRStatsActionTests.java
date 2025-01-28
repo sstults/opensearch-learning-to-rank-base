@@ -15,6 +15,13 @@
 
 package org.opensearch.ltr.transport;
 
+import static org.mockito.Mockito.mock;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.opensearch.action.FailedNodeException;
@@ -25,13 +32,6 @@ import org.opensearch.ltr.stats.StatName;
 import org.opensearch.ltr.stats.suppliers.CounterSupplier;
 import org.opensearch.test.OpenSearchIntegTestCase;
 import org.opensearch.transport.TransportService;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static org.mockito.Mockito.mock;
 
 public class TransportLTRStatsActionTests extends OpenSearchIntegTestCase {
 
@@ -55,11 +55,11 @@ public class TransportLTRStatsActionTests extends OpenSearchIntegTestCase {
         ltrStats = new LTRStats(statsMap);
 
         action = new TransportLTRStatsAction(
-                client().threadPool(),
-                clusterService(),
-                mock(TransportService.class),
-                mock(ActionFilters.class),
-                ltrStats
+            client().threadPool(),
+            clusterService(),
+            mock(TransportService.class),
+            mock(ActionFilters.class),
+            ltrStats
         );
     }
 

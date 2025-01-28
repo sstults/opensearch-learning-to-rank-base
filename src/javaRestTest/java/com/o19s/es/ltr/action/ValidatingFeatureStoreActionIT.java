@@ -16,22 +16,23 @@
 
 package com.o19s.es.ltr.action;
 
-import com.o19s.es.ltr.feature.FeatureValidation;
-import com.o19s.es.ltr.feature.store.StoredFeature;
-import com.o19s.es.ltr.feature.store.StoredFeatureSet;
-import com.o19s.es.ltr.feature.store.StoredLtrModel;
-import com.o19s.es.ltr.feature.store.index.IndexFeatureStore;
-import com.o19s.es.ltr.ranker.parser.LinearRankerParser;
-import org.opensearch.index.query.QueryBuilders;
-import org.hamcrest.CoreMatchers;
+import static java.util.Collections.singletonList;
+import static org.hamcrest.CoreMatchers.instanceOf;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
-import static java.util.Collections.singletonList;
-import static org.hamcrest.CoreMatchers.instanceOf;
+import org.hamcrest.CoreMatchers;
+import org.opensearch.index.query.QueryBuilders;
+
+import com.o19s.es.ltr.feature.FeatureValidation;
+import com.o19s.es.ltr.feature.store.StoredFeature;
+import com.o19s.es.ltr.feature.store.StoredFeatureSet;
+import com.o19s.es.ltr.feature.store.StoredLtrModel;
+import com.o19s.es.ltr.feature.store.index.IndexFeatureStore;
+import com.o19s.es.ltr.ranker.parser.LinearRankerParser;
 
 public class ValidatingFeatureStoreActionIT extends BaseIntegrationTest {
     public void testValidateFeature() throws ExecutionException, InterruptedException {
@@ -40,8 +41,8 @@ public class ValidatingFeatureStoreActionIT extends BaseIntegrationTest {
         StoredFeature feature = new StoredFeature("test", singletonList("query_string"), "mustache", brokenQuery);
         Map<String, Object> params = new HashMap<>();
         params.put("query_string", "a query");
-        Throwable e = expectThrows(ExecutionException.class,
-                () -> addElement(feature, new FeatureValidation("test_index", params))).getCause();
+        Throwable e = expectThrows(ExecutionException.class, () -> addElement(feature, new FeatureValidation("test_index", params)))
+            .getCause();
         assertThat(e, instanceOf(IllegalArgumentException.class));
         assertThat(e.getMessage(), CoreMatchers.containsString("Cannot store element, validation failed."));
     }
@@ -56,8 +57,10 @@ public class ValidatingFeatureStoreActionIT extends BaseIntegrationTest {
         Map<String, Object> params = new HashMap<>();
         params.put("query_string", "a query");
         StoredFeatureSet brokenFeatureSet = new StoredFeatureSet("my_feature_set", Arrays.asList(feature, brokenFeature));
-        Throwable e = expectThrows(ExecutionException.class,
-                () -> addElement(brokenFeatureSet, new FeatureValidation("test_index", params))).getCause();
+        Throwable e = expectThrows(
+            ExecutionException.class,
+            () -> addElement(brokenFeatureSet, new FeatureValidation("test_index", params))
+        ).getCause();
         assertThat(e, instanceOf(IllegalArgumentException.class));
         assertThat(e.getMessage(), CoreMatchers.containsString("Cannot store element, validation failed."));
     }
@@ -72,11 +75,13 @@ public class ValidatingFeatureStoreActionIT extends BaseIntegrationTest {
         Map<String, Object> params = new HashMap<>();
         params.put("query_string", "a query");
         String model = "{\"test\": 2.1, \"broken\": 4.3}";
-        StoredLtrModel brokenModel = new StoredLtrModel("broken_model",
-                new StoredFeatureSet("my_feature_set", Arrays.asList(feature, brokenFeature)),
-                new StoredLtrModel.LtrModelDefinition(LinearRankerParser.TYPE, model, true));
-        Throwable e = expectThrows(ExecutionException.class, () -> addElement(brokenModel,
-                new FeatureValidation("test_index", params))).getCause();
+        StoredLtrModel brokenModel = new StoredLtrModel(
+            "broken_model",
+            new StoredFeatureSet("my_feature_set", Arrays.asList(feature, brokenFeature)),
+            new StoredLtrModel.LtrModelDefinition(LinearRankerParser.TYPE, model, true)
+        );
+        Throwable e = expectThrows(ExecutionException.class, () -> addElement(brokenModel, new FeatureValidation("test_index", params)))
+            .getCause();
         assertThat(e, instanceOf(IllegalArgumentException.class));
         assertThat(e.getMessage(), CoreMatchers.containsString("Cannot store element, validation failed."));
     }
@@ -112,11 +117,15 @@ public class ValidatingFeatureStoreActionIT extends BaseIntegrationTest {
         StoredFeatureSet brokenFeatureSet = new StoredFeatureSet("my_feature_set", Arrays.asList(feature, brokenFeature));
         // Store a broken feature set
         addElement(brokenFeatureSet);
-        CreateModelFromSetAction.CreateModelFromSetRequestBuilder request =
-            new CreateModelFromSetAction.CreateModelFromSetRequestBuilder(client());
+        CreateModelFromSetAction.CreateModelFromSetRequestBuilder request = new CreateModelFromSetAction.CreateModelFromSetRequestBuilder(
+            client()
+        );
         request.request().setValidation(new FeatureValidation("test_index", params));
-        StoredLtrModel.LtrModelDefinition definition = new StoredLtrModel.LtrModelDefinition("model/linear",
-                "{\"test\": 2.1, \"broken\": 4.3}", true);
+        StoredLtrModel.LtrModelDefinition definition = new StoredLtrModel.LtrModelDefinition(
+            "model/linear",
+            "{\"test\": 2.1, \"broken\": 4.3}",
+            true
+        );
         request.withoutVersion(IndexFeatureStore.DEFAULT_STORE, "my_feature_set", "broken_model", definition);
         request.request().setValidation(new FeatureValidation("test_index", params));
         IllegalArgumentException e = expectThrows(IllegalArgumentException.class, request::get);

@@ -16,20 +16,16 @@
 
 package com.o19s.es.ltr.query;
 
-import org.opensearch.ltr.stats.LTRStats;
-import org.opensearch.ltr.stats.StatName;
-import com.o19s.es.ltr.LtrQueryContext;
-import com.o19s.es.ltr.feature.Feature;
-import com.o19s.es.ltr.feature.FeatureSet;
-import com.o19s.es.ltr.feature.FeatureValidation;
-import com.o19s.es.ltr.feature.store.CompiledLtrModel;
-import com.o19s.es.ltr.feature.store.PrecompiledExpressionFeature;
-import com.o19s.es.ltr.feature.store.StorableElement;
-import com.o19s.es.ltr.feature.store.StoredFeature;
-import com.o19s.es.ltr.feature.store.StoredFeatureSet;
-import com.o19s.es.ltr.feature.store.StoredLtrModel;
-import com.o19s.es.ltr.ranker.linear.LinearRanker;
-import com.o19s.es.ltr.ranker.parser.LtrRankerParserFactory;
+import static java.util.Arrays.asList;
+import static java.util.Collections.unmodifiableSet;
+import static java.util.stream.Collectors.joining;
+
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.BiConsumer;
+
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
 import org.opensearch.core.ParseField;
@@ -42,22 +38,26 @@ import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.index.query.AbstractQueryBuilder;
 import org.opensearch.index.query.QueryShardContext;
 import org.opensearch.index.query.QueryShardException;
+import org.opensearch.ltr.stats.LTRStats;
+import org.opensearch.ltr.stats.StatName;
 
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.BiConsumer;
-
-import static java.util.Arrays.asList;
-import static java.util.Collections.unmodifiableSet;
-import static java.util.stream.Collectors.joining;
+import com.o19s.es.ltr.LtrQueryContext;
+import com.o19s.es.ltr.feature.Feature;
+import com.o19s.es.ltr.feature.FeatureSet;
+import com.o19s.es.ltr.feature.FeatureValidation;
+import com.o19s.es.ltr.feature.store.CompiledLtrModel;
+import com.o19s.es.ltr.feature.store.PrecompiledExpressionFeature;
+import com.o19s.es.ltr.feature.store.StorableElement;
+import com.o19s.es.ltr.feature.store.StoredFeature;
+import com.o19s.es.ltr.feature.store.StoredFeatureSet;
+import com.o19s.es.ltr.feature.store.StoredLtrModel;
+import com.o19s.es.ltr.ranker.linear.LinearRanker;
+import com.o19s.es.ltr.ranker.parser.LtrRankerParserFactory;
 
 public class ValidatingLtrQueryBuilder extends AbstractQueryBuilder<ValidatingLtrQueryBuilder> {
-    public static final Set<String> SUPPORTED_TYPES = unmodifiableSet(new HashSet<>(asList(
-            StoredFeature.TYPE,
-            StoredFeatureSet.TYPE,
-            StoredLtrModel.TYPE)));
+    public static final Set<String> SUPPORTED_TYPES = unmodifiableSet(
+        new HashSet<>(asList(StoredFeature.TYPE, StoredFeatureSet.TYPE, StoredLtrModel.TYPE))
+    );
 
     public static final String NAME = "validating_ltr_query";
     private static final ParseField VALIDATION = new ParseField("validation");
@@ -66,24 +66,21 @@ public class ValidatingLtrQueryBuilder extends AbstractQueryBuilder<ValidatingLt
     static {
         BiConsumer<ValidatingLtrQueryBuilder, StorableElement> setElem = (b, v) -> {
             if (b.element != null) {
-                throw new IllegalArgumentException("[" + b.element.type() + "] already set, only one element can be set at a time (" +
-                        SUPPORTED_TYPES.stream().collect(joining(",")) + ").");
+                throw new IllegalArgumentException(
+                    "["
+                        + b.element.type()
+                        + "] already set, only one element can be set at a time ("
+                        + SUPPORTED_TYPES.stream().collect(joining(","))
+                        + ")."
+                );
             }
             b.element = v;
         };
 
-        PARSER.declareObject(setElem,
-                (parser, ctx) -> StoredFeature.parse(parser),
-                new ParseField(StoredFeature.TYPE));
-        PARSER.declareObject(setElem,
-                (parser, ctx) -> StoredFeatureSet.parse(parser),
-                new ParseField(StoredFeatureSet.TYPE));
-        PARSER.declareObject(setElem,
-                (parser, ctx) -> StoredLtrModel.parse(parser),
-                new ParseField(StoredLtrModel.TYPE));
-        PARSER.declareObject((b, v) -> b.validation = v,
-                (p, c) -> FeatureValidation.PARSER.apply(p, null),
-                new ParseField("validation"));
+        PARSER.declareObject(setElem, (parser, ctx) -> StoredFeature.parse(parser), new ParseField(StoredFeature.TYPE));
+        PARSER.declareObject(setElem, (parser, ctx) -> StoredFeatureSet.parse(parser), new ParseField(StoredFeatureSet.TYPE));
+        PARSER.declareObject(setElem, (parser, ctx) -> StoredLtrModel.parse(parser), new ParseField(StoredLtrModel.TYPE));
+        PARSER.declareObject((b, v) -> b.validation = v, (p, c) -> FeatureValidation.PARSER.apply(p, null), new ParseField("validation"));
         declareStandardFields(PARSER);
     }
 
@@ -91,14 +88,17 @@ public class ValidatingLtrQueryBuilder extends AbstractQueryBuilder<ValidatingLt
     private StorableElement element;
     private FeatureValidation validation;
     private LTRStats ltrStats;
+
     private ValidatingLtrQueryBuilder(LtrRankerParserFactory factory) {
         this.factory = factory;
     }
 
-    public ValidatingLtrQueryBuilder(StorableElement element,
-                                     FeatureValidation validation,
-                                     LtrRankerParserFactory factory,
-                                     LTRStats ltrStats) {
+    public ValidatingLtrQueryBuilder(
+        StorableElement element,
+        FeatureValidation validation,
+        LtrRankerParserFactory factory,
+        LTRStats ltrStats
+    ) {
         this(factory);
         this.element = Objects.requireNonNull(element);
         this.validation = Objects.requireNonNull(validation);
@@ -130,15 +130,16 @@ public class ValidatingLtrQueryBuilder extends AbstractQueryBuilder<ValidatingLt
         this.ltrStats = ltrStats;
     }
 
-    public static ValidatingLtrQueryBuilder fromXContent(XContentParser parser,
-                                                         LtrRankerParserFactory factory,
-                                                         LTRStats ltrStats) throws IOException {
+    public static ValidatingLtrQueryBuilder fromXContent(XContentParser parser, LtrRankerParserFactory factory, LTRStats ltrStats)
+        throws IOException {
         try {
             ValidatingLtrQueryBuilder builder = new ValidatingLtrQueryBuilder(factory);
             PARSER.parse(parser, builder, null);
             if (builder.element == null) {
-                throw new ParsingException(parser.getTokenLocation(), "Element of type [" + SUPPORTED_TYPES.stream().collect(joining(",")) +
-                        "] is mandatory.");
+                throw new ParsingException(
+                    parser.getTokenLocation(),
+                    "Element of type [" + SUPPORTED_TYPES.stream().collect(joining(",")) + "] is mandatory."
+                );
             }
             if (builder.validation == null) {
                 throw new ParsingException(parser.getTokenLocation(), "Expected field [" + VALIDATION.getPreferredName() + "]");
@@ -178,7 +179,7 @@ public class ValidatingLtrQueryBuilder extends AbstractQueryBuilder<ValidatingLt
     }
 
     private Query doToQueryInternal(QueryShardContext queryShardContext) throws IOException {
-        //TODO: should we be passing activeFeatures here?
+        // TODO: should we be passing activeFeatures here?
         LtrQueryContext context = new LtrQueryContext(queryShardContext);
         if (StoredFeature.TYPE.equals(element.type())) {
             Feature feature = ((StoredFeature) element).optimize();
@@ -186,7 +187,7 @@ public class ValidatingLtrQueryBuilder extends AbstractQueryBuilder<ValidatingLt
                 // Derived features cannot be tested alone
                 return new MatchAllDocsQuery();
             }
-            //TODO: support activeFeatures in Validating queries
+            // TODO: support activeFeatures in Validating queries
             return feature.doToQuery(context, null, validation.getParams());
         } else if (StoredFeatureSet.TYPE.equals(element.type())) {
             FeatureSet set = ((StoredFeatureSet) element).optimize();
@@ -203,8 +204,7 @@ public class ValidatingLtrQueryBuilder extends AbstractQueryBuilder<ValidatingLt
 
     @Override
     protected boolean doEquals(ValidatingLtrQueryBuilder other) {
-        return Objects.equals(element, other.element) &&
-                Objects.equals(validation, other.validation);
+        return Objects.equals(element, other.element) && Objects.equals(validation, other.validation);
     }
 
     @Override

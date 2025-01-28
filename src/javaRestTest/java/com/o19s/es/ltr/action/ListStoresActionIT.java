@@ -16,6 +16,13 @@
 
 package com.o19s.es.ltr.action;
 
+import static com.o19s.es.ltr.feature.store.index.IndexFeatureStore.indexName;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import com.o19s.es.ltr.LtrTestUtils;
 import com.o19s.es.ltr.action.ListStoresAction.IndexStoreInfo;
 import com.o19s.es.ltr.action.ListStoresAction.ListStoresActionResponse;
@@ -24,22 +31,14 @@ import com.o19s.es.ltr.feature.store.StoredFeatureSet;
 import com.o19s.es.ltr.feature.store.StoredLtrModel;
 import com.o19s.es.ltr.feature.store.index.IndexFeatureStore;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static com.o19s.es.ltr.feature.store.index.IndexFeatureStore.indexName;
-
 public class ListStoresActionIT extends BaseIntegrationTest {
     public void testListStore() throws Exception {
         createStore(indexName("test2"));
         createStore(indexName("test3"));
         Map<String, IndexStoreInfo> infos = new HashMap<>();
-        String[] stores = new String[]{IndexFeatureStore.DEFAULT_STORE, indexName("test2"), indexName("test3")};
+        String[] stores = new String[] { IndexFeatureStore.DEFAULT_STORE, indexName("test2"), indexName("test3") };
         for (String store : stores) {
-            infos.put(IndexFeatureStore.storeName(store),
-                    new IndexStoreInfo(store, IndexFeatureStore.VERSION, addElements(store)));
+            infos.put(IndexFeatureStore.storeName(store), new IndexStoreInfo(store, IndexFeatureStore.VERSION, addElements(store)));
         }
         ListStoresActionResponse resp = new ListStoresAction.ListStoresActionBuilder(client()).execute().get();
         assertEquals(infos.size(), resp.getStores().size());
@@ -66,7 +65,7 @@ public class ListStoresActionIT extends BaseIntegrationTest {
         return counts;
     }
 
-    private void addElements(String store, int nFeatures, int nSets,int nModels) throws Exception {
+    private void addElements(String store, int nFeatures, int nSets, int nModels) throws Exception {
         for (int i = 0; i < nFeatures; i++) {
             StoredFeature feat = LtrTestUtils.randomFeature("feature" + i);
             addElement(feat, store);

@@ -15,10 +15,12 @@
  */
 package com.o19s.es.explore;
 
-import org.opensearch.ltr.stats.LTRStat;
-import org.opensearch.ltr.stats.LTRStats;
-import org.opensearch.ltr.stats.StatName;
-import org.opensearch.ltr.stats.suppliers.CounterSupplier;
+import static java.util.Collections.unmodifiableMap;
+import static org.hamcrest.Matchers.equalTo;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StoredField;
@@ -37,15 +39,13 @@ import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.ByteBuffersDirectory;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.tests.util.LuceneTestCase;
-import org.opensearch.common.lucene.Lucene;
 import org.junit.After;
 import org.junit.Before;
-
-import java.util.HashMap;
-import java.util.Map;
-
-import static java.util.Collections.unmodifiableMap;
-import static org.hamcrest.Matchers.equalTo;
+import org.opensearch.common.lucene.Lucene;
+import org.opensearch.ltr.stats.LTRStat;
+import org.opensearch.ltr.stats.LTRStats;
+import org.opensearch.ltr.stats.StatName;
+import org.opensearch.ltr.stats.suppliers.CounterSupplier;
 
 public class ExplorerQueryTests extends LuceneTestCase {
     private Directory dir;
@@ -55,19 +55,18 @@ public class ExplorerQueryTests extends LuceneTestCase {
 
     // Some simple documents to index
     private final String[] docs = new String[] {
-            "how now brown cow",
-            "brown is the color of cows",
-            "brown cow",
-            "banana cows are yummy",
-            "dance with monkeys and do not stop to dance",
-            "break on through to the other side... break on through to the other side... break on through to the other side"
-    };
+        "how now brown cow",
+        "brown is the color of cows",
+        "brown cow",
+        "banana cows are yummy",
+        "dance with monkeys and do not stop to dance",
+        "break on through to the other side... break on through to the other side... break on through to the other side" };
 
     @Before
     public void setupIndex() throws Exception {
         dir = new ByteBuffersDirectory();
 
-        try(IndexWriter indexWriter = new IndexWriter(dir, new IndexWriterConfig(Lucene.STANDARD_ANALYZER))) {
+        try (IndexWriter indexWriter = new IndexWriter(dir, new IndexWriterConfig(Lucene.STANDARD_ANALYZER))) {
             for (int i = 0; i < docs.length; i++) {
                 Document doc = new Document();
                 doc.add(new Field("_id", Integer.toString(i + 1), StoredField.TYPE));
@@ -79,10 +78,8 @@ public class ExplorerQueryTests extends LuceneTestCase {
         reader = DirectoryReader.open(dir);
         searcher = new IndexSearcher(reader);
         Map<String, LTRStat<?>> stats = new HashMap<>();
-        stats.put(StatName.LTR_REQUEST_TOTAL_COUNT.getName(),
-                new LTRStat<>(false, new CounterSupplier()));
-        stats.put(StatName.LTR_REQUEST_ERROR_COUNT.getName(),
-                new LTRStat<>(false, new CounterSupplier()));
+        stats.put(StatName.LTR_REQUEST_TOTAL_COUNT.getName(), new LTRStat<>(false, new CounterSupplier()));
+        stats.put(StatName.LTR_REQUEST_ERROR_COUNT.getName(), new LTRStat<>(false, new CounterSupplier()));
         ltrStats = new LTRStats(unmodifiableMap(stats));
     }
 
