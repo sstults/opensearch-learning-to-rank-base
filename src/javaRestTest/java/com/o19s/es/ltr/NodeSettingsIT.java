@@ -16,38 +16,41 @@
 
 package com.o19s.es.ltr;
 
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.lessThan;
+
+import java.io.IOException;
+
+import org.apache.lucene.util.Accountable;
+import org.opensearch.common.settings.Settings;
+import org.opensearch.core.common.unit.ByteSizeUnit;
+import org.opensearch.core.common.unit.ByteSizeValue;
+
 import com.o19s.es.ltr.action.BaseIntegrationTest;
 import com.o19s.es.ltr.feature.store.CompiledLtrModel;
 import com.o19s.es.ltr.feature.store.MemStore;
 import com.o19s.es.ltr.feature.store.index.CachedFeatureStore;
 import com.o19s.es.ltr.feature.store.index.Caches;
 import com.o19s.es.ltr.ranker.LtrRanker;
-import org.apache.lucene.util.Accountable;
-import org.opensearch.common.settings.Settings;
-import org.opensearch.core.common.unit.ByteSizeUnit;
-import org.opensearch.core.common.unit.ByteSizeValue;
-
-import java.io.IOException;
-
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.hamcrest.Matchers.lessThan;
 
 public class NodeSettingsIT extends BaseIntegrationTest {
     private final MemStore memStore = new MemStore();
     private final int memSize = 1024;
     private final int expireAfterRead = 100;
-    private final int expireAfterWrite = expireAfterRead*4;
+    private final int expireAfterWrite = expireAfterRead * 4;
 
     @Override
     protected Settings nodeSettings() {
         Settings settings = super.nodeSettings();
-        return Settings.builder().put(settings)
-                .put(Caches.LTR_CACHE_MEM_SETTING.getKey(), memSize + "kb")
-                .put(Caches.LTR_CACHE_EXPIRE_AFTER_READ.getKey(), expireAfterRead + "ms")
-                .put(Caches.LTR_CACHE_EXPIRE_AFTER_WRITE.getKey(), expireAfterWrite + "ms")
-                .build();
+        return Settings
+            .builder()
+            .put(settings)
+            .put(Caches.LTR_CACHE_MEM_SETTING.getKey(), memSize + "kb")
+            .put(Caches.LTR_CACHE_EXPIRE_AFTER_READ.getKey(), expireAfterRead + "ms")
+            .put(Caches.LTR_CACHE_EXPIRE_AFTER_WRITE.getKey(), expireAfterWrite + "ms")
+            .build();
     }
 
     public void testCacheSettings() throws IOException, InterruptedException {
@@ -67,14 +70,14 @@ public class NodeSettingsIT extends BaseIntegrationTest {
         } while (totalAdded < maxMemSize);
         assertThat(totalAdded, greaterThan(maxMemSize));
         assertThat(caches.modelCache().weight(), greaterThan(0L));
-        Thread.sleep(expireAfterWrite*2);
+        Thread.sleep(expireAfterWrite * 2);
         caches.modelCache().refresh();
         assertEquals(0, caches.modelCache().weight());
         cached.loadModel("test0");
         // Second load for accessTime
         cached.loadModel("test0");
         assertThat(caches.modelCache().weight(), greaterThan(0L));
-        Thread.sleep(expireAfterRead*2);
+        Thread.sleep(expireAfterRead * 2);
         caches.modelCache().refresh();
         assertEquals(0, caches.modelCache().weight());
     }

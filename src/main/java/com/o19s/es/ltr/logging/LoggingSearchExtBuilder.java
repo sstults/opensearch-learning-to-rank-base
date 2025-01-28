@@ -16,6 +16,12 @@
 
 package com.o19s.es.ltr.logging;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Stream;
+
 import org.opensearch.common.Nullable;
 import org.opensearch.core.ParseField;
 import org.opensearch.core.common.ParsingException;
@@ -27,12 +33,6 @@ import org.opensearch.core.xcontent.ToXContentObject;
 import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.search.SearchExtBuilder;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Stream;
 
 public class LoggingSearchExtBuilder extends SearchExtBuilder {
     public static final String NAME = "ltr_log";
@@ -66,11 +66,10 @@ public class LoggingSearchExtBuilder extends SearchExtBuilder {
         try {
             LoggingSearchExtBuilder ext = PARSER.parse(parser, null);
             if (ext.logSpecs == null || ext.logSpecs.isEmpty()) {
-                throw new ParsingException(parser.getTokenLocation(), "[" + NAME + "] should define at least one [" +
-                    LOG_SPECS + "]");
+                throw new ParsingException(parser.getTokenLocation(), "[" + NAME + "] should define at least one [" + LOG_SPECS + "]");
             }
             return ext;
-        } catch(IllegalArgumentException iae) {
+        } catch (IllegalArgumentException iae) {
             throw new ParsingException(parser.getTokenLocation(), iae.getMessage(), iae);
         }
     }
@@ -177,8 +176,10 @@ public class LoggingSearchExtBuilder extends SearchExtBuilder {
             try {
                 LogSpec spec = PARSER.parse(parser, null);
                 if (spec.namedQuery == null && spec.rescoreIndex == null) {
-                    throw new ParsingException(parser.getTokenLocation(), "Either " +
-                            "[" + NAMED_QUERY + "] or [" + RESCORE_INDEX + "] must be set.");
+                    throw new ParsingException(
+                        parser.getTokenLocation(),
+                        "Either " + "[" + NAMED_QUERY + "] or [" + RESCORE_INDEX + "] must be set."
+                    );
                 }
                 if (spec.rescoreIndex != null && spec.rescoreIndex < 0) {
                     throw new ParsingException(parser.getTokenLocation(), "[" + RESCORE_INDEX + "] must be a non-negative integer.");
@@ -208,14 +209,19 @@ public class LoggingSearchExtBuilder extends SearchExtBuilder {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
 
             LogSpec logSpec = (LogSpec) o;
 
-            if (missingAsZero != logSpec.missingAsZero) return false;
-            if (loggerName != null ? !loggerName.equals(logSpec.loggerName) : logSpec.loggerName != null) return false;
-            if (namedQuery != null ? !namedQuery.equals(logSpec.namedQuery) : logSpec.namedQuery != null) return false;
+            if (missingAsZero != logSpec.missingAsZero)
+                return false;
+            if (loggerName != null ? !loggerName.equals(logSpec.loggerName) : logSpec.loggerName != null)
+                return false;
+            if (namedQuery != null ? !namedQuery.equals(logSpec.namedQuery) : logSpec.namedQuery != null)
+                return false;
             return rescoreIndex != null ? rescoreIndex.equals(logSpec.rescoreIndex) : logSpec.rescoreIndex == null;
         }
 

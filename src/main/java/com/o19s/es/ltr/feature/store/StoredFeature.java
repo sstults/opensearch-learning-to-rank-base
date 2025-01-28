@@ -16,30 +16,9 @@
 
 package com.o19s.es.ltr.feature.store;
 
-import com.o19s.es.ltr.LtrQueryContext;
-import com.o19s.es.ltr.feature.Feature;
-import com.o19s.es.ltr.feature.FeatureSet;
-import com.o19s.es.template.mustache.MustacheUtils;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.util.Accountable;
-import org.apache.lucene.util.BytesRef;
-import org.apache.lucene.util.RamUsageEstimator;
-import org.opensearch.core.ParseField;
-import org.opensearch.core.common.ParsingException;
-import org.opensearch.core.common.bytes.BytesReference;
-import org.opensearch.core.common.io.stream.StreamInput;
-import org.opensearch.core.common.io.stream.StreamOutput;
-import org.opensearch.common.xcontent.LoggingDeprecationHandler;
-import org.opensearch.core.xcontent.MediaTypeRegistry;
-import org.opensearch.core.xcontent.NamedXContentRegistry;
-import org.opensearch.core.xcontent.ObjectParser;
-import org.opensearch.core.xcontent.XContentBuilder;
-import org.opensearch.core.xcontent.XContentParser;
-import org.opensearch.common.xcontent.XContentType;
-import org.opensearch.index.query.QueryShardException;
-import org.opensearch.index.query.ScriptQueryBuilder;
-import org.opensearch.script.Script;
-import org.opensearch.script.ScriptType;
+import static org.apache.lucene.util.RamUsageEstimator.NUM_BYTES_ARRAY_HEADER;
+import static org.apache.lucene.util.RamUsageEstimator.NUM_BYTES_OBJECT_HEADER;
+import static org.apache.lucene.util.RamUsageEstimator.NUM_BYTES_OBJECT_REF;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -49,9 +28,31 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static org.apache.lucene.util.RamUsageEstimator.NUM_BYTES_ARRAY_HEADER;
-import static org.apache.lucene.util.RamUsageEstimator.NUM_BYTES_OBJECT_HEADER;
-import static org.apache.lucene.util.RamUsageEstimator.NUM_BYTES_OBJECT_REF;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.util.Accountable;
+import org.apache.lucene.util.BytesRef;
+import org.apache.lucene.util.RamUsageEstimator;
+import org.opensearch.common.xcontent.LoggingDeprecationHandler;
+import org.opensearch.common.xcontent.XContentType;
+import org.opensearch.core.ParseField;
+import org.opensearch.core.common.ParsingException;
+import org.opensearch.core.common.bytes.BytesReference;
+import org.opensearch.core.common.io.stream.StreamInput;
+import org.opensearch.core.common.io.stream.StreamOutput;
+import org.opensearch.core.xcontent.MediaTypeRegistry;
+import org.opensearch.core.xcontent.NamedXContentRegistry;
+import org.opensearch.core.xcontent.ObjectParser;
+import org.opensearch.core.xcontent.XContentBuilder;
+import org.opensearch.core.xcontent.XContentParser;
+import org.opensearch.index.query.QueryShardException;
+import org.opensearch.index.query.ScriptQueryBuilder;
+import org.opensearch.script.Script;
+import org.opensearch.script.ScriptType;
+
+import com.o19s.es.ltr.LtrQueryContext;
+import com.o19s.es.ltr.feature.Feature;
+import com.o19s.es.ltr.feature.FeatureSet;
+import com.o19s.es.template.mustache.MustacheUtils;
 
 public class StoredFeature implements Feature, Accountable, StorableElement {
     private static final long BASE_RAM_USED = RamUsageEstimator.shallowSizeOfInstance(StoredFeature.class);
@@ -133,8 +134,10 @@ public class StoredFeature implements Feature, Accountable, StorableElement {
         } else {
             builder.field(TEMPLATE.getPreferredName());
             // it's ok to use NamedXContentRegistry.EMPTY because we don't really parse we copy the structure...
-            XContentParser parser = MediaTypeRegistry.xContent(template).xContent().createParser(NamedXContentRegistry.EMPTY,
-                    LoggingDeprecationHandler.INSTANCE, template);
+            XContentParser parser = MediaTypeRegistry
+                .xContent(template)
+                .xContent()
+                .createParser(NamedXContentRegistry.EMPTY, LoggingDeprecationHandler.INSTANCE, template);
             builder.copyCurrentStructure(parser);
         }
         builder.endObject();
@@ -156,12 +159,20 @@ public class StoredFeature implements Feature, Accountable, StorableElement {
                 throw new ParsingException(parser.getTokenLocation(), "Field [template] is mandatory");
             }
             if (state.template instanceof String) {
-                return new StoredFeature(state.getName(), Collections.unmodifiableList(state.queryParams),
-                        state.templateLanguage, (String) state.template);
+                return new StoredFeature(
+                    state.getName(),
+                    Collections.unmodifiableList(state.queryParams),
+                    state.templateLanguage,
+                    (String) state.template
+                );
             } else {
                 assert state.template instanceof XContentBuilder;
-                return new StoredFeature(state.getName(), Collections.unmodifiableList(state.queryParams),
-                        state.templateLanguage, (XContentBuilder) state.template);
+                return new StoredFeature(
+                    state.getName(),
+                    Collections.unmodifiableList(state.queryParams),
+                    state.templateLanguage,
+                    (XContentBuilder) state.template
+                );
             }
         } catch (IllegalArgumentException iae) {
             throw new ParsingException(parser.getTokenLocation(), iae.getMessage(), iae);
@@ -193,9 +204,7 @@ public class StoredFeature implements Feature, Accountable, StorableElement {
 
     @Override
     public Query doToQuery(LtrQueryContext context, FeatureSet set, Map<String, Object> params) {
-        List<String> missingParams = queryParams.stream()
-                .filter((x) -> !params.containsKey(x))
-                .collect(Collectors.toList());
+        List<String> missingParams = queryParams.stream().filter((x) -> !params.containsKey(x)).collect(Collectors.toList());
 
         if (!missingParams.isEmpty()) {
             String names = missingParams.stream().collect(Collectors.joining(","));
@@ -218,19 +227,25 @@ public class StoredFeature implements Feature, Accountable, StorableElement {
 
     private XContentParser createParser(Object source, NamedXContentRegistry registry) throws IOException {
         if (source instanceof String) {
-            return MediaTypeRegistry.xContent((String) source).xContent()
-                    .createParser(registry, LoggingDeprecationHandler.INSTANCE, (String) source);
+            return MediaTypeRegistry
+                .xContent((String) source)
+                .xContent()
+                .createParser(registry, LoggingDeprecationHandler.INSTANCE, (String) source);
         } else if (source instanceof BytesReference) {
             BytesRef ref = ((BytesReference) source).toBytesRef();
-            return MediaTypeRegistry.xContent(ref.bytes, ref.offset, ref.length).xContent()
-                    .createParser(registry, LoggingDeprecationHandler.INSTANCE,
-                            ref.bytes, ref.offset, ref.length);
+            return MediaTypeRegistry
+                .xContent(ref.bytes, ref.offset, ref.length)
+                .xContent()
+                .createParser(registry, LoggingDeprecationHandler.INSTANCE, ref.bytes, ref.offset, ref.length);
         } else if (source instanceof byte[]) {
-            return MediaTypeRegistry.xContent((byte[]) source).xContent()
-                    .createParser(registry, LoggingDeprecationHandler.INSTANCE, (byte[]) source);
+            return MediaTypeRegistry
+                .xContent((byte[]) source)
+                .xContent()
+                .createParser(registry, LoggingDeprecationHandler.INSTANCE, (byte[]) source);
         } else {
-            throw new IllegalArgumentException("Template engine returned an unsupported object type [" +
-                    source.getClass().getCanonicalName() + "]");
+            throw new IllegalArgumentException(
+                "Template engine returned an unsupported object type [" + source.getClass().getCanonicalName() + "]"
+            );
         }
     }
 
@@ -253,13 +268,11 @@ public class StoredFeature implements Feature, Accountable, StorableElement {
     @Override
     public long ramBytesUsed() {
         // rough estimation...
-        return BASE_RAM_USED +
-                (Character.BYTES * name.length()) + NUM_BYTES_ARRAY_HEADER +
-                queryParams.stream()
-                        .mapToLong(x -> (Character.BYTES * x.length()) +
-                                NUM_BYTES_OBJECT_REF + NUM_BYTES_OBJECT_HEADER + NUM_BYTES_ARRAY_HEADER).sum() +
-                (Character.BYTES * templateLanguage.length()) + NUM_BYTES_ARRAY_HEADER +
-                (Character.BYTES * template.length()) + NUM_BYTES_ARRAY_HEADER;
+        return BASE_RAM_USED + (Character.BYTES * name.length()) + NUM_BYTES_ARRAY_HEADER + queryParams
+            .stream()
+            .mapToLong(x -> (Character.BYTES * x.length()) + NUM_BYTES_OBJECT_REF + NUM_BYTES_OBJECT_HEADER + NUM_BYTES_ARRAY_HEADER)
+            .sum() + (Character.BYTES * templateLanguage.length()) + NUM_BYTES_ARRAY_HEADER + (Character.BYTES * template.length())
+            + NUM_BYTES_ARRAY_HEADER;
     }
 
     @Override

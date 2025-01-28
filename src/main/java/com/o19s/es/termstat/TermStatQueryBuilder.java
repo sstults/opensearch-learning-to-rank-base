@@ -15,9 +15,14 @@
  */
 package com.o19s.es.termstat;
 
-import com.o19s.es.explore.StatisticsHelper.AggrType;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Set;
 
-import com.o19s.es.ltr.utils.Scripting;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.TermToBytesRefAttribute;
@@ -36,13 +41,8 @@ import org.opensearch.index.mapper.MappedFieldType;
 import org.opensearch.index.query.AbstractQueryBuilder;
 import org.opensearch.index.query.QueryShardContext;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.Set;
+import com.o19s.es.explore.StatisticsHelper.AggrType;
+import com.o19s.es.ltr.utils.Scripting;
 
 public class TermStatQueryBuilder extends AbstractQueryBuilder<TermStatQueryBuilder> implements NamedWriteable {
     public static final String NAME = "term_stat";
@@ -75,9 +75,7 @@ public class TermStatQueryBuilder extends AbstractQueryBuilder<TermStatQueryBuil
     private String aggr;
     private String pos_aggr;
 
-
-    public TermStatQueryBuilder() {
-    }
+    public TermStatQueryBuilder() {}
 
     public TermStatQueryBuilder(StreamInput in) throws IOException {
         super(in);
@@ -108,7 +106,7 @@ public class TermStatQueryBuilder extends AbstractQueryBuilder<TermStatQueryBuil
 
         // Default to all fields if none specified
         if (builder.fields == null) {
-            builder.fields(new String[]{"*"});
+            builder.fields(new String[] { "*" });
         }
 
         // Default aggr to mean if none specified
@@ -160,8 +158,8 @@ public class TermStatQueryBuilder extends AbstractQueryBuilder<TermStatQueryBuil
             // If no analyzer was specified, try grabbing it per field
             if (analyzerName == null) {
                 analyzer = getAnalyzerForField(context, field);
-            // Otherwise use the requested analyzer
-            } else if (analyzer == null){
+                // Otherwise use the requested analyzer
+            } else if (analyzer == null) {
                 analyzer = getAnalyzerByName(context, analyzerName);
             }
 
@@ -194,31 +192,38 @@ public class TermStatQueryBuilder extends AbstractQueryBuilder<TermStatQueryBuil
     }
 
     @Override
-    protected int doHashCode() { return Objects.hash(expr, aggr, pos_aggr, Arrays.hashCode(terms), Arrays.hashCode(fields), analyzerName);}
+    protected int doHashCode() {
+        return Objects.hash(expr, aggr, pos_aggr, Arrays.hashCode(terms), Arrays.hashCode(fields), analyzerName);
+    }
 
     @Override
     protected boolean doEquals(TermStatQueryBuilder other) {
         return Objects.equals(expr, other.expr)
-                && Objects.equals(aggr, other.aggr)
-                && Objects.equals(pos_aggr, other.pos_aggr)
-                && Arrays.equals(terms, other.terms)
-                && Arrays.equals(fields, other.fields)
-                && Objects.equals(analyzerName, other.analyzerName);
+            && Objects.equals(aggr, other.aggr)
+            && Objects.equals(pos_aggr, other.pos_aggr)
+            && Arrays.equals(terms, other.terms)
+            && Arrays.equals(fields, other.fields)
+            && Objects.equals(analyzerName, other.analyzerName);
     }
 
     @Override
-    public String getWriteableName() { return NAME; }
-
+    public String getWriteableName() {
+        return NAME;
+    }
 
     public String aggr() {
         return aggr;
     }
+
     public TermStatQueryBuilder aggr(String aggr) {
         this.aggr = aggr;
         return this;
     }
 
-    public String analyzer() { return analyzerName; }
+    public String analyzer() {
+        return analyzerName;
+    }
+
     public TermStatQueryBuilder analyzer(String analyzer) {
         this.analyzerName = analyzer;
         return this;
@@ -227,6 +232,7 @@ public class TermStatQueryBuilder extends AbstractQueryBuilder<TermStatQueryBuil
     public String expr() {
         return expr;
     }
+
     public TermStatQueryBuilder expr(String expr) {
         this.expr = expr;
         return this;
@@ -235,31 +241,37 @@ public class TermStatQueryBuilder extends AbstractQueryBuilder<TermStatQueryBuil
     public String[] fields() {
         return fields;
     };
+
     public TermStatQueryBuilder fields(String[] fields) {
         this.fields = fields;
         return this;
     }
+
     public TermStatQueryBuilder fields(List<String> text) {
-        this.fields = text.toArray(new String[]{});
+        this.fields = text.toArray(new String[] {});
         return this;
     }
-
 
     public String posAggr() {
         return pos_aggr;
     }
+
     public TermStatQueryBuilder posAggr(String pos_aggr) {
         this.pos_aggr = pos_aggr;
         return this;
     }
 
-    public String[] terms() { return terms; }
+    public String[] terms() {
+        return terms;
+    }
+
     public TermStatQueryBuilder terms(String[] terms) {
         this.terms = terms;
         return this;
     }
+
     public TermStatQueryBuilder terms(List<String> terms) {
-        this.terms = terms.toArray(new String[]{});
+        this.terms = terms.toArray(new String[] {});
         return this;
     }
 }

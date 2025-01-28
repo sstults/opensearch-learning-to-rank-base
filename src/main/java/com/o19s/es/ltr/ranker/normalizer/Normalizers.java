@@ -24,10 +24,12 @@ import java.util.Map;
  * Class that manages Normalizer implementations
  */
 public class Normalizers {
-    private static final Map<String, Normalizer> NORMALIZERS = Collections.unmodifiableMap(new HashMap<String, Normalizer>() {{
-        put(NOOP_NORMALIZER_NAME, new NoopNormalizer());
-        put(SIGMOID_NORMALIZER_NAME, new SigmoidNormalizer());
-    }});
+    private static final Map<String, Normalizer> NORMALIZERS = Collections.unmodifiableMap(new HashMap<String, Normalizer>() {
+        {
+            put(NOOP_NORMALIZER_NAME, new NoopNormalizer());
+            put(SIGMOID_NORMALIZER_NAME, new SigmoidNormalizer());
+        }
+    });
     public static final String NOOP_NORMALIZER_NAME = "noop";
     public static final String SIGMOID_NORMALIZER_NAME = "sigmoid";
 

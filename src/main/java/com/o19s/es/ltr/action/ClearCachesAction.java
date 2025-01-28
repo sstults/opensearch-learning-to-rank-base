@@ -16,7 +16,12 @@
 
 package com.o19s.es.ltr.action;
 
-import com.o19s.es.ltr.action.ClearCachesAction.ClearCachesNodesResponse;
+import static org.opensearch.action.ValidateActions.addValidationError;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Objects;
+
 import org.opensearch.action.ActionRequestBuilder;
 import org.opensearch.action.ActionRequestValidationException;
 import org.opensearch.action.ActionType;
@@ -29,13 +34,9 @@ import org.opensearch.cluster.ClusterName;
 import org.opensearch.cluster.node.DiscoveryNode;
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.io.stream.StreamOutput;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Objects;
 import org.opensearch.core.common.io.stream.Writeable.Reader;
 
-import static org.opensearch.action.ValidateActions.addValidationError;
+import com.o19s.es.ltr.action.ClearCachesAction.ClearCachesNodesResponse;
 
 public class ClearCachesAction extends ActionType<ClearCachesNodesResponse> {
     public static final String NAME = "cluster:admin/ltr/caches";
@@ -60,7 +61,6 @@ public class ClearCachesAction extends ActionType<ClearCachesNodesResponse> {
         private String store;
         private Operation operation;
         private String name;
-
 
         public ClearCachesNodesRequest(StreamInput in) throws IOException {
             super(in);
@@ -146,8 +146,11 @@ public class ClearCachesAction extends ActionType<ClearCachesNodesResponse> {
             super(in);
         }
 
-        public ClearCachesNodesResponse(ClusterName clusterName, List<ClearCachesNodeResponse> responses,
-                                        List<FailedNodeException> failures) {
+        public ClearCachesNodesResponse(
+            ClusterName clusterName,
+            List<ClearCachesNodeResponse> responses,
+            List<FailedNodeException> failures
+        ) {
             super(clusterName, responses, failures);
         }
 
@@ -171,7 +174,6 @@ public class ClearCachesAction extends ActionType<ClearCachesNodesResponse> {
         public ClearCachesNodeResponse(DiscoveryNode node) {
             super(node);
         }
-
 
     }
 }

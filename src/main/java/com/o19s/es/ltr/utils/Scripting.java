@@ -15,12 +15,6 @@
  */
 package com.o19s.es.ltr.utils;
 
-import org.apache.lucene.expressions.Expression;
-import org.apache.lucene.expressions.js.JavascriptCompiler;
-import org.opensearch.SpecialPermission;
-import org.opensearch.script.ClassPermission;
-import org.opensearch.script.ScriptException;
-
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -29,6 +23,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.lucene.expressions.Expression;
+import org.apache.lucene.expressions.js.JavascriptCompiler;
+import org.opensearch.SpecialPermission;
+import org.opensearch.script.ClassPermission;
+import org.opensearch.script.ScriptException;
+
 public class Scripting {
     private Scripting() {}
 
@@ -36,7 +36,7 @@ public class Scripting {
         return compile(scriptSource, JavascriptCompiler.DEFAULT_FUNCTIONS);
     }
 
-    public static Object compile(String scriptSource, Map<String,java.lang.reflect.Method> functions) {
+    public static Object compile(String scriptSource, Map<String, java.lang.reflect.Method> functions) {
         // classloader created here
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {

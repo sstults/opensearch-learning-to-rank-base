@@ -16,8 +16,8 @@
 
 package com.o19s.es.ltr.feature.store;
 
-import com.o19s.es.ltr.ranker.normalizer.Normalizer;
-import com.o19s.es.ltr.ranker.normalizer.StandardFeatureNormalizer;
+import java.io.IOException;
+
 import org.opensearch.OpenSearchException;
 import org.opensearch.core.ParseField;
 import org.opensearch.core.common.io.stream.StreamInput;
@@ -26,7 +26,8 @@ import org.opensearch.core.xcontent.ObjectParser;
 import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.core.xcontent.XContentParser;
 
-import java.io.IOException;
+import com.o19s.es.ltr.ranker.normalizer.Normalizer;
+import com.o19s.es.ltr.ranker.normalizer.StandardFeatureNormalizer;
 
 public class StandardFeatureNormDefinition implements FeatureNormDefinition {
 
@@ -38,7 +39,6 @@ public class StandardFeatureNormDefinition implements FeatureNormDefinition {
     public static final ObjectParser<StandardFeatureNormDefinition, String> PARSER;
     private static final ParseField STD_DEVIATION = new ParseField("standard_deviation");
     private static final ParseField MEAN = new ParseField("mean");
-
 
     static {
         PARSER = ObjectParser.fromBuilder("standard", StandardFeatureNormDefinition::new);
@@ -64,8 +64,7 @@ public class StandardFeatureNormDefinition implements FeatureNormDefinition {
 
     public void setStdDeviation(float stdDeviation) {
         if (stdDeviation <= 0.0f) {
-            throw new OpenSearchException("Standard Deviation Must Be Positive. " +
-                                             " You passed: " + Float.toString(stdDeviation));
+            throw new OpenSearchException("Standard Deviation Must Be Positive. " + " You passed: " + Float.toString(stdDeviation));
         }
         this.stdDeviation = stdDeviation;
     }
@@ -110,13 +109,18 @@ public class StandardFeatureNormDefinition implements FeatureNormDefinition {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof StandardFeatureNormDefinition)) return false;
+        if (this == o)
+            return true;
+        if (!(o instanceof StandardFeatureNormDefinition))
+            return false;
         StandardFeatureNormDefinition that = (StandardFeatureNormDefinition) o;
 
-        if (!this.featureName.equals(that.featureName)) return false;
-        if (this.stdDeviation != that.stdDeviation) return false;
-        if (this.mean != that.mean) return false;
+        if (!this.featureName.equals(that.featureName))
+            return false;
+        if (this.stdDeviation != that.stdDeviation)
+            return false;
+        if (this.mean != that.mean)
+            return false;
 
         return true;
     }

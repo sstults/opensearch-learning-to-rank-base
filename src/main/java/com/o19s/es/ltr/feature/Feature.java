@@ -16,10 +16,11 @@
 
 package com.o19s.es.ltr.feature;
 
-import com.o19s.es.ltr.LtrQueryContext;
+import java.util.Map;
+
 import org.apache.lucene.search.Query;
 
-import java.util.Map;
+import com.o19s.es.ltr.LtrQueryContext;
 
 /**
  * A feature that can be transformed into a lucene query
@@ -57,6 +58,5 @@ public interface Feature {
      *
      * @param set the feature-set to validate the current feature against
      */
-    default void validate(FeatureSet set) {
-    }
+    default void validate(FeatureSet set) {}
 }

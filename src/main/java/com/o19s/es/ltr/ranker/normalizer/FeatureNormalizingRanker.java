@@ -16,12 +16,13 @@
 
 package com.o19s.es.ltr.ranker.normalizer;
 
-import com.o19s.es.ltr.ranker.LtrRanker;
+import java.util.Map;
+import java.util.Objects;
+
 import org.apache.lucene.util.Accountable;
 import org.apache.lucene.util.RamUsageEstimator;
 
-import java.util.Map;
-import java.util.Objects;
+import com.o19s.es.ltr.ranker.LtrRanker;
 
 public class FeatureNormalizingRanker implements LtrRanker, Accountable {
 
@@ -55,7 +56,7 @@ public class FeatureNormalizingRanker implements LtrRanker, Accountable {
 
     @Override
     public float score(FeatureVector point) {
-        for (Map.Entry<Integer, Normalizer> ordToNorm: this.ftrNorms.entrySet()) {
+        for (Map.Entry<Integer, Normalizer> ordToNorm : this.ftrNorms.entrySet()) {
             int ord = ordToNorm.getKey();
             float origFtrScore = point.getFeatureScore(ord);
             float normed = ordToNorm.getValue().normalize(origFtrScore);
@@ -66,23 +67,26 @@ public class FeatureNormalizingRanker implements LtrRanker, Accountable {
 
     @Override
     public boolean equals(Object other) {
-        if (other == null) return false;
-        if (!(other instanceof  FeatureNormalizingRanker)) {
+        if (other == null)
+            return false;
+        if (!(other instanceof FeatureNormalizingRanker)) {
             return false;
         }
-        final FeatureNormalizingRanker that = (FeatureNormalizingRanker)(other);
-        if (that == null) return false;
+        final FeatureNormalizingRanker that = (FeatureNormalizingRanker) (other);
+        if (that == null)
+            return false;
 
-        if (!that.ftrNorms.equals(this.ftrNorms)) return false;
-        if (!that.wrapped.equals(this.wrapped)) return false;
+        if (!that.ftrNorms.equals(this.ftrNorms))
+            return false;
+        if (!that.wrapped.equals(this.wrapped))
+            return false;
 
         return true;
     }
 
     @Override
     public int hashCode() {
-        return this.wrapped.hashCode() +
-                (31 * this.ftrNorms.hashCode());
+        return this.wrapped.hashCode() + (31 * this.ftrNorms.hashCode());
     }
 
     @Override
@@ -91,7 +95,7 @@ public class FeatureNormalizingRanker implements LtrRanker, Accountable {
         long ftrNormSize = ftrNorms.size() * (PER_FTR_NORM_RAM_USED);
 
         if (this.wrapped instanceof Accountable) {
-            Accountable accountable = (Accountable)this.wrapped;
+            Accountable accountable = (Accountable) this.wrapped;
             return BASE_RAM_USED + accountable.ramBytesUsed() + ftrNormSize;
         } else {
             return BASE_RAM_USED + ftrNormSize;

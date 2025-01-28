@@ -15,14 +15,13 @@
 
 package org.opensearch.ltr.transport;
 
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.opensearch.action.support.nodes.BaseNodesRequest;
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.io.stream.StreamOutput;
-
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
 
 public class LTRStatsRequest extends BaseNodesRequest<LTRStatsRequest> {
 

@@ -16,16 +16,17 @@
  */
 package com.o19s.es.ltr.ranker.ranklib;
 
-import com.o19s.es.ltr.ranker.LtrRanker;
-import com.o19s.es.ltr.ranker.parser.LtrRankerParserFactory;
-import org.opensearch.script.ScriptContext;
-import org.opensearch.script.ScriptEngine;
-
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+
+import org.opensearch.script.ScriptContext;
+import org.opensearch.script.ScriptEngine;
+
+import com.o19s.es.ltr.ranker.LtrRanker;
+import com.o19s.es.ltr.ranker.parser.LtrRankerParserFactory;
 
 /**
  * Created by doug on 12/30/16.
@@ -41,15 +42,16 @@ public class RankLibScriptEngine implements ScriptEngine {
 
     public static final String NAME = "ranklib";
     public static final String EXTENSION = "ranklib";
-    public static final ScriptContext<RankLibModelContainer.Factory> CONTEXT =
-            new ScriptContext<>("ranklib", RankLibModelContainer.Factory.class);
+    public static final ScriptContext<RankLibModelContainer.Factory> CONTEXT = new ScriptContext<>(
+        "ranklib",
+        RankLibModelContainer.Factory.class
+    );
     private final LtrRankerParserFactory factory;
 
     public RankLibScriptEngine(LtrRankerParserFactory factory) {
         super();
         this.factory = Objects.requireNonNull(factory);
     }
-
 
     @Override
     public String getType() {
@@ -98,6 +100,6 @@ public class RankLibScriptEngine implements ScriptEngine {
             return _ranker;
         }
 
-        public void execute () {}
+        public void execute() {}
     }
 }

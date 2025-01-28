@@ -16,9 +16,11 @@
 
 package com.o19s.es.ltr.utils;
 
-import com.o19s.es.ltr.feature.store.FeatureStore;
 import java.util.function.Supplier;
+
 import org.opensearch.client.Client;
+
+import com.o19s.es.ltr.feature.store.FeatureStore;
 
 @FunctionalInterface
 public interface FeatureStoreLoader {

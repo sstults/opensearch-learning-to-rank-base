@@ -15,13 +15,13 @@
 
 package org.opensearch.ltr.stats.suppliers;
 
+import java.util.List;
+import java.util.function.Supplier;
+
 import org.opensearch.client.Client;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.ltr.breaker.LTRCircuitBreakerService;
 import org.opensearch.ltr.stats.suppliers.utils.StoreUtils;
-
-import java.util.List;
-import java.util.function.Supplier;
 
 /**
  * Supplier for an overall plugin health status, which is based on the
@@ -35,8 +35,7 @@ public class PluginHealthStatusSupplier implements Supplier<String> {
     private final StoreUtils storeUtils;
     private final LTRCircuitBreakerService ltrCircuitBreakerService;
 
-    protected PluginHealthStatusSupplier(StoreUtils storeUtils,
-                                      LTRCircuitBreakerService ltrCircuitBreakerService) {
+    protected PluginHealthStatusSupplier(StoreUtils storeUtils, LTRCircuitBreakerService ltrCircuitBreakerService) {
         this.storeUtils = storeUtils;
         this.ltrCircuitBreakerService = ltrCircuitBreakerService;
     }
@@ -51,9 +50,7 @@ public class PluginHealthStatusSupplier implements Supplier<String> {
 
     private String getAggregateStoresStatus() {
         List<String> storeNames = storeUtils.getAllLtrStoreNames();
-        return storeNames.stream()
-                .map(storeUtils::getLtrStoreHealthStatus)
-                .reduce(STATUS_GREEN, this::combineStatuses);
+        return storeNames.stream().map(storeUtils::getLtrStoreHealthStatus).reduce(STATUS_GREEN, this::combineStatuses);
     }
 
     private String combineStatuses(String status1, String status2) {
@@ -67,9 +64,10 @@ public class PluginHealthStatusSupplier implements Supplier<String> {
     }
 
     public static PluginHealthStatusSupplier create(
-            final Client client,
-            final ClusterService clusterService,
-            LTRCircuitBreakerService ltrCircuitBreakerService) {
+        final Client client,
+        final ClusterService clusterService,
+        LTRCircuitBreakerService ltrCircuitBreakerService
+    ) {
         return new PluginHealthStatusSupplier(new StoreUtils(client, clusterService), ltrCircuitBreakerService);
     }
 }

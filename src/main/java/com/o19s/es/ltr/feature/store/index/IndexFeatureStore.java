@@ -16,15 +16,18 @@
 
 package com.o19s.es.ltr.feature.store.index;
 
-import com.o19s.es.ltr.feature.Feature;
-import com.o19s.es.ltr.feature.FeatureSet;
-import com.o19s.es.ltr.feature.store.CompiledLtrModel;
-import com.o19s.es.ltr.feature.store.FeatureStore;
-import com.o19s.es.ltr.feature.store.StorableElement;
-import com.o19s.es.ltr.feature.store.StoredFeature;
-import com.o19s.es.ltr.feature.store.StoredFeatureSet;
-import com.o19s.es.ltr.feature.store.StoredLtrModel;
-import com.o19s.es.ltr.ranker.parser.LtrRankerParserFactory;
+import static com.o19s.es.ltr.feature.store.StorableElement.generateId;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Supplier;
+import java.util.regex.Pattern;
+
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.apache.lucene.util.BytesRef;
@@ -36,34 +39,32 @@ import org.opensearch.client.Requests;
 import org.opensearch.cluster.metadata.IndexMetadata;
 import org.opensearch.cluster.metadata.MetadataCreateIndexService;
 import org.opensearch.common.CheckedFunction;
-import org.opensearch.core.ParseField;
-import org.opensearch.core.common.bytes.BytesReference;
-import org.apache.logging.log4j.LogManager;
 import org.opensearch.common.settings.Setting;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.xcontent.LoggingDeprecationHandler;
+import org.opensearch.common.xcontent.XContentType;
+import org.opensearch.core.ParseField;
+import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.core.xcontent.MediaTypeRegistry;
 import org.opensearch.core.xcontent.NamedXContentRegistry;
 import org.opensearch.core.xcontent.ObjectParser;
 import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.core.xcontent.XContentParser;
-import org.opensearch.common.xcontent.XContentType;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.function.Supplier;
-import java.util.regex.Pattern;
-
-import static com.o19s.es.ltr.feature.store.StorableElement.generateId;
+import com.o19s.es.ltr.feature.Feature;
+import com.o19s.es.ltr.feature.FeatureSet;
+import com.o19s.es.ltr.feature.store.CompiledLtrModel;
+import com.o19s.es.ltr.feature.store.FeatureStore;
+import com.o19s.es.ltr.feature.store.StorableElement;
+import com.o19s.es.ltr.feature.store.StoredFeature;
+import com.o19s.es.ltr.feature.store.StoredFeatureSet;
+import com.o19s.es.ltr.feature.store.StoredLtrModel;
+import com.o19s.es.ltr.ranker.parser.LtrRankerParserFactory;
 
 public class IndexFeatureStore implements FeatureStore {
     public static final int VERSION = 2;
-    public static final Setting<Integer> STORE_VERSION_PROP = Setting.intSetting("index.ltrstore_version",
-            VERSION, -1, Integer.MAX_VALUE, Setting.Property.IndexScope);
+    public static final Setting<Integer> STORE_VERSION_PROP = Setting
+        .intSetting("index.ltrstore_version", VERSION, -1, Integer.MAX_VALUE, Setting.Property.IndexScope);
     public static final String DEFAULT_STORE = ".ltrstore";
     public static final String STORE_PREFIX = DEFAULT_STORE + "_";
     private static final String MAPPING_FILE = "fstore-index-mapping.json";
@@ -83,15 +84,27 @@ public class IndexFeatureStore implements FeatureStore {
     private static final ObjectParser<ParserState, Void> SOURCE_PARSER;
     static {
         SOURCE_PARSER = new ObjectParser<>("", true, ParserState::new);
-        SOURCE_PARSER.declareField(ParserState::setElement,
+        SOURCE_PARSER
+            .declareField(
+                ParserState::setElement,
                 (CheckedFunction<XContentParser, StoredFeature, IOException>) StoredFeature::parse,
-                new ParseField(StoredFeature.TYPE), ObjectParser.ValueType.OBJECT);
-        SOURCE_PARSER.declareField(ParserState::setElement,
+                new ParseField(StoredFeature.TYPE),
+                ObjectParser.ValueType.OBJECT
+            );
+        SOURCE_PARSER
+            .declareField(
+                ParserState::setElement,
                 (CheckedFunction<XContentParser, StoredFeatureSet, IOException>) StoredFeatureSet::parse,
-                new ParseField(StoredFeatureSet.TYPE), ObjectParser.ValueType.OBJECT);
-        SOURCE_PARSER.declareField(ParserState::setElement,
+                new ParseField(StoredFeatureSet.TYPE),
+                ObjectParser.ValueType.OBJECT
+            );
+        SOURCE_PARSER
+            .declareField(
+                ParserState::setElement,
                 (CheckedFunction<XContentParser, StoredLtrModel, IOException>) StoredLtrModel::parse,
-                new ParseField(StoredLtrModel.TYPE), ObjectParser.ValueType.OBJECT);
+                new ParseField(StoredLtrModel.TYPE),
+                ObjectParser.ValueType.OBJECT
+            );
     }
 
     private final String index;
@@ -112,19 +125,15 @@ public class IndexFeatureStore implements FeatureStore {
     @Override
     public Feature load(final String name) throws IOException {
         return getAndParse(name, StoredFeature.class, StoredFeature.TYPE)
-                .orElseThrow(
-                        () -> new ResourceNotFoundException("Unknown feature [" + name + "]")
-                )
-                .optimize();
+            .orElseThrow(() -> new ResourceNotFoundException("Unknown feature [" + name + "]"))
+            .optimize();
     }
 
     @Override
     public FeatureSet loadSet(final String name) throws IOException {
         return getAndParse(name, StoredFeatureSet.class, StoredFeatureSet.TYPE)
-                .orElseThrow(
-                        () -> new ResourceNotFoundException("Unknown featureset [" + name + "]")
-                )
-                .optimize();
+            .orElseThrow(() -> new ResourceNotFoundException("Unknown featureset [" + name + "]"))
+            .optimize();
     }
 
     /**
@@ -169,16 +178,14 @@ public class IndexFeatureStore implements FeatureStore {
      * @return true if this index name is a possible index store, false otherwise.
      */
     public static boolean isIndexStore(String indexName) {
-        return Objects.requireNonNull(indexName).equals(DEFAULT_STORE) ||
-                (indexName.startsWith(STORE_PREFIX) && indexName.length() > STORE_PREFIX.length());
+        return Objects.requireNonNull(indexName).equals(DEFAULT_STORE)
+            || (indexName.startsWith(STORE_PREFIX) && indexName.length() > STORE_PREFIX.length());
     }
 
     @Override
     public CompiledLtrModel loadModel(String name) throws IOException {
         StoredLtrModel model = getAndParse(name, StoredLtrModel.class, StoredLtrModel.TYPE)
-                .orElseThrow(
-                        () -> new ResourceNotFoundException("Unknown model [" + name + "]")
-                );
+            .orElseThrow(() -> new ResourceNotFoundException("Unknown model [" + name + "]"));
 
         return model.compile(parserFactory);
     }
@@ -230,19 +237,25 @@ public class IndexFeatureStore implements FeatureStore {
         return parse(eltClass, type, bytes, 0, bytes.length);
     }
 
-    public static <E extends StorableElement> E parse(Class<E> eltClass, String type, byte[] bytes,
-                                                      int offset, int length) throws IOException {
-        try (XContentParser parser = MediaTypeRegistry.xContent(bytes).xContent()
-                .createParser(NamedXContentRegistry.EMPTY, LoggingDeprecationHandler.INSTANCE, bytes)) {
+    public static <E extends StorableElement> E parse(Class<E> eltClass, String type, byte[] bytes, int offset, int length)
+        throws IOException {
+        try (
+            XContentParser parser = MediaTypeRegistry
+                .xContent(bytes)
+                .xContent()
+                .createParser(NamedXContentRegistry.EMPTY, LoggingDeprecationHandler.INSTANCE, bytes)
+        ) {
             return parse(eltClass, type, parser);
         }
     }
 
     public static <E extends StorableElement> E parse(Class<E> eltClass, String type, BytesReference bytesReference) throws IOException {
         BytesRef ref = bytesReference.toBytesRef();
-        try (XContentParser parser = MediaTypeRegistry.xContent(ref.bytes, ref.offset, ref.length).xContent()
-                .createParser(NamedXContentRegistry.EMPTY, LoggingDeprecationHandler.INSTANCE,
-                        ref.bytes, ref.offset, ref.length)
+        try (
+            XContentParser parser = MediaTypeRegistry
+                .xContent(ref.bytes, ref.offset, ref.length)
+                .xContent()
+                .createParser(NamedXContentRegistry.EMPTY, LoggingDeprecationHandler.INSTANCE, ref.bytes, ref.offset, ref.length)
         ) {
             return parse(eltClass, type, parser);
         }
@@ -275,8 +288,8 @@ public class IndexFeatureStore implements FeatureStore {
 
     public static CreateIndexRequest buildIndexRequest(String indexName) {
         return new CreateIndexRequest(indexName)
-                .mapping(readResourceFile(indexName, MAPPING_FILE), XContentType.JSON)
-                .settings(storeIndexSettings(indexName));
+            .mapping(readResourceFile(indexName, MAPPING_FILE), XContentType.JSON)
+            .settings(storeIndexSettings(indexName));
     }
 
     private static String readResourceFile(String indexName, String resource) {
@@ -285,25 +298,29 @@ public class IndexFeatureStore implements FeatureStore {
             is.transferTo(out);
             return out.toString(StandardCharsets.UTF_8.name());
         } catch (Exception e) {
-            LOGGER.error(
+            LOGGER
+                .error(
                     (org.apache.logging.log4j.util.Supplier<?>) () -> new ParameterizedMessage(
-                            "failed to create ltr feature store index [{}] with resource [{}]",
-                            indexName, resource), e);
+                        "failed to create ltr feature store index [{}] with resource [{}]",
+                        indexName,
+                        resource
+                    ),
+                    e
+                );
             throw new IllegalStateException("failed to create ltr feature store index with resource [" + resource + "]", e);
         }
     }
 
     private static Settings storeIndexSettings(String indexName) {
-        return Settings.builder()
-                .put(IndexMetadata.INDEX_NUMBER_OF_SHARDS_SETTING.getKey(), 1)
-                .put(IndexMetadata.INDEX_AUTO_EXPAND_REPLICAS_SETTING.getKey(), "0-2")
-                .put(STORE_VERSION_PROP.getKey(), VERSION)
-                .put(IndexMetadata.SETTING_PRIORITY, Integer.MAX_VALUE)
-                .put(IndexMetadata.SETTING_INDEX_HIDDEN, true)
-                .put(Settings.builder()
-                        .loadFromSource(readResourceFile(indexName, ANALYSIS_FILE), XContentType.JSON)
-                        .build())
-                .build();
+        return Settings
+            .builder()
+            .put(IndexMetadata.INDEX_NUMBER_OF_SHARDS_SETTING.getKey(), 1)
+            .put(IndexMetadata.INDEX_AUTO_EXPAND_REPLICAS_SETTING.getKey(), "0-2")
+            .put(STORE_VERSION_PROP.getKey(), VERSION)
+            .put(IndexMetadata.SETTING_PRIORITY, Integer.MAX_VALUE)
+            .put(IndexMetadata.SETTING_INDEX_HIDDEN, true)
+            .put(Settings.builder().loadFromSource(readResourceFile(indexName, ANALYSIS_FILE), XContentType.JSON).build())
+            .build();
     }
 
     /**
@@ -317,7 +334,10 @@ public class IndexFeatureStore implements FeatureStore {
         if (INVALID_NAMES.matcher(storeName).matches()) {
             throw new IllegalArgumentException("A featurestore name cannot be based on the words [feature], [featureset] and [model]");
         }
-        MetadataCreateIndexService.validateIndexOrAliasName(storeName,
-                (name, error) -> new IllegalArgumentException("Invalid feature store name [" + name + "]: " + error));
+        MetadataCreateIndexService
+            .validateIndexOrAliasName(
+                storeName,
+                (name, error) -> new IllegalArgumentException("Invalid feature store name [" + name + "]: " + error)
+            );
     }
 }

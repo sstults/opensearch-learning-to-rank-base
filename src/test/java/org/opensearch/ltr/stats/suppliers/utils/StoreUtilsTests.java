@@ -15,14 +15,14 @@
 
 package org.opensearch.ltr.stats.suppliers.utils;
 
-import com.o19s.es.ltr.feature.store.index.IndexFeatureStore;
+import java.util.Map;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.opensearch.index.IndexNotFoundException;
-import org.opensearch.ltr.stats.suppliers.utils.StoreUtils;
 import org.opensearch.test.OpenSearchIntegTestCase;
 
-import java.util.Map;
+import com.o19s.es.ltr.feature.store.index.IndexFeatureStore;
 
 public class StoreUtilsTests extends OpenSearchIntegTestCase {
     private StoreUtils storeUtils;
@@ -96,46 +96,42 @@ public class StoreUtilsTests extends OpenSearchIntegTestCase {
         assertEquals(1, storeUtils.getModelCount(IndexFeatureStore.DEFAULT_STORE));
     }
 
-
     private String testFeatureSet() {
-        return "{\n" +
-                "\"name\": \"movie_features\",\n" +
-                "\"type\": \"featureset\",\n" +
-                "\"featureset\": {\n" +
-                "    \"name\": \"movie_features\",\n" +
-                "    \"features\": [\n" +
-                "        {\n" +
-                "            \"name\": \"1\",\n" +
-                "            \"params\": [\n" +
-                "                \"keywords\"\n" +
-                "            ],\n" +
-                "            \"template_language\": \"mustache\",\n" +
-                "            \"template\": {\n" +
-                "                \"match\": {\n" +
-                "                    \"title\": \"{{keywords}}\"\n" +
-                "                }\n" +
-                "            }\n" +
-                "        },\n" +
-                "        {\n" +
-                "            \"name\": \"2\",\n" +
-                "            \"params\": [\n" +
-                "                \"keywords\"\n" +
-                "            ],\n" +
-                "            \"template_language\": \"mustache\",\n" +
-                "            \"template\": {\n" +
-                "                \"match\": {\n" +
-                "                    \"overview\": \"{{keywords}}\"\n" +
-                "                }\n" +
-                "            }\n" +
-                "        }\n" +
-                "    ]\n" +
-                "}\n}";
+        return "{\n"
+            + "\"name\": \"movie_features\",\n"
+            + "\"type\": \"featureset\",\n"
+            + "\"featureset\": {\n"
+            + "    \"name\": \"movie_features\",\n"
+            + "    \"features\": [\n"
+            + "        {\n"
+            + "            \"name\": \"1\",\n"
+            + "            \"params\": [\n"
+            + "                \"keywords\"\n"
+            + "            ],\n"
+            + "            \"template_language\": \"mustache\",\n"
+            + "            \"template\": {\n"
+            + "                \"match\": {\n"
+            + "                    \"title\": \"{{keywords}}\"\n"
+            + "                }\n"
+            + "            }\n"
+            + "        },\n"
+            + "        {\n"
+            + "            \"name\": \"2\",\n"
+            + "            \"params\": [\n"
+            + "                \"keywords\"\n"
+            + "            ],\n"
+            + "            \"template_language\": \"mustache\",\n"
+            + "            \"template\": {\n"
+            + "                \"match\": {\n"
+            + "                    \"overview\": \"{{keywords}}\"\n"
+            + "                }\n"
+            + "            }\n"
+            + "        }\n"
+            + "    ]\n"
+            + "}\n}";
     }
 
     private String testModel() {
-        return "{\n" +
-                "\"name\": \"movie_model\",\n" +
-                "\"type\": \"model\"" +
-                "\n}";
+        return "{\n" + "\"name\": \"movie_model\",\n" + "\"type\": \"model\"" + "\n}";
     }
 }

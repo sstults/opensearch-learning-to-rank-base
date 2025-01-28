@@ -33,7 +33,7 @@ public class StatisticsHelper {
 
         private String type;
 
-        AggrType(String type){
+        AggrType(String type) {
             this.type = type;
         }
 
@@ -49,11 +49,11 @@ public class StatisticsHelper {
     public void add(float val) {
         data.add(val);
 
-        if(val < this.min) {
+        if (val < this.min) {
             this.min = val;
         }
 
-        if(val > this.max) {
+        if (val > this.max) {
             this.max = val;
         }
     }
@@ -62,7 +62,7 @@ public class StatisticsHelper {
         return data;
     }
 
-    public int getSize(){
+    public int getSize() {
         return data.size();
     }
 
@@ -89,7 +89,7 @@ public class StatisticsHelper {
 
         float sum = 0.0f;
 
-        for(float a : data) {
+        for (float a : data) {
             sum += a;
         }
 
@@ -101,9 +101,9 @@ public class StatisticsHelper {
 
         float mean = getMean();
         float temp = 0.0f;
-        for(float a : data)
-            temp += (a-mean)*(a-mean);
-        return temp/data.size();
+        for (float a : data)
+            temp += (a - mean) * (a - mean);
+        return temp / data.size();
     }
 
     public float getStdDev() {
@@ -113,7 +113,7 @@ public class StatisticsHelper {
     }
 
     public float getAggr(AggrType type) {
-        switch(type) {
+        switch (type) {
             case AVG:
                 return getMean();
             case MAX:

@@ -16,6 +16,21 @@
 
 package com.o19s.es.ltr;
 
+import static org.apache.lucene.tests.util.LuceneTestCase.random;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.function.IntFunction;
+
+import org.apache.lucene.tests.util.TestUtil;
+import org.opensearch.common.CheckedFunction;
+import org.opensearch.common.xcontent.json.JsonXContent;
+import org.opensearch.core.xcontent.XContentBuilder;
+import org.opensearch.index.query.WrapperQueryBuilder;
+
 import com.o19s.es.ltr.feature.Feature;
 import com.o19s.es.ltr.feature.FeatureSet;
 import com.o19s.es.ltr.feature.store.CompiledLtrModel;
@@ -36,20 +51,6 @@ import com.o19s.es.ltr.ranker.normalizer.FeatureNormalizingRanker;
 import com.o19s.es.ltr.ranker.normalizer.Normalizer;
 import com.o19s.es.ltr.ranker.parser.LinearRankerParser;
 import com.o19s.es.ltr.utils.FeatureStoreLoader;
-import org.apache.lucene.tests.util.TestUtil;
-import org.opensearch.common.CheckedFunction;
-import org.opensearch.core.xcontent.XContentBuilder;
-import org.opensearch.common.xcontent.json.JsonXContent;
-import org.opensearch.index.query.WrapperQueryBuilder;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.function.IntFunction;
-
-import static org.apache.lucene.tests.util.LuceneTestCase.random;
 
 public class LtrTestUtils {
 
@@ -80,8 +81,7 @@ public class LtrTestUtils {
         if (ftrNorms.size() > 0) {
             ranker = new FeatureNormalizingRanker(ranker, ftrNorms);
         }
-        return new CompiledLtrModel(TestUtil.randomSimpleString(random(), 5, 10), set,
-                                                                ranker);
+        return new CompiledLtrModel(TestUtil.randomSimpleString(random(), 5, 10), set, ranker);
     }
 
     public static StoredLtrModel randomLinearModel(String name, StoredFeatureSet set) throws IOException {
@@ -101,8 +101,7 @@ public class LtrTestUtils {
 
             if (random().nextBoolean()) {
                 continue;
-            }
-            else {
+            } else {
 
                 Feature ftr = set.feature(i);
 
@@ -130,23 +129,30 @@ public class LtrTestUtils {
         if (random().nextBoolean()) {
             ranker = LinearRankerTests.generateRandomRanker(fSize);
         } else {
-            ranker = NaiveAdditiveDecisionTreeTests.generateRandomDecTree(fSize, TestUtil.nextInt(random(), 1, 50),
-                    5, 50, null);
+            ranker = NaiveAdditiveDecisionTreeTests.generateRandomDecTree(fSize, TestUtil.nextInt(random(), 1, 50), 5, 50, null);
         }
         return ranker;
     }
 
     public static FeatureStoreLoader nullLoader() {
-        return (storeName, client) -> {throw new IllegalStateException("Invalid state, this query cannot be " +
-                "built without a valid store loader. Your are seeing this exception because you attempt to call " +
-                "doToQuery on a " + StoredLtrQueryBuilder.class.getSimpleName() + " instance that was built with " +
-                "an invalid FeatureStoreLoader. If you are trying to run integration tests with this query consider " +
-                "wrapping it inside a " + WrapperQueryBuilder.class.getSimpleName() + ":\n" +
-                "\tnew WrapperQueryBuilder(sltrBuilder.toString())\n" +
-                "This will force elastic to initialize the feature loader properly");};
+        return (storeName, client) -> {
+            throw new IllegalStateException(
+                "Invalid state, this query cannot be "
+                    + "built without a valid store loader. Your are seeing this exception because you attempt to call "
+                    + "doToQuery on a "
+                    + StoredLtrQueryBuilder.class.getSimpleName()
+                    + " instance that was built with "
+                    + "an invalid FeatureStoreLoader. If you are trying to run integration tests with this query consider "
+                    + "wrapping it inside a "
+                    + WrapperQueryBuilder.class.getSimpleName()
+                    + ":\n"
+                    + "\tnew WrapperQueryBuilder(sltrBuilder.toString())\n"
+                    + "This will force elastic to initialize the feature loader properly"
+            );
+        };
     }
 
-    public static <T,R,E extends Exception> Function<T, R> wrapFuncion(CheckedFunction<T, R, E> f) {
+    public static <T, R, E extends Exception> Function<T, R> wrapFuncion(CheckedFunction<T, R, E> f) {
         return (p) -> {
             try {
                 return f.apply(p);
@@ -156,7 +162,7 @@ public class LtrTestUtils {
         };
     }
 
-    public static <R,E extends Exception> IntFunction<R> wrapIntFuncion(CheckedFunction<Integer, R, E> f) {
+    public static <R, E extends Exception> IntFunction<R> wrapIntFuncion(CheckedFunction<Integer, R, E> f) {
         return (p) -> {
             try {
                 return f.apply(p);
@@ -170,46 +176,42 @@ public class LtrTestUtils {
         return (storeName, client) -> store;
     }
 
-
     public static String testFeatureSetString() {
-        return "{\n" +
-                "\"name\": \"movie_features\",\n" +
-                "\"type\": \"featureset\",\n" +
-                "\"featureset\": {\n" +
-                "    \"name\": \"movie_features\",\n" +
-                "    \"features\": [\n" +
-                "        {\n" +
-                "            \"name\": \"1\",\n" +
-                "            \"params\": [\n" +
-                "                \"keywords\"\n" +
-                "            ],\n" +
-                "            \"template_language\": \"mustache\",\n" +
-                "            \"template\": {\n" +
-                "                \"match\": {\n" +
-                "                    \"title\": \"{{keywords}}\"\n" +
-                "                }\n" +
-                "            }\n" +
-                "        },\n" +
-                "        {\n" +
-                "            \"name\": \"2\",\n" +
-                "            \"params\": [\n" +
-                "                \"keywords\"\n" +
-                "            ],\n" +
-                "            \"template_language\": \"mustache\",\n" +
-                "            \"template\": {\n" +
-                "                \"match\": {\n" +
-                "                    \"overview\": \"{{keywords}}\"\n" +
-                "                }\n" +
-                "            }\n" +
-                "        }\n" +
-                "    ]\n" +
-                "}\n}";
+        return "{\n"
+            + "\"name\": \"movie_features\",\n"
+            + "\"type\": \"featureset\",\n"
+            + "\"featureset\": {\n"
+            + "    \"name\": \"movie_features\",\n"
+            + "    \"features\": [\n"
+            + "        {\n"
+            + "            \"name\": \"1\",\n"
+            + "            \"params\": [\n"
+            + "                \"keywords\"\n"
+            + "            ],\n"
+            + "            \"template_language\": \"mustache\",\n"
+            + "            \"template\": {\n"
+            + "                \"match\": {\n"
+            + "                    \"title\": \"{{keywords}}\"\n"
+            + "                }\n"
+            + "            }\n"
+            + "        },\n"
+            + "        {\n"
+            + "            \"name\": \"2\",\n"
+            + "            \"params\": [\n"
+            + "                \"keywords\"\n"
+            + "            ],\n"
+            + "            \"template_language\": \"mustache\",\n"
+            + "            \"template\": {\n"
+            + "                \"match\": {\n"
+            + "                    \"overview\": \"{{keywords}}\"\n"
+            + "                }\n"
+            + "            }\n"
+            + "        }\n"
+            + "    ]\n"
+            + "}\n}";
     }
 
     public static String testModelString() {
-        return "{\n" +
-                "\"name\": \"movie_model\",\n" +
-                "\"type\": \"model\"" +
-                "\n}";
+        return "{\n" + "\"name\": \"movie_model\",\n" + "\"type\": \"model\"" + "\n}";
     }
 }

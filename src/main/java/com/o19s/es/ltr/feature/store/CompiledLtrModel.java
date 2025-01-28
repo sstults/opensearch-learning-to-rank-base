@@ -16,14 +16,15 @@
 
 package com.o19s.es.ltr.feature.store;
 
-import com.o19s.es.ltr.feature.FeatureSet;
-import com.o19s.es.ltr.feature.LtrModel;
-import com.o19s.es.ltr.ranker.LtrRanker;
+import static org.apache.lucene.util.RamUsageEstimator.NUM_BYTES_ARRAY_HEADER;
+import static org.apache.lucene.util.RamUsageEstimator.NUM_BYTES_OBJECT_HEADER;
+
 import org.apache.lucene.util.Accountable;
 import org.apache.lucene.util.RamUsageEstimator;
 
-import static org.apache.lucene.util.RamUsageEstimator.NUM_BYTES_ARRAY_HEADER;
-import static org.apache.lucene.util.RamUsageEstimator.NUM_BYTES_OBJECT_HEADER;
+import com.o19s.es.ltr.feature.FeatureSet;
+import com.o19s.es.ltr.feature.LtrModel;
+import com.o19s.es.ltr.ranker.LtrRanker;
 
 public class CompiledLtrModel implements LtrModel, Accountable {
     private static final long BASE_RAM_USED = RamUsageEstimator.shallowSizeOfInstance(StoredLtrModel.class);
@@ -67,9 +68,10 @@ public class CompiledLtrModel implements LtrModel, Accountable {
      */
     @Override
     public long ramBytesUsed() {
-        return BASE_RAM_USED + name.length() * Character.BYTES + NUM_BYTES_ARRAY_HEADER
-                + (set instanceof Accountable ? ((Accountable)set).ramBytesUsed() : set.size() * NUM_BYTES_OBJECT_HEADER)
-                + (ranker instanceof Accountable ?
-                ((Accountable)ranker).ramBytesUsed() : set.size() * NUM_BYTES_OBJECT_HEADER);
+        return BASE_RAM_USED + name.length() * Character.BYTES + NUM_BYTES_ARRAY_HEADER + (set instanceof Accountable
+            ? ((Accountable) set).ramBytesUsed()
+            : set.size() * NUM_BYTES_OBJECT_HEADER) + (ranker instanceof Accountable
+                ? ((Accountable) ranker).ramBytesUsed()
+                : set.size() * NUM_BYTES_OBJECT_HEADER);
     }
 }

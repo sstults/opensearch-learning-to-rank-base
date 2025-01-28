@@ -15,11 +15,11 @@
  */
 package com.o19s.es.explore;
 
+import java.io.IOException;
+
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.Weight;
-
-import java.io.IOException;
 
 public class ExplorerScorer extends Scorer {
     private final Scorer subScorer;
@@ -36,10 +36,10 @@ public class ExplorerScorer extends Scorer {
         StatisticsHelper tf_stats = new StatisticsHelper();
 
         // Grab freq from subscorer, or the children if available
-        if(subScorer.getChildren().size() > 0) {
-            for(ChildScorable child : subScorer.getChildren()) {
+        if (subScorer.getChildren().size() > 0) {
+            for (ChildScorable child : subScorer.getChildren()) {
                 assert child.child instanceof PostingsExplorerQuery.PostingsExplorerScorer;
-                if(child.child.docID() == docID()) {
+                if (child.child.docID() == docID()) {
                     ((PostingsExplorerQuery.PostingsExplorerScorer) child.child).setType(type);
                     tf_stats.add(child.child.score());
                 }
@@ -52,25 +52,25 @@ public class ExplorerScorer extends Scorer {
         }
 
         float retval;
-        switch(type) {
-            case("sum_raw_tf"):
+        switch (type) {
+            case ("sum_raw_tf"):
                 retval = tf_stats.getSum();
                 break;
-            case("mean_raw_tf"):
+            case ("mean_raw_tf"):
                 retval = tf_stats.getMean();
                 break;
-            case("max_raw_tf"):
-            case("max_raw_tp"):
+            case ("max_raw_tf"):
+            case ("max_raw_tp"):
                 retval = tf_stats.getMax();
                 break;
-            case("min_raw_tf"):
-            case("min_raw_tp"):
+            case ("min_raw_tf"):
+            case ("min_raw_tp"):
                 retval = tf_stats.getMin();
                 break;
-            case("stddev_raw_tf"):
+            case ("stddev_raw_tf"):
                 retval = tf_stats.getStdDev();
                 break;
-            case("avg_raw_tp"):
+            case ("avg_raw_tp"):
                 retval = tf_stats.getMean();
                 break;
             default:
@@ -84,7 +84,6 @@ public class ExplorerScorer extends Scorer {
     public int docID() {
         return subScorer.docID();
     }
-
 
     @Override
     public DocIdSetIterator iterator() {

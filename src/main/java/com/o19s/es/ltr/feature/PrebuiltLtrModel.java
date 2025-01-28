@@ -16,9 +16,9 @@
 
 package com.o19s.es.ltr.feature;
 
-import com.o19s.es.ltr.ranker.LtrRanker;
-
 import java.util.Objects;
+
+import com.o19s.es.ltr.ranker.LtrRanker;
 
 /**
  * Prebuilt model

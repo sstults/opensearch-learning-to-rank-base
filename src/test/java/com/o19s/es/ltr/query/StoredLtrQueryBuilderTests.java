@@ -16,10 +16,45 @@
 
 package com.o19s.es.ltr.query;
 
+import static java.util.Collections.unmodifiableMap;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.instanceOf;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.apache.lucene.search.MatchNoDocsQuery;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.util.BytesRef;
+import org.junit.Before;
+import org.opensearch.common.io.stream.BytesStreamOutput;
+import org.opensearch.common.lucene.search.function.FieldValueFactorFunction;
+import org.opensearch.common.lucene.search.function.FunctionScoreQuery;
+import org.opensearch.common.settings.Settings;
+import org.opensearch.core.common.io.stream.ByteBufferStreamInput;
+import org.opensearch.core.common.io.stream.StreamInput;
+import org.opensearch.index.query.MatchQueryBuilder;
+import org.opensearch.index.query.QueryBuilder;
+import org.opensearch.index.query.QueryShardContext;
+import org.opensearch.index.query.Rewriteable;
+import org.opensearch.index.query.functionscore.FieldValueFactorFunctionBuilder;
+import org.opensearch.index.query.functionscore.FunctionScoreQueryBuilder;
 import org.opensearch.ltr.stats.LTRStat;
 import org.opensearch.ltr.stats.LTRStats;
 import org.opensearch.ltr.stats.StatName;
 import org.opensearch.ltr.stats.suppliers.CounterSupplier;
+import org.opensearch.plugins.Plugin;
+import org.opensearch.test.AbstractQueryTestCase;
+import org.opensearch.test.TestGeoShapeFieldMapperPlugin;
+
 import com.o19s.es.ltr.LtrQueryParserPlugin;
 import com.o19s.es.ltr.LtrTestUtils;
 import com.o19s.es.ltr.feature.store.CompiledLtrModel;
@@ -33,49 +68,15 @@ import com.o19s.es.ltr.ranker.normalizer.FeatureNormalizingRanker;
 import com.o19s.es.ltr.ranker.normalizer.Normalizer;
 import com.o19s.es.ltr.ranker.normalizer.StandardFeatureNormalizer;
 import com.o19s.es.ltr.utils.FeatureStoreLoader;
-import org.apache.lucene.search.MatchNoDocsQuery;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.util.BytesRef;
-import org.opensearch.core.common.io.stream.ByteBufferStreamInput;
-import org.opensearch.common.io.stream.BytesStreamOutput;
-import org.opensearch.core.common.io.stream.StreamInput;
-import org.opensearch.common.lucene.search.function.FieldValueFactorFunction;
-import org.opensearch.common.lucene.search.function.FunctionScoreQuery;
-import org.opensearch.common.settings.Settings;
-import org.opensearch.index.query.MatchQueryBuilder;
-import org.opensearch.index.query.QueryBuilder;
-import org.opensearch.index.query.QueryShardContext;
-import org.opensearch.index.query.Rewriteable;
-import org.opensearch.index.query.functionscore.FieldValueFactorFunctionBuilder;
-import org.opensearch.index.query.functionscore.FunctionScoreQueryBuilder;
-import org.opensearch.plugins.Plugin;
-import org.opensearch.test.AbstractQueryTestCase;
-import org.opensearch.test.TestGeoShapeFieldMapperPlugin;
-import org.junit.Before;
-
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static java.util.Collections.unmodifiableMap;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.instanceOf;
 
 public class StoredLtrQueryBuilderTests extends AbstractQueryTestCase<StoredLtrQueryBuilder> {
     private static final MemStore store = new MemStore();
-    private LTRStats ltrStats = new LTRStats(unmodifiableMap(new HashMap<String, LTRStat<?>>() {{
-        put(StatName.LTR_REQUEST_TOTAL_COUNT.getName(),
-                new LTRStat<>(false, new CounterSupplier()));
-        put(StatName.LTR_REQUEST_ERROR_COUNT.getName(),
-                new LTRStat<>(false, new CounterSupplier()));
-    }}));
+    private LTRStats ltrStats = new LTRStats(unmodifiableMap(new HashMap<String, LTRStat<?>>() {
+        {
+            put(StatName.LTR_REQUEST_TOTAL_COUNT.getName(), new LTRStat<>(false, new CounterSupplier()));
+            put(StatName.LTR_REQUEST_ERROR_COUNT.getName(), new LTRStat<>(false, new CounterSupplier()));
+        }
+    }));
 
     // TODO: Remove the TestGeoShapeFieldMapperPlugin once upstream has completed the migration.
     protected Collection<Class<? extends Plugin>> getPlugins() {
@@ -98,24 +99,32 @@ public class StoredLtrQueryBuilderTests extends AbstractQueryTestCase<StoredLtrQ
     public void setUp() throws Exception {
         super.setUp();
         store.clear();
-        StoredFeature feature1 = new StoredFeature("match1", Collections.singletonList("query_string"),
-                "mustache",
-                new MatchQueryBuilder("field1", "{{query_string}}").toString());
-        StoredFeature feature2 = new StoredFeature("match2", Collections.singletonList("query_string"),
-                "mustache",
-                new MatchQueryBuilder("field2", "{{query_string}}").toString());
-        StoredFeature feature3 = new StoredFeature("score3", Collections.emptyList(),
-                "mustache",
-                new FunctionScoreQueryBuilder(new FieldValueFactorFunctionBuilder("scorefield2")
-                        .factor(1.2F)
-                        .modifier(FieldValueFactorFunction.Modifier.LN2P)
-                        .missing(0F)).toString());
+        StoredFeature feature1 = new StoredFeature(
+            "match1",
+            Collections.singletonList("query_string"),
+            "mustache",
+            new MatchQueryBuilder("field1", "{{query_string}}").toString()
+        );
+        StoredFeature feature2 = new StoredFeature(
+            "match2",
+            Collections.singletonList("query_string"),
+            "mustache",
+            new MatchQueryBuilder("field2", "{{query_string}}").toString()
+        );
+        StoredFeature feature3 = new StoredFeature(
+            "score3",
+            Collections.emptyList(),
+            "mustache",
+            new FunctionScoreQueryBuilder(
+                new FieldValueFactorFunctionBuilder("scorefield2").factor(1.2F).modifier(FieldValueFactorFunction.Modifier.LN2P).missing(0F)
+            ).toString()
+        );
         StoredFeatureSet set = new StoredFeatureSet("set1", Arrays.asList(feature1, feature2, feature3));
         store.add(set);
-        LtrRanker ranker = new LinearRanker(new float[] {0.1F, 0.2F, 0.3F});
+        LtrRanker ranker = new LinearRanker(new float[] { 0.1F, 0.2F, 0.3F });
 
         Map<Integer, Normalizer> ftrNorms = new HashMap<>();
-        ftrNorms.put(2, new StandardFeatureNormalizer(1.0f,0.5f));
+        ftrNorms.put(2, new StandardFeatureNormalizer(1.0f, 0.5f));
         ranker = new FeatureNormalizingRanker(ranker, ftrNorms);
 
         CompiledLtrModel model = new CompiledLtrModel("model1", set, ranker);
@@ -145,14 +154,18 @@ public class StoredLtrQueryBuilderTests extends AbstractQueryTestCase<StoredLtrQ
         builder.ltrStats(ltrStats);
         builder.modelName("model1");
 
-        assertThat(expectThrows(IllegalArgumentException.class, () -> builder.toQuery(createShardContext())).getMessage(),
-                equalTo("Missing required param(s): [query_string]"));
+        assertThat(
+            expectThrows(IllegalArgumentException.class, () -> builder.toQuery(createShardContext())).getMessage(),
+            equalTo("Missing required param(s): [query_string]")
+        );
 
         Map<String, Object> params = new HashMap<>();
         params.put("query_string2", "a wonderful query");
         builder.params(params);
-        assertThat(expectThrows(IllegalArgumentException.class, () -> builder.toQuery(createShardContext())).getMessage(),
-                equalTo("Missing required param(s): [query_string]"));
+        assertThat(
+            expectThrows(IllegalArgumentException.class, () -> builder.toQuery(createShardContext())).getMessage(),
+            equalTo("Missing required param(s): [query_string]")
+        );
 
     }
 
@@ -161,8 +174,10 @@ public class StoredLtrQueryBuilderTests extends AbstractQueryTestCase<StoredLtrQ
         builder.modelName("model1");
         builder.activeFeatures(Collections.singletonList("non_existent_feature"));
         builder.ltrStats(ltrStats);
-        assertThat(expectThrows(IllegalArgumentException.class, () -> builder.toQuery(createShardContext())).getMessage(),
-                equalTo("Feature: [non_existent_feature] provided in active_features does not exist"));
+        assertThat(
+            expectThrows(IllegalArgumentException.class, () -> builder.toQuery(createShardContext())).getMessage(),
+            equalTo("Feature: [non_existent_feature] provided in active_features does not exist")
+        );
     }
 
     public void testSerDe() throws IOException {
@@ -175,7 +190,10 @@ public class StoredLtrQueryBuilderTests extends AbstractQueryTestCase<StoredLtrQ
         BytesRef ref = out.bytes().toBytesRef();
         StreamInput input = ByteBufferStreamInput.wrap(ref.bytes, ref.offset, ref.length);
         StoredLtrQueryBuilder builderFromInputStream = new StoredLtrQueryBuilder(
-                LtrTestUtils.wrapMemStore(StoredLtrQueryBuilderTests.store), input, ltrStats);
+            LtrTestUtils.wrapMemStore(StoredLtrQueryBuilderTests.store),
+            input,
+            ltrStats
+        );
         List<String> expected = Collections.singletonList("match1");
         assertEquals(expected, builderFromInputStream.activeFeatures());
     }
@@ -205,8 +223,7 @@ public class StoredLtrQueryBuilderTests extends AbstractQueryTestCase<StoredLtrQ
     }
 
     @Override
-    protected void doAssertLuceneQuery(StoredLtrQueryBuilder queryBuilder,
-                                       Query query, QueryShardContext context) throws IOException {
+    protected void doAssertLuceneQuery(StoredLtrQueryBuilder queryBuilder, Query query, QueryShardContext context) throws IOException {
         assertThat(query, instanceOf(RankerQuery.class));
         RankerQuery rquery = (RankerQuery) query;
         Iterator<Query> ite = rquery.stream().iterator();
@@ -238,10 +255,9 @@ public class StoredLtrQueryBuilderTests extends AbstractQueryTestCase<StoredLtrQ
         assertTrue(ite.hasNext());
 
         featureQuery = ite.next();
-        builder = new FunctionScoreQueryBuilder(new FieldValueFactorFunctionBuilder("scorefield2")
-                .factor(1.2F)
-                .modifier(FieldValueFactorFunction.Modifier.LN2P)
-                .missing(0F));
+        builder = new FunctionScoreQueryBuilder(
+            new FieldValueFactorFunctionBuilder("scorefield2").factor(1.2F).modifier(FieldValueFactorFunction.Modifier.LN2P).missing(0F)
+        );
         qcontext = createShardContext();
         expected = Rewriteable.rewrite(builder, qcontext).toQuery(qcontext);
         assertEquals(expected, featureQuery);

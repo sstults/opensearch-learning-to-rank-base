@@ -27,8 +27,7 @@ public class LTRStatsAction extends ActionType<LTRStatsNodesResponse> {
         super(NAME, LTRStatsNodesResponse::new);
     }
 
-    public static class LTRStatsRequestBuilder
-            extends ActionRequestBuilder<LTRStatsRequest, LTRStatsNodesResponse> {
+    public static class LTRStatsRequestBuilder extends ActionRequestBuilder<LTRStatsRequest, LTRStatsNodesResponse> {
         private static final String[] nodeIds = null;
 
         protected LTRStatsRequestBuilder(final OpenSearchClient client) {

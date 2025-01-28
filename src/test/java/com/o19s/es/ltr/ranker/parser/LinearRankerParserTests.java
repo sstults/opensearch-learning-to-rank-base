@@ -16,22 +16,22 @@
 
 package com.o19s.es.ltr.ranker.parser;
 
+import static java.util.Collections.singletonList;
+
+import java.io.IOException;
+
+import org.apache.lucene.tests.util.LuceneTestCase;
+import org.junit.Assert;
+import org.opensearch.common.xcontent.json.JsonXContent;
+import org.opensearch.core.common.ParsingException;
+import org.opensearch.core.xcontent.XContentBuilder;
+
 import com.o19s.es.ltr.LtrTestUtils;
 import com.o19s.es.ltr.feature.FeatureSet;
 import com.o19s.es.ltr.feature.store.StoredFeatureSet;
 import com.o19s.es.ltr.ranker.DenseFeatureVector;
 import com.o19s.es.ltr.ranker.linear.LinearRanker;
 import com.o19s.es.ltr.ranker.linear.LinearRankerTests;
-import org.apache.lucene.tests.util.LuceneTestCase;
-import org.opensearch.core.common.ParsingException;
-import org.opensearch.core.common.Strings;
-import org.opensearch.core.xcontent.XContentBuilder;
-import org.opensearch.common.xcontent.json.JsonXContent;
-import org.junit.Assert;
-
-import java.io.IOException;
-
-import static java.util.Collections.singletonList;
 
 public class LinearRankerParserTests extends LuceneTestCase {
     public void testParse() throws IOException {

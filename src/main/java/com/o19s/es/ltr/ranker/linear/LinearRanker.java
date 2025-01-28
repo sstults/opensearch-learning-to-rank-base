@@ -16,13 +16,14 @@
 
 package com.o19s.es.ltr.ranker.linear;
 
-import com.o19s.es.ltr.ranker.DenseFeatureVector;
-import com.o19s.es.ltr.ranker.DenseLtrRanker;
+import java.util.Arrays;
+import java.util.Objects;
+
 import org.apache.lucene.util.Accountable;
 import org.apache.lucene.util.RamUsageEstimator;
 
-import java.util.Arrays;
-import java.util.Objects;
+import com.o19s.es.ltr.ranker.DenseFeatureVector;
+import com.o19s.es.ltr.ranker.DenseLtrRanker;
 
 /**
  * Simple linear ranker that applies a dot product based
@@ -45,7 +46,7 @@ public class LinearRanker extends DenseLtrRanker implements Accountable {
         float[] scores = point.scores;
         float score = 0;
         for (int i = 0; i < weights.length; i++) {
-            score += weights[i]*scores[i];
+            score += weights[i] * scores[i];
         }
         return score;
     }
@@ -57,8 +58,10 @@ public class LinearRanker extends DenseLtrRanker implements Accountable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
 
         LinearRanker ranker = (LinearRanker) o;
 

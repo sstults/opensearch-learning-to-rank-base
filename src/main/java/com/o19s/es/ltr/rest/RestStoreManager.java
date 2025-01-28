@@ -15,26 +15,27 @@
  */
 package com.o19s.es.ltr.rest;
 
-import com.o19s.es.ltr.action.ListStoresAction;
-import com.o19s.es.ltr.feature.store.index.IndexFeatureStore;
-import org.opensearch.action.admin.indices.delete.DeleteIndexRequest;
-import org.opensearch.action.admin.indices.exists.indices.IndicesExistsResponse;
-import org.opensearch.client.node.NodeClient;
-import org.opensearch.core.xcontent.XContentBuilder;
-import org.opensearch.ltr.settings.LTRSettings;
-import org.opensearch.rest.BytesRestResponse;
-import org.opensearch.rest.RestRequest;
-import org.opensearch.rest.RestResponse;
-import org.opensearch.core.rest.RestStatus;
-import org.opensearch.rest.action.RestBuilderListener;
-import org.opensearch.rest.action.RestToXContentListener;
-import org.opensearch.rest.BaseRestHandler;
+import static java.util.Arrays.asList;
+import static java.util.Collections.unmodifiableList;
 
 import java.io.IOException;
 import java.util.List;
 
-import static java.util.Arrays.asList;
-import static java.util.Collections.unmodifiableList;
+import org.opensearch.action.admin.indices.delete.DeleteIndexRequest;
+import org.opensearch.action.admin.indices.exists.indices.IndicesExistsResponse;
+import org.opensearch.client.node.NodeClient;
+import org.opensearch.core.rest.RestStatus;
+import org.opensearch.core.xcontent.XContentBuilder;
+import org.opensearch.ltr.settings.LTRSettings;
+import org.opensearch.rest.BaseRestHandler;
+import org.opensearch.rest.BytesRestResponse;
+import org.opensearch.rest.RestRequest;
+import org.opensearch.rest.RestResponse;
+import org.opensearch.rest.action.RestBuilderListener;
+import org.opensearch.rest.action.RestToXContentListener;
+
+import com.o19s.es.ltr.action.ListStoresAction;
+import com.o19s.es.ltr.feature.store.index.IndexFeatureStore;
 
 public class RestStoreManager extends FeatureStoreBaseRestHandler {
     @Override
@@ -44,7 +45,8 @@ public class RestStoreManager extends FeatureStoreBaseRestHandler {
 
     @Override
     public List<Route> routes() {
-        return unmodifiableList(asList(
+        return unmodifiableList(
+            asList(
                 new Route(RestRequest.Method.PUT, "/_ltr/{store}"),
                 new Route(RestRequest.Method.PUT, "/_ltr"),
                 new Route(RestRequest.Method.POST, "/_ltr/{store}"),
@@ -53,7 +55,8 @@ public class RestStoreManager extends FeatureStoreBaseRestHandler {
                 new Route(RestRequest.Method.DELETE, "/_ltr"),
                 new Route(RestRequest.Method.GET, "/_ltr"),
                 new Route(RestRequest.Method.GET, "/_ltr/{store}")
-        ));
+            )
+        );
     }
 
     /**
@@ -99,34 +102,28 @@ public class RestStoreManager extends FeatureStoreBaseRestHandler {
     }
 
     RestChannelConsumer listStores(NodeClient client) {
-        return (channel) -> new ListStoresAction.ListStoresActionBuilder(client).execute(
-                new RestToXContentListener<>(channel)
-        );
+        return (channel) -> new ListStoresAction.ListStoresActionBuilder(client).execute(new RestToXContentListener<>(channel));
     }
 
     RestChannelConsumer getStore(NodeClient client, String indexName) {
-        return (channel) -> client.admin().indices().prepareExists(indexName)
-                .execute(new RestBuilderListener<IndicesExistsResponse>(channel) {
-                    @Override
-                    public RestResponse buildResponse(
-                            IndicesExistsResponse indicesExistsResponse,
-                            XContentBuilder builder
-                    ) throws Exception {
-                        builder.startObject()
-                                .field("exists", indicesExistsResponse.isExists())
-                                .endObject()
-                                .close();
-                        return new BytesRestResponse(
-                                indicesExistsResponse.isExists() ? RestStatus.OK : RestStatus.NOT_FOUND,
-                                builder
-                        );
-                    }
-                });
+        return (channel) -> client
+            .admin()
+            .indices()
+            .prepareExists(indexName)
+            .execute(new RestBuilderListener<IndicesExistsResponse>(channel) {
+                @Override
+                public RestResponse buildResponse(IndicesExistsResponse indicesExistsResponse, XContentBuilder builder) throws Exception {
+                    builder.startObject().field("exists", indicesExistsResponse.isExists()).endObject().close();
+                    return new BytesRestResponse(indicesExistsResponse.isExists() ? RestStatus.OK : RestStatus.NOT_FOUND, builder);
+                }
+            });
     }
 
     RestChannelConsumer createIndex(NodeClient client, String indexName) {
-        return (channel) -> client.admin().indices()
-                .create(IndexFeatureStore.buildIndexRequest(indexName), new RestToXContentListener<>(channel));
+        return (channel) -> client
+            .admin()
+            .indices()
+            .create(IndexFeatureStore.buildIndexRequest(indexName), new RestToXContentListener<>(channel));
     }
 
     RestChannelConsumer deleteIndex(NodeClient client, String indexName) {

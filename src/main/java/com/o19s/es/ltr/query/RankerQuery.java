@@ -16,34 +16,6 @@
 
 package com.o19s.es.ltr.query;
 
-import org.opensearch.ltr.settings.LTRSettings;
-import org.opensearch.ltr.stats.LTRStats;
-import org.opensearch.ltr.stats.StatName;
-import com.o19s.es.ltr.LtrQueryContext;
-import com.o19s.es.ltr.feature.Feature;
-import com.o19s.es.ltr.feature.FeatureSet;
-import com.o19s.es.ltr.feature.LtrModel;
-import com.o19s.es.ltr.feature.PrebuiltLtrModel;
-import com.o19s.es.ltr.ranker.LogLtrRanker;
-import com.o19s.es.ltr.ranker.LtrRanker;
-import com.o19s.es.ltr.ranker.NullRanker;
-import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.index.LeafReaderContext;
-import org.apache.lucene.index.Term;
-import org.apache.lucene.search.BooleanClause;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.QueryVisitor;
-import org.apache.lucene.search.ScoreMode;
-import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.Weight;
-import org.apache.lucene.search.ConstantScoreWeight;
-import org.apache.lucene.search.Explanation;
-import org.apache.lucene.search.Scorer;
-import org.apache.lucene.search.ConstantScoreScorer;
-import org.apache.lucene.search.DocIdSetIterator;
-import org.apache.lucene.search.DisiPriorityQueue;
-import org.apache.lucene.search.DisiWrapper;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -54,6 +26,35 @@ import java.util.Objects;
 import java.util.RandomAccess;
 import java.util.Set;
 import java.util.stream.Stream;
+
+import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.LeafReaderContext;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.ConstantScoreScorer;
+import org.apache.lucene.search.ConstantScoreWeight;
+import org.apache.lucene.search.DisiPriorityQueue;
+import org.apache.lucene.search.DisiWrapper;
+import org.apache.lucene.search.DocIdSetIterator;
+import org.apache.lucene.search.Explanation;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.QueryVisitor;
+import org.apache.lucene.search.ScoreMode;
+import org.apache.lucene.search.Scorer;
+import org.apache.lucene.search.Weight;
+import org.opensearch.ltr.settings.LTRSettings;
+import org.opensearch.ltr.stats.LTRStats;
+import org.opensearch.ltr.stats.StatName;
+
+import com.o19s.es.ltr.LtrQueryContext;
+import com.o19s.es.ltr.feature.Feature;
+import com.o19s.es.ltr.feature.FeatureSet;
+import com.o19s.es.ltr.feature.LtrModel;
+import com.o19s.es.ltr.feature.PrebuiltLtrModel;
+import com.o19s.es.ltr.ranker.LogLtrRanker;
+import com.o19s.es.ltr.ranker.LtrRanker;
+import com.o19s.es.ltr.ranker.NullRanker;
 
 /**
  * Lucene query designed to apply a ranking model provided by {@link LtrRanker}
@@ -89,11 +90,12 @@ public class RankerQuery extends Query {
     private final Map<Integer, float[]> featureScoreCache;
 
     private RankerQuery(
-            List<Query> queries,
-            FeatureSet features,
-            LtrRanker ranker,
-            Map<Integer, float[]> featureScoreCache,
-            LTRStats ltrStats) {
+        List<Query> queries,
+        FeatureSet features,
+        LtrRanker ranker,
+        Map<Integer, float[]> featureScoreCache,
+        LTRStats ltrStats
+    ) {
         this.queries = Objects.requireNonNull(queries);
         this.features = Objects.requireNonNull(features);
         this.ranker = Objects.requireNonNull(ranker);
@@ -110,12 +112,12 @@ public class RankerQuery extends Query {
      */
     public static RankerQuery build(PrebuiltLtrModel model, LTRStats ltrStats) {
         return build(
-                model.ranker(),
-                model.featureSet(),
-                new LtrQueryContext(null, Collections.emptySet()),
-                Collections.emptyMap(),
-                false,
-                ltrStats
+            model.ranker(),
+            model.featureSet(),
+            new LtrQueryContext(null, Collections.emptySet()),
+            Collections.emptyMap(),
+            false,
+            ltrStats
         );
     }
 
@@ -128,27 +130,23 @@ public class RankerQuery extends Query {
      * @return the lucene query
      */
     public static RankerQuery build(
-            LtrModel model,
-            LtrQueryContext context,
-            Map<String, Object> params,
-            Boolean featureScoreCacheFlag,
-            LTRStats ltrStats) {
-        return build(
-                model.ranker(),
-                model.featureSet(),
-                context,
-                params,
-                featureScoreCacheFlag,
-                ltrStats);
+        LtrModel model,
+        LtrQueryContext context,
+        Map<String, Object> params,
+        Boolean featureScoreCacheFlag,
+        LTRStats ltrStats
+    ) {
+        return build(model.ranker(), model.featureSet(), context, params, featureScoreCacheFlag, ltrStats);
     }
 
     private static RankerQuery build(
-            LtrRanker ranker,
-            FeatureSet features,
-            LtrQueryContext context,
-            Map<String, Object> params,
-            Boolean featureScoreCacheFlag,
-            LTRStats ltrStats) {
+        LtrRanker ranker,
+        FeatureSet features,
+        LtrQueryContext context,
+        Map<String, Object> params,
+        Boolean featureScoreCacheFlag,
+        LTRStats ltrStats
+    ) {
         List<Query> queries = features.toQueries(context, params);
         Map<Integer, float[]> featureScoreCache = null;
         if (null != featureScoreCacheFlag && featureScoreCacheFlag) {
@@ -157,11 +155,15 @@ public class RankerQuery extends Query {
         return new RankerQuery(queries, features, ranker, featureScoreCache, ltrStats);
     }
 
-    public static RankerQuery buildLogQuery(LogLtrRanker.LogConsumer consumer, FeatureSet features,
-                                            LtrQueryContext context, Map<String, Object> params, LTRStats ltrStats) {
+    public static RankerQuery buildLogQuery(
+        LogLtrRanker.LogConsumer consumer,
+        FeatureSet features,
+        LtrQueryContext context,
+        Map<String, Object> params,
+        LTRStats ltrStats
+    ) {
         List<Query> queries = features.toQueries(context, params);
-        return new RankerQuery(queries, features,
-                new LogLtrRanker(consumer, features.size()), null, ltrStats);
+        return new RankerQuery(queries, features, new LogLtrRanker(consumer, features.size()), null, ltrStats);
     }
 
     public RankerQuery toLoggerQuery(LogLtrRanker.LogConsumer consumer) {
@@ -192,9 +194,9 @@ public class RankerQuery extends Query {
             return false;
         }
         RankerQuery that = (RankerQuery) obj;
-        return Objects.deepEquals(queries, that.queries) &&
-                Objects.deepEquals(features, that.features) &&
-                Objects.equals(ranker, that.ranker);
+        return Objects.deepEquals(queries, that.queries)
+            && Objects.deepEquals(features, that.features)
+            && Objects.equals(ranker, that.ranker);
     }
 
     Stream<Query> stream() {
@@ -249,8 +251,7 @@ public class RankerQuery extends Query {
             return new ConstantScoreWeight(this, boost) {
                 @Override
                 public Scorer scorer(LeafReaderContext context) throws IOException {
-                    return new ConstantScoreScorer(this, score(),
-                            scoreMode, DocIdSetIterator.all(context.reader().maxDoc()));
+                    return new ConstantScoreScorer(this, score(), scoreMode, DocIdSetIterator.all(context.reader().maxDoc()));
                 }
 
                 @Override
@@ -279,8 +280,13 @@ public class RankerQuery extends Query {
         private final FeatureSet features;
         private final Map<Integer, float[]> featureScoreCache;
 
-        RankerWeight(RankerQuery query, List<Weight> weights, FVLtrRankerWrapper ranker, FeatureSet features,
-                     Map<Integer, float[]> featureScoreCache) {
+        RankerWeight(
+            RankerQuery query,
+            List<Weight> weights,
+            FVLtrRankerWrapper ranker,
+            FeatureSet features,
+            Map<Integer, float[]> featureScoreCache
+        ) {
             super(query);
             assert weights instanceof RandomAccess;
             this.weights = weights;
@@ -296,7 +302,7 @@ public class RankerQuery extends Query {
 
         public void extractTerms(Set<Term> terms) {
             for (Weight w : weights) {
-//                w.extractTerms(terms);
+                // w.extractTerms(terms);
                 QueryVisitor.termCollector(terms);
             }
         }
@@ -341,7 +347,11 @@ public class RankerQuery extends Query {
             }
 
             DisjunctionDISI rankerIterator = new DisjunctionDISI(
-                    DocIdSetIterator.all(context.reader().maxDoc()), disiPriorityQueue, context.docBase, featureScoreCache);
+                DocIdSetIterator.all(context.reader().maxDoc()),
+                disiPriorityQueue,
+                context.docBase,
+                featureScoreCache
+            );
             return new RankerScorer(scorers, rankerIterator, ranker, context.docBase, featureScoreCache);
         }
 
@@ -357,8 +367,13 @@ public class RankerQuery extends Query {
             private final int docBase;
             private final Map<Integer, float[]> featureScoreCache;
 
-            RankerScorer(List<Scorer> scorers, DisjunctionDISI iterator, FVLtrRankerWrapper ranker,
-                         int docBase, Map<Integer, float[]> featureScoreCache) {
+            RankerScorer(
+                List<Scorer> scorers,
+                DisjunctionDISI iterator,
+                FVLtrRankerWrapper ranker,
+                int docBase,
+                Map<Integer, float[]> featureScoreCache
+            ) {
                 super(RankerWeight.this);
                 this.scorers = scorers;
                 this.iterator = iterator;
@@ -417,10 +432,10 @@ public class RankerQuery extends Query {
                 return ranker.score(fv);
             }
 
-//            @Override
-//            public int freq() throws IOException {
-//                return scorers.size();
-//            }
+            // @Override
+            // public int freq() throws IOException {
+            // return scorers.size();
+            // }
 
             @Override
             public DocIdSetIterator iterator() {
@@ -451,8 +466,12 @@ public class RankerQuery extends Query {
         private final int docBase;
         private final Map<Integer, float[]> featureScoreCache;
 
-        DisjunctionDISI(DocIdSetIterator main, DisiPriorityQueue subIteratorsPriorityQueue, int docBase,
-                        Map<Integer, float[]> featureScoreCache) {
+        DisjunctionDISI(
+            DocIdSetIterator main,
+            DisiPriorityQueue subIteratorsPriorityQueue,
+            int docBase,
+            Map<Integer, float[]> featureScoreCache
+        ) {
             this.main = main;
             this.subIteratorsPriorityQueue = subIteratorsPriorityQueue;
             this.docBase = docBase;
@@ -526,8 +545,10 @@ public class RankerQuery extends Query {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
             FVLtrRankerWrapper that = (FVLtrRankerWrapper) o;
             return Objects.equals(wrapped, that.wrapped);
         }

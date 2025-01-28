@@ -15,20 +15,19 @@
  */
 package com.o19s.es.ltr.rest;
 
-import com.o19s.es.ltr.feature.store.index.IndexFeatureStore;
-import org.opensearch.client.node.NodeClient;
-import org.opensearch.index.query.BoolQueryBuilder;
-import org.opensearch.ltr.settings.LTRSettings;
-import org.opensearch.rest.RestRequest;
-import org.opensearch.rest.action.RestStatusToXContentListener;
-
-import java.util.List;
-
 import static java.util.Arrays.asList;
 import static java.util.Collections.unmodifiableList;
 import static org.opensearch.index.query.QueryBuilders.boolQuery;
 import static org.opensearch.index.query.QueryBuilders.matchQuery;
 import static org.opensearch.index.query.QueryBuilders.termQuery;
+
+import java.util.List;
+
+import org.opensearch.client.node.NodeClient;
+import org.opensearch.index.query.BoolQueryBuilder;
+import org.opensearch.ltr.settings.LTRSettings;
+import org.opensearch.rest.RestRequest;
+import org.opensearch.rest.action.RestStatusToXContentListener;
 
 public class RestSearchStoreElements extends FeatureStoreBaseRestHandler {
     private final String type;
@@ -44,10 +43,9 @@ public class RestSearchStoreElements extends FeatureStoreBaseRestHandler {
 
     @Override
     public List<Route> routes() {
-        return unmodifiableList(asList(
-                new Route(RestRequest.Method.GET, "/_ltr/{store}/_" + type),
-                new Route(RestRequest.Method.GET, "/_ltr/_" + type)
-        ));
+        return unmodifiableList(
+            asList(new Route(RestRequest.Method.GET, "/_ltr/{store}/_" + type), new Route(RestRequest.Method.GET, "/_ltr/_" + type))
+        );
     }
 
     @Override
@@ -67,11 +65,12 @@ public class RestSearchStoreElements extends FeatureStoreBaseRestHandler {
         if (prefix != null && !prefix.isEmpty()) {
             qb.must(matchQuery("name.prefix", prefix));
         }
-        return (channel) -> client.prepareSearch(indexName)
-                .setQuery(qb)
-                .setSize(size)
-                .setFrom(from)
-                .execute(new RestStatusToXContentListener<>(channel));
+        return (channel) -> client
+            .prepareSearch(indexName)
+            .setQuery(qb)
+            .setSize(size)
+            .setFrom(from)
+            .execute(new RestStatusToXContentListener<>(channel));
     }
 
 }

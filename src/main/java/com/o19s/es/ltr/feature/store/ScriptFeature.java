@@ -16,42 +16,6 @@
 
 package com.o19s.es.ltr.feature.store;
 
-import com.o19s.es.ltr.LtrQueryContext;
-import com.o19s.es.ltr.feature.Feature;
-import com.o19s.es.ltr.feature.FeatureSet;
-import com.o19s.es.ltr.query.LtrRewritableQuery;
-import com.o19s.es.ltr.query.LtrRewriteContext;
-import com.o19s.es.ltr.ranker.LogLtrRanker;
-import com.o19s.es.termstat.TermStatSupplier;
-import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.tokenattributes.TermToBytesRefAttribute;
-import org.apache.lucene.index.LeafReaderContext;
-import org.apache.lucene.index.Term;
-import org.apache.lucene.index.TermStates;
-import org.apache.lucene.search.BooleanClause;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.QueryVisitor;
-import org.apache.lucene.search.Weight;
-import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.ScoreMode;
-import org.apache.lucene.search.Scorer;
-import org.apache.lucene.search.Explanation;
-import org.apache.lucene.search.DocIdSetIterator;
-import org.apache.lucene.search.MatchAllDocsQuery;
-
-import org.opensearch.common.lucene.search.function.LeafScoreFunction;
-import org.opensearch.common.lucene.search.function.ScriptScoreFunction;
-import org.opensearch.common.xcontent.LoggingDeprecationHandler;
-
-import org.opensearch.core.xcontent.NamedXContentRegistry;
-import org.opensearch.core.xcontent.XContentParser;
-import org.opensearch.common.xcontent.XContentType;
-import org.opensearch.index.mapper.MappedFieldType;
-import org.opensearch.ltr.settings.LTRSettings;
-import org.opensearch.script.ScoreScript;
-import org.opensearch.script.Script;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -63,6 +27,41 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.tokenattributes.TermToBytesRefAttribute;
+import org.apache.lucene.index.LeafReaderContext;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.index.TermStates;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.DocIdSetIterator;
+import org.apache.lucene.search.Explanation;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.MatchAllDocsQuery;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.QueryVisitor;
+import org.apache.lucene.search.ScoreMode;
+import org.apache.lucene.search.Scorer;
+import org.apache.lucene.search.Weight;
+import org.opensearch.common.lucene.search.function.LeafScoreFunction;
+import org.opensearch.common.lucene.search.function.ScriptScoreFunction;
+import org.opensearch.common.xcontent.LoggingDeprecationHandler;
+import org.opensearch.common.xcontent.XContentType;
+import org.opensearch.core.xcontent.NamedXContentRegistry;
+import org.opensearch.core.xcontent.XContentParser;
+import org.opensearch.index.mapper.MappedFieldType;
+import org.opensearch.ltr.settings.LTRSettings;
+import org.opensearch.script.ScoreScript;
+import org.opensearch.script.Script;
+
+import com.o19s.es.ltr.LtrQueryContext;
+import com.o19s.es.ltr.feature.Feature;
+import com.o19s.es.ltr.feature.FeatureSet;
+import com.o19s.es.ltr.query.LtrRewritableQuery;
+import com.o19s.es.ltr.query.LtrRewriteContext;
+import com.o19s.es.ltr.ranker.LogLtrRanker;
+import com.o19s.es.termstat.TermStatSupplier;
 
 public class ScriptFeature implements Feature {
     public static final String TEMPLATE_LANGUAGE = "script_feature";
@@ -107,8 +106,9 @@ public class ScriptFeature implements Feature {
 
     public static ScriptFeature compile(StoredFeature feature) {
         try {
-            XContentParser xContentParser = XContentType.JSON.xContent().createParser(NamedXContentRegistry.EMPTY,
-                    LoggingDeprecationHandler.INSTANCE, feature.template());
+            XContentParser xContentParser = XContentType.JSON
+                .xContent()
+                .createParser(NamedXContentRegistry.EMPTY, LoggingDeprecationHandler.INSTANCE, feature.template());
 
             return new ScriptFeature(feature.name(), Script.parse(xContentParser, "native"), feature.queryParams());
         } catch (IOException e) {
@@ -130,9 +130,7 @@ public class ScriptFeature implements Feature {
     @Override
     @SuppressWarnings("unchecked")
     public Query doToQuery(LtrQueryContext context, FeatureSet featureSet, Map<String, Object> params) {
-        List<String> missingParams = queryParams.stream()
-                .filter((x) -> !params.containsKey(x))
-                .collect(Collectors.toList());
+        List<String> missingParams = queryParams.stream().filter((x) -> !params.containsKey(x)).collect(Collectors.toList());
         if (!missingParams.isEmpty()) {
             String names = String.join(",", missingParams);
             throw new IllegalArgumentException("Missing required param(s): [" + names + "]");
@@ -172,7 +170,7 @@ public class ScriptFeature implements Feature {
             if (analyzerNameObj != null) {
                 if (analyzerNameObj instanceof String) {
                     // Support direct assignment by prefixing analyzer with a bang
-                    if (((String)analyzerNameObj).startsWith("!")) {
+                    if (((String) analyzerNameObj).startsWith("!")) {
                         analyzerName = ((String) analyzerNameObj).substring(1);
                     } else {
                         analyzerName = (String) params.get(analyzerNameObj);
@@ -201,7 +199,7 @@ public class ScriptFeature implements Feature {
             }
 
             Analyzer analyzer = null;
-            for(String field : fields) {
+            for (String field : fields) {
                 if (analyzerName == null) {
                     final MappedFieldType fieldType = context.getQueryShardContext().getFieldType(field);
                     analyzer = fieldType.getTextSearchInfo().getSearchAnalyzer();
@@ -239,16 +237,24 @@ public class ScriptFeature implements Feature {
         nparams.putAll(extraQueryTimeParams);
         nparams.put(FEATURE_VECTOR, supplier);
         nparams.put(EXTRA_LOGGING, extraLoggingSupplier);
-        Script script = new Script(this.script.getType(), this.script.getLang(),
-            this.script.getIdOrCode(), this.script.getOptions(), nparams);
-        ScoreScript.Factory factoryFactory  = context.getQueryShardContext().compile(script, ScoreScript.CONTEXT);
-        ScoreScript.LeafFactory leafFactory = factoryFactory.newFactory(nparams, context.getQueryShardContext().lookup(), context.getQueryShardContext().searcher());
-        ScriptScoreFunction function = new ScriptScoreFunction(script, leafFactory,
-                context.getQueryShardContext().index().getName(),
-                context.getQueryShardContext().getShardId(),
-                context.getQueryShardContext().indexVersionCreated(),
-                null //TODO: this is different from ES LTR
-                );
+        Script script = new Script(
+            this.script.getType(),
+            this.script.getLang(),
+            this.script.getIdOrCode(),
+            this.script.getOptions(),
+            nparams
+        );
+        ScoreScript.Factory factoryFactory = context.getQueryShardContext().compile(script, ScoreScript.CONTEXT);
+        ScoreScript.LeafFactory leafFactory = factoryFactory
+            .newFactory(nparams, context.getQueryShardContext().lookup(), context.getQueryShardContext().searcher());
+        ScriptScoreFunction function = new ScriptScoreFunction(
+            script,
+            leafFactory,
+            context.getQueryShardContext().index().getName(),
+            context.getQueryShardContext().getShardId(),
+            context.getQueryShardContext().indexVersionCreated(),
+            null // TODO: this is different from ES LTR
+        );
         return new LtrScript(function, supplier, extraLoggingSupplier, terms);
     }
 
@@ -258,10 +264,7 @@ public class ScriptFeature implements Feature {
         private final ExtraLoggingSupplier extraLoggingSupplier;
         private final Set<Term> terms;
 
-        LtrScript(ScriptScoreFunction function,
-                  FeatureSupplier supplier,
-                  ExtraLoggingSupplier extraLoggingSupplier,
-                  Set<Term> terms) {
+        LtrScript(ScriptScoreFunction function, FeatureSupplier supplier, ExtraLoggingSupplier extraLoggingSupplier, Set<Term> terms) {
             this.function = function;
             this.supplier = supplier;
             this.extraLoggingSupplier = extraLoggingSupplier;
@@ -270,10 +273,10 @@ public class ScriptFeature implements Feature {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
+            if (this == o)
+                return true;
             LtrScript ol = (LtrScript) o;
-            return sameClassAs(o)
-                    && Objects.equals(function, ol.function);
+            return sameClassAs(o) && Objects.equals(function, ol.function);
         }
 
         @Override
@@ -311,8 +314,8 @@ public class ScriptFeature implements Feature {
             return this;
         }
 
-       @Override
-       public void visit(QueryVisitor visitor) {
+        @Override
+        public void visit(QueryVisitor visitor) {
             Set<String> fields = terms.stream().map(Term::field).collect(Collectors.toUnmodifiableSet());
             for (String field : fields) {
                 if (visitor.acceptField(field) == false) {
@@ -320,7 +323,7 @@ public class ScriptFeature implements Feature {
                 }
             }
             visitor.getSubVisitor(BooleanClause.Occur.SHOULD, this).consumeTerms(this, terms.toArray(new Term[0]));
-       }
+        }
     }
 
     static class LtrScriptWeight extends Weight {
@@ -330,10 +333,8 @@ public class ScriptFeature implements Feature {
         private final Set<Term> terms;
         private final HashMap<Term, TermStates> termContexts;
 
-        LtrScriptWeight(Query query, ScriptScoreFunction function,
-                        Set<Term> terms,
-                        IndexSearcher searcher,
-                        ScoreMode scoreMode) throws IOException {
+        LtrScriptWeight(Query query, ScriptScoreFunction function, Set<Term> terms, IndexSearcher searcher, ScoreMode scoreMode)
+            throws IOException {
             super(query);
             this.function = function;
             this.terms = terms;
@@ -394,14 +395,13 @@ public class ScriptFeature implements Feature {
                  */
                 @Override
                 public float getMaxScore(int upTo) throws IOException {
-                    //TODO??
+                    // TODO??
                     return Float.POSITIVE_INFINITY;
                 }
             };
         }
 
-        public void extractTerms(Set<Term> terms) {
-        }
+        public void extractTerms(Set<Term> terms) {}
 
         @Override
         public boolean isCacheable(LeafReaderContext ctx) {

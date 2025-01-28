@@ -15,11 +15,9 @@
 
 package org.opensearch.ltr.settings;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.opensearch.cluster.service.ClusterService;
-import org.opensearch.common.settings.Setting;
-import org.opensearch.common.settings.Settings;
+import static java.util.Collections.unmodifiableMap;
+import static org.opensearch.common.settings.Setting.Property.Dynamic;
+import static org.opensearch.common.settings.Setting.Property.NodeScope;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,9 +25,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static java.util.Collections.unmodifiableMap;
-import static org.opensearch.common.settings.Setting.Property.Dynamic;
-import static org.opensearch.common.settings.Setting.Property.NodeScope;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.opensearch.cluster.service.ClusterService;
+import org.opensearch.common.settings.Setting;
+import org.opensearch.common.settings.Settings;
 
 public class LTRSettings {
 
@@ -76,12 +76,10 @@ public class LTRSettings {
 
     private void setSettingsUpdateConsumers() {
         for (Setting<?> setting : settings.values()) {
-            clusterService.getClusterSettings().addSettingsUpdateConsumer(
-                    setting,
-                    newVal -> {
-                        logger.info("[LTR] The value of setting [{}] changed to [{}]", setting.getKey(), newVal);
-                        latestSettings.put(setting.getKey(), newVal);
-                    });
+            clusterService.getClusterSettings().addSettingsUpdateConsumer(setting, newVal -> {
+                logger.info("[LTR] The value of setting [{}] changed to [{}]", setting.getKey(), newVal);
+                latestSettings.put(setting.getKey(), newVal);
+            });
         }
     }
 

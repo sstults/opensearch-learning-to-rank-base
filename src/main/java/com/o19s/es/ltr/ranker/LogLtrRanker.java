@@ -24,7 +24,7 @@ public class LogLtrRanker implements LtrRanker {
 
     public LogLtrRanker(NullRanker ranker, LogConsumer consumer) {
         this.ranker = ranker;
-        assert(this.ranker.getClass() == NullRanker.class);
+        assert (this.ranker.getClass() == NullRanker.class);
         this.logger = consumer;
     }
 
@@ -89,7 +89,11 @@ public class LogLtrRanker implements LtrRanker {
     @FunctionalInterface
     public interface LogConsumer {
         void accept(int featureOrdinal, float score);
-        default Map<String,Object> getExtraLoggingMap() {return null;}
+
+        default Map<String, Object> getExtraLoggingMap() {
+            return null;
+        }
+
         default void reset() {}
     }
 }
