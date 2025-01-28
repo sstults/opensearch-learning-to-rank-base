@@ -16,22 +16,23 @@
 
 package com.o19s.es.ltr.action;
 
-import com.o19s.es.ltr.action.AddFeaturesToSetAction.AddFeaturesToSetRequestBuilder;
-import com.o19s.es.ltr.action.AddFeaturesToSetAction.AddFeaturesToSetResponse;
-import com.o19s.es.ltr.feature.store.StoredFeature;
-import com.o19s.es.ltr.feature.store.StoredFeatureSet;
-import com.o19s.es.ltr.feature.store.index.IndexFeatureStore;
-import org.opensearch.action.DocWriteResponse;
+import static com.o19s.es.ltr.LtrTestUtils.randomFeature;
+import static java.util.Arrays.asList;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.opensearch.ExceptionsHelper.unwrap;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import static com.o19s.es.ltr.LtrTestUtils.randomFeature;
-import static java.util.Arrays.asList;
-import static org.opensearch.ExceptionsHelper.unwrap;
-import static org.hamcrest.CoreMatchers.containsString;
+import org.opensearch.action.DocWriteResponse;
+
+import com.o19s.es.ltr.action.AddFeaturesToSetAction.AddFeaturesToSetRequestBuilder;
+import com.o19s.es.ltr.action.AddFeaturesToSetAction.AddFeaturesToSetResponse;
+import com.o19s.es.ltr.feature.store.StoredFeature;
+import com.o19s.es.ltr.feature.store.StoredFeatureSet;
+import com.o19s.es.ltr.feature.store.index.IndexFeatureStore;
 
 public class AddFeaturesToSetActionIT extends BaseIntegrationTest {
     public void testAddToSetWithQuery() throws Exception {
@@ -100,7 +101,7 @@ public class AddFeaturesToSetActionIT extends BaseIntegrationTest {
         assertEquals(2, resp.getResponse().getVersion());
         assertEquals(DocWriteResponse.Result.UPDATED, resp.getResponse().getResult());
         set = getElement(StoredFeatureSet.class, StoredFeatureSet.TYPE, "new_feature_set");
-        assertEquals(features.size()+1, set.size());
+        assertEquals(features.size() + 1, set.size());
         assertTrue(set.hasFeature("another_feature"));
     }
 
@@ -109,8 +110,7 @@ public class AddFeaturesToSetActionIT extends BaseIntegrationTest {
         builder.request().setFeatureSet("new_broken_set");
         builder.request().setFeatureNameQuery("doesnotexist*");
         builder.request().setStore(IndexFeatureStore.DEFAULT_STORE);
-        Throwable iae = unwrap(expectThrows(ExecutionException.class, () -> builder.execute().get()),
-                IllegalArgumentException.class);
+        Throwable iae = unwrap(expectThrows(ExecutionException.class, () -> builder.execute().get()), IllegalArgumentException.class);
         assertNotNull(iae);
         assertThat(iae.getMessage(), containsString("returned no features"));
     }
@@ -127,14 +127,12 @@ public class AddFeaturesToSetActionIT extends BaseIntegrationTest {
         assertEquals(DocWriteResponse.Result.CREATED, resp.getResponse().getResult());
         assertEquals(1, resp.getResponse().getVersion());
 
-
-        AddFeaturesToSetRequestBuilder builder2= new AddFeaturesToSetRequestBuilder(client());
+        AddFeaturesToSetRequestBuilder builder2 = new AddFeaturesToSetRequestBuilder(client());
         builder2.request().setFeatureSet("duplicated_set");
         builder2.request().setFeatureNameQuery("duplicated");
         builder2.request().setStore(IndexFeatureStore.DEFAULT_STORE);
 
-        Throwable iae = unwrap(expectThrows(ExecutionException.class, () -> builder2.execute().get()),
-                IllegalArgumentException.class);
+        Throwable iae = unwrap(expectThrows(ExecutionException.class, () -> builder2.execute().get()), IllegalArgumentException.class);
         assertNotNull(iae);
         assertThat(iae.getMessage(), containsString("defined twice in this set"));
     }
@@ -143,7 +141,7 @@ public class AddFeaturesToSetActionIT extends BaseIntegrationTest {
         addElement(randomFeature("duplicated"));
         addElement(randomFeature("new_feature"));
 
-        AddFeaturesToSetRequestBuilder builder= new AddFeaturesToSetRequestBuilder(client());
+        AddFeaturesToSetRequestBuilder builder = new AddFeaturesToSetRequestBuilder(client());
         builder.request().setFeatureSet("merged_set");
         builder.request().setFeatureNameQuery("duplicated*");
         builder.request().setStore(IndexFeatureStore.DEFAULT_STORE);
@@ -153,7 +151,7 @@ public class AddFeaturesToSetActionIT extends BaseIntegrationTest {
         assertEquals(DocWriteResponse.Result.CREATED, resp.getResponse().getResult());
         assertEquals(1, resp.getResponse().getVersion());
 
-        builder= new AddFeaturesToSetRequestBuilder(client());
+        builder = new AddFeaturesToSetRequestBuilder(client());
         builder.request().setFeatureSet("merged_set");
         builder.request().setFeatureNameQuery("*");
         builder.request().setStore(IndexFeatureStore.DEFAULT_STORE);
@@ -176,7 +174,7 @@ public class AddFeaturesToSetActionIT extends BaseIntegrationTest {
             features.add(feat);
         }
 
-        AddFeaturesToSetRequestBuilder builder= new AddFeaturesToSetRequestBuilder(client());
+        AddFeaturesToSetRequestBuilder builder = new AddFeaturesToSetRequestBuilder(client());
         builder.request().setFeatureSet("new_feature_set");
         builder.request().setFeatures(features);
         builder.request().setMerge(true);
@@ -191,7 +189,7 @@ public class AddFeaturesToSetActionIT extends BaseIntegrationTest {
         assertEquals(features.size(), set.size());
         assertTrue(features.stream().map(StoredFeature::name).allMatch(set::hasFeature));
 
-        builder= new AddFeaturesToSetRequestBuilder(client());
+        builder = new AddFeaturesToSetRequestBuilder(client());
         builder.request().setFeatureSet("new_feature_set");
         builder.request().setFeatures(asList(randomFeature("another_feature"), randomFeature("feature0")));
         builder.request().setMerge(true);
@@ -200,7 +198,7 @@ public class AddFeaturesToSetActionIT extends BaseIntegrationTest {
         assertEquals(2, resp.getResponse().getVersion());
         assertEquals(DocWriteResponse.Result.UPDATED, resp.getResponse().getResult());
         set = getElement(StoredFeatureSet.class, StoredFeatureSet.TYPE, "new_feature_set");
-        assertEquals(features.size()+1, set.size());
+        assertEquals(features.size() + 1, set.size());
         assertTrue(set.hasFeature("another_feature"));
         assertEquals(0, set.featureOrdinal("feature0"));
     }

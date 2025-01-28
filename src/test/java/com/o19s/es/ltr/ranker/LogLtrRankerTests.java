@@ -16,9 +16,10 @@
 
 package com.o19s.es.ltr.ranker;
 
-import com.o19s.es.ltr.ranker.linear.LinearRankerTests;
 import org.apache.lucene.tests.util.LuceneTestCase;
 import org.apache.lucene.tests.util.TestUtil;
+
+import com.o19s.es.ltr.ranker.linear.LinearRankerTests;
 
 public class LogLtrRankerTests extends LuceneTestCase {
     public void testNewFeatureVector() throws Exception {

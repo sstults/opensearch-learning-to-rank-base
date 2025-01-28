@@ -16,25 +16,26 @@
 
 package com.o19s.es.ltr.action;
 
-import com.o19s.es.ltr.action.LTRStatsAction.LTRStatsNodeRequest;
-import com.o19s.es.ltr.action.LTRStatsAction.LTRStatsNodeResponse;
-import com.o19s.es.ltr.action.LTRStatsAction.LTRStatsNodesRequest;
-import com.o19s.es.ltr.action.LTRStatsAction.LTRStatsNodesResponse;
-import org.opensearch.ltr.stats.LTRStat;
-import org.opensearch.ltr.stats.LTRStats;
-import org.opensearch.ltr.stats.StatName;
-import org.opensearch.action.FailedNodeException;
-import org.opensearch.action.support.ActionFilters;
-import org.opensearch.test.OpenSearchIntegTestCase;
-import org.opensearch.transport.TransportService;
-import org.junit.Before;
+import static org.mockito.Mockito.mock;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.mockito.Mockito.mock;
+import org.junit.Before;
+import org.opensearch.action.FailedNodeException;
+import org.opensearch.action.support.ActionFilters;
+import org.opensearch.ltr.stats.LTRStat;
+import org.opensearch.ltr.stats.LTRStats;
+import org.opensearch.ltr.stats.StatName;
+import org.opensearch.test.OpenSearchIntegTestCase;
+import org.opensearch.transport.TransportService;
+
+import com.o19s.es.ltr.action.LTRStatsAction.LTRStatsNodeRequest;
+import com.o19s.es.ltr.action.LTRStatsAction.LTRStatsNodeResponse;
+import com.o19s.es.ltr.action.LTRStatsAction.LTRStatsNodesRequest;
+import com.o19s.es.ltr.action.LTRStatsAction.LTRStatsNodesResponse;
 
 public class TransportLTRStatsActionTests extends OpenSearchIntegTestCase {
 
@@ -53,11 +54,11 @@ public class TransportLTRStatsActionTests extends OpenSearchIntegTestCase {
         ltrStats = new LTRStats(statsMap);
 
         action = new TransportLTRStatsAction(
-                client().threadPool(),
-                clusterService(),
-                mock(TransportService.class),
-                mock(ActionFilters.class),
-                ltrStats
+            client().threadPool(),
+            clusterService(),
+            mock(TransportService.class),
+            mock(ActionFilters.class),
+            ltrStats
         );
     }
 

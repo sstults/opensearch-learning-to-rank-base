@@ -73,7 +73,6 @@ public class LTRStats {
         this.stats.put(key, stat);
     }
 
-
     /**
      * Get a map of the stats that are kept at the node level
      *
@@ -93,9 +92,10 @@ public class LTRStats {
     }
 
     private Map<String, LTRStat<?>> getClusterOrNodeStats(Boolean isClusterStats) {
-        return stats.entrySet()
-                .stream()
-                .filter(e -> e.getValue().isClusterLevel() == isClusterStats)
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        return stats
+            .entrySet()
+            .stream()
+            .filter(e -> e.getValue().isClusterLevel() == isClusterStats)
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 }

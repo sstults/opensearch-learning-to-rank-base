@@ -19,11 +19,10 @@ package com.o19s.es.ltr.feature.store;
 import java.util.Map;
 import java.util.function.Supplier;
 
+public class ExtraLoggingSupplier implements Supplier<Map<String, Object>> {
+    protected Supplier<Map<String, Object>> supplier;
 
-public class ExtraLoggingSupplier implements Supplier<Map<String,Object>> {
-    protected Supplier<Map<String,Object>> supplier;
-
-    public void setSupplier(Supplier<Map<String,Object>> supplier) {
+    public void setSupplier(Supplier<Map<String, Object>> supplier) {
         this.supplier = supplier;
     }
 

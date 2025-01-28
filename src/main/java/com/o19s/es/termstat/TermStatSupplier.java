@@ -15,21 +15,6 @@
  */
 package com.o19s.es.termstat;
 
-import com.o19s.es.explore.StatisticsHelper;
-import com.o19s.es.explore.StatisticsHelper.AggrType;
-import org.apache.lucene.index.LeafReaderContext;
-import org.apache.lucene.index.PostingsEnum;
-import org.apache.lucene.index.ReaderUtil;
-import org.apache.lucene.index.Term;
-import org.apache.lucene.index.TermsEnum;
-import org.apache.lucene.index.TermState;
-import org.apache.lucene.index.TermStates;
-import org.apache.lucene.search.DocIdSetIterator;
-import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.ScoreMode;
-import org.apache.lucene.search.TermStatistics;
-import org.apache.lucene.search.similarities.ClassicSimilarity;
-
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
@@ -40,9 +25,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.lucene.index.LeafReaderContext;
+import org.apache.lucene.index.PostingsEnum;
+import org.apache.lucene.index.ReaderUtil;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.index.TermState;
+import org.apache.lucene.index.TermStates;
+import org.apache.lucene.index.TermsEnum;
+import org.apache.lucene.search.DocIdSetIterator;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.ScoreMode;
+import org.apache.lucene.search.TermStatistics;
+import org.apache.lucene.search.similarities.ClassicSimilarity;
 
-public class TermStatSupplier extends AbstractMap<String, ArrayList<Float>>  {
-    private final List<String> ACCEPTED_KEYS = Arrays.asList(new String[]{"df", "idf", "tf", "ttf", "tp"});
+import com.o19s.es.explore.StatisticsHelper;
+import com.o19s.es.explore.StatisticsHelper.AggrType;
+
+public class TermStatSupplier extends AbstractMap<String, ArrayList<Float>> {
+    private final List<String> ACCEPTED_KEYS = Arrays.asList(new String[] { "df", "idf", "tf", "ttf", "tp" });
     private AggrType posAggrType = AggrType.AVG;
 
     private final ClassicSimilarity sim;
@@ -59,9 +59,14 @@ public class TermStatSupplier extends AbstractMap<String, ArrayList<Float>>  {
         this.tp_stats = new StatisticsHelper();
     }
 
-    public void bump (IndexSearcher searcher, LeafReaderContext context,
-                      int docID, Set<Term> terms,
-                      ScoreMode scoreMode, Map<Term, TermStates> termContexts) throws IOException {
+    public void bump(
+        IndexSearcher searcher,
+        LeafReaderContext context,
+        int docID,
+        Set<Term> terms,
+        ScoreMode scoreMode,
+        Map<Term, TermStates> termContexts
+    ) throws IOException {
         df_stats.getData().clear();
         idf_stats.getData().clear();
         tf_stats.getData().clear();
@@ -77,8 +82,7 @@ public class TermStatSupplier extends AbstractMap<String, ArrayList<Float>>  {
 
             TermStates termStates = termContexts.get(term);
 
-            assert termStates != null && termStates
-                    .wasBuiltFor(ReaderUtil.getTopLevelContext(context));
+            assert termStates != null && termStates.wasBuiltFor(ReaderUtil.getTopLevelContext(context));
 
             TermState state = termStates.get(context);
 
@@ -100,12 +104,12 @@ public class TermStatSupplier extends AbstractMap<String, ArrayList<Float>>  {
             postingsEnum = termsEnum.postings(postingsEnum, PostingsEnum.ALL);
 
             // Verify document is in postings
-            if (postingsEnum.advance(docID) == docID){
+            if (postingsEnum.advance(docID) == docID) {
                 matchedTermCount++;
 
                 tf_stats.add(postingsEnum.freq());
 
-                if(postingsEnum.freq() > 0) {
+                if (postingsEnum.freq() > 0) {
                     StatisticsHelper positions = new StatisticsHelper();
                     for (int i = 0; i < postingsEnum.freq(); i++) {
                         positions.add((float) postingsEnum.nextPosition() + 1);
@@ -115,7 +119,7 @@ public class TermStatSupplier extends AbstractMap<String, ArrayList<Float>>  {
                 } else {
                     tp_stats.add(0.0f);
                 }
-            // If document isn't in postings default to 0 for tf/tp
+                // If document isn't in postings default to 0 for tf/tp
             } else {
                 tf_stats.add(0.0f);
                 tp_stats.add(0.0f);
@@ -150,7 +154,7 @@ public class TermStatSupplier extends AbstractMap<String, ArrayList<Float>>  {
     public ArrayList<Float> get(Object statType) {
         String key = (String) statType;
 
-        switch(key) {
+        switch (key) {
             case "df":
                 return df_stats.getData();
 
@@ -236,4 +240,3 @@ public class TermStatSupplier extends AbstractMap<String, ArrayList<Float>>  {
         tp_stats.add(0.0f);
     }
 }
-

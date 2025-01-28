@@ -16,6 +16,12 @@
 
 package com.o19s.es.ltr.action;
 
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.opensearch.action.ActionRequestBuilder;
 import org.opensearch.action.ActionType;
 import org.opensearch.action.FailedNodeException;
@@ -32,12 +38,6 @@ import org.opensearch.core.xcontent.ToXContentFragment;
 import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.transport.TransportRequest;
 
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 public class LTRStatsAction extends ActionType<LTRStatsAction.LTRStatsNodesResponse> {
     public static final String NAME = "cluster:admin/ltr/stats";
     public static final LTRStatsAction INSTANCE = new LTRStatsAction();
@@ -46,8 +46,7 @@ public class LTRStatsAction extends ActionType<LTRStatsAction.LTRStatsNodesRespo
         super(NAME, LTRStatsNodesResponse::new);
     }
 
-    public static class LTRStatsRequestBuilder
-            extends ActionRequestBuilder<LTRStatsNodesRequest, LTRStatsNodesResponse> {
+    public static class LTRStatsRequestBuilder extends ActionRequestBuilder<LTRStatsNodesRequest, LTRStatsNodesResponse> {
         private static final String[] nodeIds = null;
 
         public LTRStatsRequestBuilder(OpenSearchClient client) {
@@ -151,8 +150,12 @@ public class LTRStatsAction extends ActionType<LTRStatsAction.LTRStatsNodesRespo
             clusterStats = in.readMap();
         }
 
-        public LTRStatsNodesResponse(ClusterName clusterName, List<LTRStatsNodeResponse> nodeResponses,
-                                     List<FailedNodeException> failures, Map<String, Object> clusterStats) {
+        public LTRStatsNodesResponse(
+            ClusterName clusterName,
+            List<LTRStatsNodeResponse> nodeResponses,
+            List<FailedNodeException> failures,
+            Map<String, Object> clusterStats
+        ) {
             super(clusterName, nodeResponses, failures);
             this.clusterStats = clusterStats;
         }

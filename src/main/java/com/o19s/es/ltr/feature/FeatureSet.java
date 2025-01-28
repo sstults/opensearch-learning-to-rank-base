@@ -16,11 +16,12 @@
 
 package com.o19s.es.ltr.feature;
 
-import com.o19s.es.ltr.LtrQueryContext;
-import org.apache.lucene.search.Query;
-
 import java.util.List;
 import java.util.Map;
+
+import org.apache.lucene.search.Query;
+
+import com.o19s.es.ltr.LtrQueryContext;
 
 /**
  * A set of features.
@@ -88,6 +89,5 @@ public interface FeatureSet {
         return this;
     }
 
-    default void validate() {
-    }
+    default void validate() {}
 }

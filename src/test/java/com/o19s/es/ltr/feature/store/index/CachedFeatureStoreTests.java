@@ -16,20 +16,21 @@
 
 package com.o19s.es.ltr.feature.store.index;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
+
+import java.io.IOException;
+
+import org.apache.lucene.tests.util.LuceneTestCase;
+import org.apache.lucene.tests.util.TestUtil;
+import org.opensearch.common.settings.Settings;
+import org.opensearch.common.unit.TimeValue;
+import org.opensearch.core.common.unit.ByteSizeValue;
+
 import com.o19s.es.ltr.LtrTestUtils;
 import com.o19s.es.ltr.feature.store.CompiledLtrModel;
 import com.o19s.es.ltr.feature.store.MemStore;
 import com.o19s.es.ltr.feature.store.StoredFeature;
 import com.o19s.es.ltr.feature.store.StoredFeatureSet;
-import org.apache.lucene.tests.util.LuceneTestCase;
-import org.apache.lucene.tests.util.TestUtil;
-import org.opensearch.common.settings.Settings;
-import org.opensearch.core.common.unit.ByteSizeValue;
-import org.opensearch.common.unit.TimeValue;
-
-import java.io.IOException;
-
-import static org.hamcrest.CoreMatchers.instanceOf;
 
 public class CachedFeatureStoreTests extends LuceneTestCase {
     private final MemStore memStore = new MemStore();
@@ -53,8 +54,7 @@ public class CachedFeatureStoreTests extends LuceneTestCase {
         assertEquals(1, caches.getPerStoreStats(memStore.getStoreName()).featureCount());
         assertEquals(feat.ramBytesUsed(), caches.getPerStoreStats(memStore.getStoreName()).totalRam());
         assertEquals(1, caches.getPerStoreStats(memStore.getStoreName()).totalCount());
-        assertThat(expectThrows(IOException.class, () -> store.load("unk")).getCause(),
-            instanceOf(IllegalArgumentException.class));
+        assertThat(expectThrows(IOException.class, () -> store.load("unk")).getCause(), instanceOf(IllegalArgumentException.class));
     }
 
     public void testCachedFeatureSet() throws IOException {
@@ -71,8 +71,7 @@ public class CachedFeatureStoreTests extends LuceneTestCase {
         assertEquals(set.ramBytesUsed(), caches.getPerStoreStats(memStore.getStoreName()).totalRam());
         assertEquals(1, caches.getPerStoreStats(memStore.getStoreName()).totalCount());
 
-        assertThat(expectThrows(IOException.class, () -> store.loadSet("unk")).getCause(),
-                instanceOf(IllegalArgumentException.class));
+        assertThat(expectThrows(IOException.class, () -> store.loadSet("unk")).getCause(), instanceOf(IllegalArgumentException.class));
     }
 
     public void testCachedModelSet() throws IOException {
@@ -88,8 +87,7 @@ public class CachedFeatureStoreTests extends LuceneTestCase {
         assertEquals(1, caches.getPerStoreStats(memStore.getStoreName()).modelCount());
         assertEquals(model.ramBytesUsed(), caches.getPerStoreStats(memStore.getStoreName()).modelRam());
         assertEquals(1, caches.getPerStoreStats(memStore.getStoreName()).totalCount());
-        assertThat(expectThrows(IOException.class, () -> store.loadModel("unk")).getCause(),
-                instanceOf(IllegalArgumentException.class));
+        assertThat(expectThrows(IOException.class, () -> store.loadModel("unk")).getCause(), instanceOf(IllegalArgumentException.class));
     }
 
     public void testWontBlowUp() throws IOException {

@@ -16,10 +16,10 @@
 
 package com.o19s.es.ltr.query;
 
+import java.util.function.Supplier;
+
 import com.o19s.es.ltr.ranker.LogLtrRanker;
 import com.o19s.es.ltr.ranker.LtrRanker;
-
-import java.util.function.Supplier;
 
 /**
  * Contains context needed to rewrite queries to holds the vectorSupplier and provide extra logging support
@@ -46,7 +46,7 @@ public class LtrRewriteContext {
      */
     public LogLtrRanker.LogConsumer getLogConsumer() {
         if (ranker instanceof LogLtrRanker) {
-            return ((LogLtrRanker)ranker).getLogConsumer();
+            return ((LogLtrRanker) ranker).getLogConsumer();
         }
         return null;
     }

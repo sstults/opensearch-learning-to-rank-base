@@ -37,8 +37,6 @@ public enum StatName {
     }
 
     public static Set<String> getNames() {
-        return Arrays.stream(StatName.values())
-                .map(StatName::getName)
-                .collect(Collectors.toSet());
+        return Arrays.stream(StatName.values()).map(StatName::getName).collect(Collectors.toSet());
     }
 }

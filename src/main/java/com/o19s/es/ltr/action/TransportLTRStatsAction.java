@@ -16,54 +16,67 @@
 
 package com.o19s.es.ltr.action;
 
-import com.o19s.es.ltr.action.LTRStatsAction.LTRStatsNodeRequest;
-import com.o19s.es.ltr.action.LTRStatsAction.LTRStatsNodeResponse;
-import com.o19s.es.ltr.action.LTRStatsAction.LTRStatsNodesRequest;
-import com.o19s.es.ltr.action.LTRStatsAction.LTRStatsNodesResponse;
-import org.opensearch.ltr.stats.LTRStats;
-import org.opensearch.action.FailedNodeException;
-import org.opensearch.action.support.ActionFilters;
-import org.opensearch.action.support.nodes.TransportNodesAction;
-import org.opensearch.cluster.service.ClusterService;
-import org.opensearch.common.inject.Inject;
-import org.opensearch.core.common.io.stream.StreamInput;
-import org.opensearch.threadpool.ThreadPool;
-import org.opensearch.transport.TransportService;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.opensearch.action.FailedNodeException;
+import org.opensearch.action.support.ActionFilters;
+import org.opensearch.action.support.nodes.TransportNodesAction;
+import org.opensearch.cluster.service.ClusterService;
+import org.opensearch.common.inject.Inject;
+import org.opensearch.core.common.io.stream.StreamInput;
+import org.opensearch.ltr.stats.LTRStats;
+import org.opensearch.threadpool.ThreadPool;
+import org.opensearch.transport.TransportService;
+
+import com.o19s.es.ltr.action.LTRStatsAction.LTRStatsNodeRequest;
+import com.o19s.es.ltr.action.LTRStatsAction.LTRStatsNodeResponse;
+import com.o19s.es.ltr.action.LTRStatsAction.LTRStatsNodesRequest;
+import com.o19s.es.ltr.action.LTRStatsAction.LTRStatsNodesResponse;
+
 public class TransportLTRStatsAction extends
-        TransportNodesAction<LTRStatsNodesRequest, LTRStatsNodesResponse, LTRStatsNodeRequest, LTRStatsNodeResponse> {
+    TransportNodesAction<LTRStatsNodesRequest, LTRStatsNodesResponse, LTRStatsNodeRequest, LTRStatsNodeResponse> {
 
     private final LTRStats ltrStats;
 
     @Inject
-    public TransportLTRStatsAction(ThreadPool threadPool,
-                                   ClusterService clusterService,
-                                   TransportService transportService,
-                                   ActionFilters actionFilters,
-                                   LTRStats ltrStats) {
-        super(LTRStatsAction.NAME, threadPool, clusterService, transportService,
-                actionFilters, LTRStatsNodesRequest::new, LTRStatsNodeRequest::new,
-                ThreadPool.Names.MANAGEMENT, LTRStatsNodeResponse.class);
+    public TransportLTRStatsAction(
+        ThreadPool threadPool,
+        ClusterService clusterService,
+        TransportService transportService,
+        ActionFilters actionFilters,
+        LTRStats ltrStats
+    ) {
+        super(
+            LTRStatsAction.NAME,
+            threadPool,
+            clusterService,
+            transportService,
+            actionFilters,
+            LTRStatsNodesRequest::new,
+            LTRStatsNodeRequest::new,
+            ThreadPool.Names.MANAGEMENT,
+            LTRStatsNodeResponse.class
+        );
         this.ltrStats = ltrStats;
     }
 
     @Override
-    protected LTRStatsNodesResponse newResponse(LTRStatsNodesRequest request,
-                                                List<LTRStatsNodeResponse> nodeResponses,
-                                                List<FailedNodeException> failures) {
+    protected LTRStatsNodesResponse newResponse(
+        LTRStatsNodesRequest request,
+        List<LTRStatsNodeResponse> nodeResponses,
+        List<FailedNodeException> failures
+    ) {
         Set<String> statsToBeRetrieved = request.getStatsToBeRetrieved();
-        Map<String, Object> clusterStats =
-                ltrStats.getClusterStats()
-                        .entrySet()
-                        .stream()
-                        .filter(e -> statsToBeRetrieved.contains(e.getKey()))
-                        .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getValue()));
+        Map<String, Object> clusterStats = ltrStats
+            .getClusterStats()
+            .entrySet()
+            .stream()
+            .filter(e -> statsToBeRetrieved.contains(e.getKey()))
+            .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getValue()));
 
         return new LTRStatsNodesResponse(clusterService.getClusterName(), nodeResponses, failures, clusterStats);
     }
@@ -83,12 +96,12 @@ public class TransportLTRStatsAction extends
         LTRStatsNodesRequest nodesRequest = request.getLTRStatsNodesRequest();
         Set<String> statsToBeRetrieved = nodesRequest.getStatsToBeRetrieved();
 
-        Map<String, Object> statValues =
-                ltrStats.getNodeStats()
-                        .entrySet()
-                        .stream()
-                        .filter(e -> statsToBeRetrieved.contains(e.getKey()))
-                        .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getValue()));
+        Map<String, Object> statValues = ltrStats
+            .getNodeStats()
+            .entrySet()
+            .stream()
+            .filter(e -> statsToBeRetrieved.contains(e.getKey()))
+            .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getValue()));
         return new LTRStatsNodeResponse(clusterService.localNode(), statValues);
     }
 }

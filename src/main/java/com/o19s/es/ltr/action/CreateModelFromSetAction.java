@@ -16,25 +16,26 @@
 
 package com.o19s.es.ltr.action;
 
-import com.o19s.es.ltr.action.CreateModelFromSetAction.CreateModelFromSetResponse;
-import com.o19s.es.ltr.feature.FeatureValidation;
-import com.o19s.es.ltr.feature.store.StoredLtrModel;
-import org.opensearch.action.ActionRequest;
-import org.opensearch.action.ActionRequestBuilder;
-import org.opensearch.action.ActionRequestValidationException;
-import org.opensearch.core.action.ActionResponse;
-import org.opensearch.action.ActionType;
-import org.opensearch.action.index.IndexResponse;
-import org.opensearch.client.OpenSearchClient;
-import org.opensearch.core.common.io.stream.StreamInput;
-import org.opensearch.core.common.io.stream.StreamOutput;
-import org.opensearch.common.xcontent.StatusToXContentObject;
-import org.opensearch.core.xcontent.XContentBuilder;
-import org.opensearch.core.rest.RestStatus;
+import static org.opensearch.action.ValidateActions.addValidationError;
 
 import java.io.IOException;
 
-import static org.opensearch.action.ValidateActions.addValidationError;
+import org.opensearch.action.ActionRequest;
+import org.opensearch.action.ActionRequestBuilder;
+import org.opensearch.action.ActionRequestValidationException;
+import org.opensearch.action.ActionType;
+import org.opensearch.action.index.IndexResponse;
+import org.opensearch.client.OpenSearchClient;
+import org.opensearch.common.xcontent.StatusToXContentObject;
+import org.opensearch.core.action.ActionResponse;
+import org.opensearch.core.common.io.stream.StreamInput;
+import org.opensearch.core.common.io.stream.StreamOutput;
+import org.opensearch.core.rest.RestStatus;
+import org.opensearch.core.xcontent.XContentBuilder;
+
+import com.o19s.es.ltr.action.CreateModelFromSetAction.CreateModelFromSetResponse;
+import com.o19s.es.ltr.feature.FeatureValidation;
+import com.o19s.es.ltr.feature.store.StoredLtrModel;
 
 public class CreateModelFromSetAction extends ActionType<CreateModelFromSetResponse> {
     public static final String NAME = "cluster:admin/ltr/store/create-model-from-set";
@@ -44,16 +45,20 @@ public class CreateModelFromSetAction extends ActionType<CreateModelFromSetRespo
         super(NAME, CreateModelFromSetResponse::new);
     }
 
-
-    public static class CreateModelFromSetRequestBuilder extends ActionRequestBuilder<CreateModelFromSetRequest,
-        CreateModelFromSetResponse> {
+    public static class CreateModelFromSetRequestBuilder extends
+        ActionRequestBuilder<CreateModelFromSetRequest, CreateModelFromSetResponse> {
 
         public CreateModelFromSetRequestBuilder(OpenSearchClient client) {
             super(client, INSTANCE, new CreateModelFromSetRequest());
         }
 
-        public CreateModelFromSetRequestBuilder withVersion(String store, String featureSetName, long expectedSetVersion,
-                                                            String modelName, StoredLtrModel.LtrModelDefinition definition) {
+        public CreateModelFromSetRequestBuilder withVersion(
+            String store,
+            String featureSetName,
+            long expectedSetVersion,
+            String modelName,
+            StoredLtrModel.LtrModelDefinition definition
+        ) {
             request.store = store;
             request.featureSetName = featureSetName;
             request.expectedSetVersion = expectedSetVersion;
@@ -62,8 +67,12 @@ public class CreateModelFromSetAction extends ActionType<CreateModelFromSetRespo
             return this;
         }
 
-        public CreateModelFromSetRequestBuilder withoutVersion(String store, String featureSetName, String modelName,
-                                                               StoredLtrModel.LtrModelDefinition definition) {
+        public CreateModelFromSetRequestBuilder withoutVersion(
+            String store,
+            String featureSetName,
+            String modelName,
+            StoredLtrModel.LtrModelDefinition definition
+        ) {
             request.store = store;
             request.featureSetName = featureSetName;
             request.expectedSetVersion = null;

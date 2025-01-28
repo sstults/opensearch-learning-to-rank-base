@@ -16,11 +16,12 @@
 
 package com.o19s.es.ltr.feature.store;
 
-import com.o19s.es.ltr.ranker.LogLtrRanker;
-import org.apache.lucene.tests.util.LuceneTestCase;
-
 import java.util.HashMap;
 import java.util.Map;
+
+import org.apache.lucene.tests.util.LuceneTestCase;
+
+import com.o19s.es.ltr.ranker.LogLtrRanker;
 
 public class ExtraLoggingSupplierTests extends LuceneTestCase {
     public void testGetWithConsumerNotSet() {
@@ -41,14 +42,14 @@ public class ExtraLoggingSupplierTests extends LuceneTestCase {
     }
 
     public void testGetWithSuppliedMap() {
-        Map<String,Object> extraLoggingMap = new HashMap<>();
+        Map<String, Object> extraLoggingMap = new HashMap<>();
 
         LogLtrRanker.LogConsumer consumer = new LogLtrRanker.LogConsumer() {
             @Override
             public void accept(int featureOrdinal, float score) {}
 
             @Override
-            public Map<String,Object> getExtraLoggingMap() {
+            public Map<String, Object> getExtraLoggingMap() {
                 return extraLoggingMap;
             }
         };

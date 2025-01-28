@@ -15,13 +15,13 @@
 
 package org.opensearch.ltr.breaker;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opensearch.ltr.settings.LTRSettings;
 import org.opensearch.monitor.jvm.JvmService;
-
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * Class {@code LTRCircuitBreakerService} provide storing, retrieving circuit breakers functions.

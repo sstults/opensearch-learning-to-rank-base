@@ -16,27 +16,28 @@
 
 package com.o19s.es.ltr.action;
 
-import com.o19s.es.ltr.action.AddFeaturesToSetAction.AddFeaturesToSetResponse;
-import com.o19s.es.ltr.feature.store.StoredFeature;
-import com.o19s.es.ltr.feature.FeatureValidation;
-import org.opensearch.action.ActionRequest;
-import org.opensearch.action.ActionRequestBuilder;
-import org.opensearch.action.ActionRequestValidationException;
-import org.opensearch.core.action.ActionResponse;
-import org.opensearch.action.ActionType;
-import org.opensearch.action.index.IndexResponse;
-import org.opensearch.client.OpenSearchClient;
-import org.opensearch.core.common.io.stream.StreamInput;
-import org.opensearch.core.common.io.stream.StreamOutput;
-import org.opensearch.core.common.io.stream.Writeable.Reader;
-import org.opensearch.common.xcontent.StatusToXContentObject;
-import org.opensearch.core.xcontent.XContentBuilder;
-import org.opensearch.core.rest.RestStatus;
+import static org.opensearch.action.ValidateActions.addValidationError;
 
 import java.io.IOException;
 import java.util.List;
 
-import static org.opensearch.action.ValidateActions.addValidationError;
+import org.opensearch.action.ActionRequest;
+import org.opensearch.action.ActionRequestBuilder;
+import org.opensearch.action.ActionRequestValidationException;
+import org.opensearch.action.ActionType;
+import org.opensearch.action.index.IndexResponse;
+import org.opensearch.client.OpenSearchClient;
+import org.opensearch.common.xcontent.StatusToXContentObject;
+import org.opensearch.core.action.ActionResponse;
+import org.opensearch.core.common.io.stream.StreamInput;
+import org.opensearch.core.common.io.stream.StreamOutput;
+import org.opensearch.core.common.io.stream.Writeable.Reader;
+import org.opensearch.core.rest.RestStatus;
+import org.opensearch.core.xcontent.XContentBuilder;
+
+import com.o19s.es.ltr.action.AddFeaturesToSetAction.AddFeaturesToSetResponse;
+import com.o19s.es.ltr.feature.FeatureValidation;
+import com.o19s.es.ltr.feature.store.StoredFeature;
 
 public class AddFeaturesToSetAction extends ActionType<AddFeaturesToSetResponse> {
     public static final AddFeaturesToSetAction INSTANCE = new AddFeaturesToSetAction();
@@ -66,11 +67,9 @@ public class AddFeaturesToSetAction extends ActionType<AddFeaturesToSetResponse>
         private String routing;
         private FeatureValidation validation;
 
-        public AddFeaturesToSetRequest() {
-        }
+        public AddFeaturesToSetRequest() {}
 
-
-        public  AddFeaturesToSetRequest(StreamInput in) throws IOException {
+        public AddFeaturesToSetRequest(StreamInput in) throws IOException {
             super(in);
             store = in.readString();
             features = in.readList(StoredFeature::new);
@@ -82,7 +81,6 @@ public class AddFeaturesToSetAction extends ActionType<AddFeaturesToSetResponse>
             routing = in.readOptionalString();
             validation = in.readOptionalWriteable(FeatureValidation::new);
         }
-
 
         @Override
         public ActionRequestValidationException validate() {

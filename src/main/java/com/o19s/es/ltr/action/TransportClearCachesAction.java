@@ -16,43 +16,61 @@
 
 package com.o19s.es.ltr.action;
 
-import com.o19s.es.ltr.action.ClearCachesAction.ClearCachesNodeResponse;
-import com.o19s.es.ltr.action.ClearCachesAction.ClearCachesNodesRequest;
-import com.o19s.es.ltr.action.ClearCachesAction.ClearCachesNodesResponse;
-import com.o19s.es.ltr.feature.store.index.Caches;
+import java.io.IOException;
+import java.util.List;
+
 import org.opensearch.action.FailedNodeException;
 import org.opensearch.action.support.ActionFilters;
 import org.opensearch.action.support.nodes.TransportNodesAction;
 import org.opensearch.cluster.metadata.IndexNameExpressionResolver;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.inject.Inject;
+import org.opensearch.common.settings.Settings;
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.io.stream.StreamOutput;
-import org.opensearch.common.settings.Settings;
 import org.opensearch.threadpool.ThreadPool;
 import org.opensearch.transport.TransportRequest;
 import org.opensearch.transport.TransportService;
 
-import java.io.IOException;
-import java.util.List;
+import com.o19s.es.ltr.action.ClearCachesAction.ClearCachesNodeResponse;
+import com.o19s.es.ltr.action.ClearCachesAction.ClearCachesNodesRequest;
+import com.o19s.es.ltr.action.ClearCachesAction.ClearCachesNodesResponse;
+import com.o19s.es.ltr.feature.store.index.Caches;
 
-public class TransportClearCachesAction extends TransportNodesAction<ClearCachesNodesRequest, ClearCachesNodesResponse,
-        TransportClearCachesAction.ClearCachesNodeRequest, ClearCachesNodeResponse> {
+public class TransportClearCachesAction extends
+    TransportNodesAction<ClearCachesNodesRequest, ClearCachesNodesResponse, TransportClearCachesAction.ClearCachesNodeRequest, ClearCachesNodeResponse> {
     private final Caches caches;
 
     @Inject
-    public TransportClearCachesAction(Settings settings, ThreadPool threadPool,
-                                         ClusterService clusterService, TransportService transportService,
-                                         ActionFilters actionFilters, IndexNameExpressionResolver indexNameExpressionResolver,
-                                         Caches caches) {
-        super(ClearCachesAction.NAME, threadPool, clusterService, transportService, actionFilters,
-                ClearCachesNodesRequest::new, ClearCachesNodeRequest::new, ThreadPool.Names.MANAGEMENT, ClearCachesNodeResponse.class);
+    public TransportClearCachesAction(
+        Settings settings,
+        ThreadPool threadPool,
+        ClusterService clusterService,
+        TransportService transportService,
+        ActionFilters actionFilters,
+        IndexNameExpressionResolver indexNameExpressionResolver,
+        Caches caches
+    ) {
+        super(
+            ClearCachesAction.NAME,
+            threadPool,
+            clusterService,
+            transportService,
+            actionFilters,
+            ClearCachesNodesRequest::new,
+            ClearCachesNodeRequest::new,
+            ThreadPool.Names.MANAGEMENT,
+            ClearCachesNodeResponse.class
+        );
         this.caches = caches;
     }
 
     @Override
-    protected ClearCachesNodesResponse newResponse(ClearCachesNodesRequest request, List<ClearCachesNodeResponse> responses,
-                                                   List<FailedNodeException> failures) {
+    protected ClearCachesNodesResponse newResponse(
+        ClearCachesNodesRequest request,
+        List<ClearCachesNodeResponse> responses,
+        List<FailedNodeException> failures
+    ) {
         return new ClearCachesNodesResponse(clusterService.getClusterName(), responses, failures);
     }
 
@@ -70,20 +88,20 @@ public class TransportClearCachesAction extends TransportNodesAction<ClearCaches
     protected ClearCachesNodeResponse nodeOperation(ClearCachesNodeRequest request) {
         ClearCachesNodesRequest r = request.request;
         switch (r.getOperation()) {
-        case ClearStore:
-            caches.evict(r.getStore());
-            break;
-        case ClearFeature:
-            caches.evictFeature(r.getStore(), r.getName());
-            break;
-        case ClearFeatureSet:
-            caches.evictFeatureSet(r.getStore(), r.getName());
-            break;
-        case ClearModel:
-            caches.evictModel(r.getStore(), r.getName());
-            break;
-        default:
-            throw new RuntimeException("Unsupported operation [" + r.getOperation() + "]");
+            case ClearStore:
+                caches.evict(r.getStore());
+                break;
+            case ClearFeature:
+                caches.evictFeature(r.getStore(), r.getName());
+                break;
+            case ClearFeatureSet:
+                caches.evictFeatureSet(r.getStore(), r.getName());
+                break;
+            case ClearModel:
+                caches.evictModel(r.getStore(), r.getName());
+                break;
+            default:
+                throw new RuntimeException("Unsupported operation [" + r.getOperation() + "]");
         }
         return new ClearCachesNodeResponse(clusterService.localNode());
     }
@@ -101,7 +119,6 @@ public class TransportClearCachesAction extends TransportNodesAction<ClearCaches
             super(in);
             request = new ClearCachesNodesRequest(in);
         }
-
 
         @Override
         public void writeTo(StreamOutput out) throws IOException {

@@ -16,33 +16,32 @@
 
 package com.o19s.es.explore;
 
-import org.apache.lucene.search.QueryVisitor;
-import org.opensearch.ltr.settings.LTRSettings;
-import org.opensearch.ltr.stats.LTRStats;
-import org.opensearch.ltr.stats.StatName;
-import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.index.LeafReaderContext;
-import org.apache.lucene.index.Term;
-import org.apache.lucene.index.TermStates;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.ScoreMode;
-import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.Weight;
-import org.apache.lucene.search.TermStatistics;
-import org.apache.lucene.search.ConstantScoreWeight;
-import org.apache.lucene.search.Explanation;
-import org.apache.lucene.search.Scorer;
-import org.apache.lucene.search.ConstantScoreScorer;
-import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.BooleanClause;
-
-import org.apache.lucene.search.DocIdSetIterator;
-import org.apache.lucene.search.similarities.ClassicSimilarity;
-
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+
+import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.LeafReaderContext;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.index.TermStates;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.ConstantScoreScorer;
+import org.apache.lucene.search.ConstantScoreWeight;
+import org.apache.lucene.search.DocIdSetIterator;
+import org.apache.lucene.search.Explanation;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.QueryVisitor;
+import org.apache.lucene.search.ScoreMode;
+import org.apache.lucene.search.Scorer;
+import org.apache.lucene.search.TermStatistics;
+import org.apache.lucene.search.Weight;
+import org.apache.lucene.search.similarities.ClassicSimilarity;
+import org.opensearch.ltr.settings.LTRSettings;
+import org.opensearch.ltr.stats.LTRStats;
+import org.opensearch.ltr.stats.StatName;
 
 public class ExplorerQuery extends Query {
     private final Query query;
@@ -56,26 +55,25 @@ public class ExplorerQuery extends Query {
     }
 
     private boolean isCollectionScoped() {
-        return type.endsWith("_count")
-                || type.endsWith("_df")
-                || type.endsWith("_idf")
-                || type.endsWith(("_ttf"));
+        return type.endsWith("_count") || type.endsWith("_df") || type.endsWith("_idf") || type.endsWith(("_ttf"));
     }
 
-    public Query getQuery() { return this.query; }
+    public Query getQuery() {
+        return this.query;
+    }
 
-    public String getType() { return this.type; }
+    public String getType() {
+        return this.type;
+    }
 
     @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
     @Override
     public boolean equals(Object other) {
-        return sameClassAs(other) &&
-                equalsTo(getClass().cast(other));
+        return sameClassAs(other) && equalsTo(getClass().cast(other));
     }
 
     private boolean equalsTo(ExplorerQuery other) {
-        return Objects.equals(query, other.query)
-                && Objects.equals(type, other.type);
+        return Objects.equals(query, other.query) && Objects.equals(type, other.type);
     }
 
     @Override
@@ -122,7 +120,7 @@ public class ExplorerQuery extends Query {
 
             for (Term term : terms) {
                 TermStates ctx = TermStates.build(searcher, term, scoreMode.needsScores());
-                if(ctx != null && ctx.docFreq() > 0){
+                if (ctx != null && ctx.docFreq() > 0) {
                     TermStatistics tStats = searcher.termStatistics(term, ctx.docFreq(), ctx.totalTermFreq());
                     df_stats.add(tStats.docFreq());
                     idf_stats.add(sim.idf(tStats.docFreq(), searcher.collectionStatistics(term.field()).docCount()));
@@ -206,9 +204,7 @@ public class ExplorerQuery extends Query {
                     Scorer scorer = scorer(context);
                     int newDoc = scorer.iterator().advance(doc);
                     assert newDoc == doc; // this is a DocIdSetIterator.all
-                    return Explanation.match(
-                            scorer.score(),
-                            "Stat Score: " + type);
+                    return Explanation.match(scorer.score(), "Stat Score: " + type);
                 }
 
                 @Override
@@ -238,12 +234,10 @@ public class ExplorerQuery extends Query {
     }
 
     private BooleanClause makeBooleanClause(Term term, String type) throws IllegalArgumentException {
-        if(type.endsWith("_raw_tf")) {
-            return new BooleanClause(new PostingsExplorerQuery(term, PostingsExplorerQuery.Type.TF),
-                    BooleanClause.Occur.SHOULD);
-        }else if(type.endsWith("_raw_tp")) {
-            return new BooleanClause(new PostingsExplorerQuery(term, PostingsExplorerQuery.Type.TP),
-                    BooleanClause.Occur.SHOULD);
+        if (type.endsWith("_raw_tf")) {
+            return new BooleanClause(new PostingsExplorerQuery(term, PostingsExplorerQuery.Type.TF), BooleanClause.Occur.SHOULD);
+        } else if (type.endsWith("_raw_tp")) {
+            return new BooleanClause(new PostingsExplorerQuery(term, PostingsExplorerQuery.Type.TP), BooleanClause.Occur.SHOULD);
         }
         throw new IllegalArgumentException("Unknown ExplorerQuery type [" + type + "]");
     }
@@ -269,9 +263,7 @@ public class ExplorerQuery extends Query {
             if (scorer != null) {
                 int newDoc = scorer.iterator().advance(doc);
                 if (newDoc == doc) {
-                    return Explanation.match(
-                            scorer.score(),
-                            "Stat Score: " + type);
+                    return Explanation.match(scorer.score(), "Stat Score: " + type);
                 }
             }
             return Explanation.noMatch("no matching term");

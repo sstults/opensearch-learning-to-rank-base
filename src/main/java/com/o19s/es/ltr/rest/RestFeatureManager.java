@@ -16,33 +16,33 @@
 
 package com.o19s.es.ltr.rest;
 
+import static com.o19s.es.ltr.feature.store.StorableElement.generateId;
+import static com.o19s.es.ltr.query.ValidatingLtrQueryBuilder.SUPPORTED_TYPES;
+import static java.util.Arrays.asList;
+import static java.util.Collections.unmodifiableList;
+import static org.opensearch.core.rest.RestStatus.NOT_FOUND;
+import static org.opensearch.core.rest.RestStatus.OK;
+
+import java.io.IOException;
+import java.util.List;
+
+import org.opensearch.action.delete.DeleteResponse;
+import org.opensearch.action.get.GetResponse;
+import org.opensearch.client.node.NodeClient;
+import org.opensearch.core.action.ActionListener;
+import org.opensearch.core.rest.RestStatus;
+import org.opensearch.ltr.settings.LTRSettings;
+import org.opensearch.rest.BytesRestResponse;
+import org.opensearch.rest.RestRequest;
+import org.opensearch.rest.action.RestStatusToXContentListener;
+import org.opensearch.rest.action.RestToXContentListener;
+
 import com.o19s.es.ltr.action.ClearCachesAction;
 import com.o19s.es.ltr.action.FeatureStoreAction;
 import com.o19s.es.ltr.feature.store.StorableElement;
 import com.o19s.es.ltr.feature.store.StoredFeature;
 import com.o19s.es.ltr.feature.store.StoredFeatureSet;
 import com.o19s.es.ltr.feature.store.StoredLtrModel;
-import org.opensearch.core.action.ActionListener;
-import org.opensearch.action.delete.DeleteResponse;
-import org.opensearch.action.get.GetResponse;
-import org.opensearch.client.node.NodeClient;
-import org.opensearch.ltr.settings.LTRSettings;
-import org.opensearch.rest.BytesRestResponse;
-import org.opensearch.rest.RestRequest;
-import org.opensearch.core.rest.RestStatus;
-import org.opensearch.rest.action.RestStatusToXContentListener;
-import org.opensearch.rest.action.RestToXContentListener;
-
-import java.io.IOException;
-import java.util.List;
-
-import static com.o19s.es.ltr.feature.store.StorableElement.generateId;
-import static com.o19s.es.ltr.feature.store.index.IndexFeatureStore.ES_TYPE;
-import static com.o19s.es.ltr.query.ValidatingLtrQueryBuilder.SUPPORTED_TYPES;
-import static java.util.Arrays.asList;
-import static java.util.Collections.unmodifiableList;
-import static org.opensearch.core.rest.RestStatus.NOT_FOUND;
-import static org.opensearch.core.rest.RestStatus.OK;
 
 public class RestFeatureManager extends FeatureStoreBaseRestHandler {
     private final String type;
@@ -58,7 +58,8 @@ public class RestFeatureManager extends FeatureStoreBaseRestHandler {
 
     @Override
     public List<Route> routes() {
-        return unmodifiableList(asList(
+        return unmodifiableList(
+            asList(
                 new Route(RestRequest.Method.PUT, "/_ltr/{store}/_" + this.type + "/{name}"),
                 new Route(RestRequest.Method.PUT, "/_ltr/_" + this.type + "/{name}"),
                 new Route(RestRequest.Method.POST, "/_ltr/{store}/_" + this.type + "/{name}"),
@@ -69,7 +70,8 @@ public class RestFeatureManager extends FeatureStoreBaseRestHandler {
                 new Route(RestRequest.Method.GET, "/_ltr/_" + this.type + "/{name}"),
                 new Route(RestRequest.Method.HEAD, "/_ltr/{store}/_" + this.type + "/{name}"),
                 new Route(RestRequest.Method.HEAD, "/_ltr/_" + this.type + "/{name}")
-        ));
+            )
+        );
     }
 
     @Override
@@ -93,34 +95,36 @@ public class RestFeatureManager extends FeatureStoreBaseRestHandler {
         String name = request.param("name");
         String id = generateId(type, name);
         String routing = request.param("routing");
-        return (channel) ->  {
+        return (channel) -> {
             RestStatusToXContentListener<DeleteResponse> restR = new RestStatusToXContentListener<>(channel, (r) -> r.getLocation(routing));
-            client.prepareDelete(indexName, id)
-                    .setRouting(routing)
-                    .execute(ActionListener.wrap((deleteResponse) -> {
-                                // wrap the response so we can send another request to clear the cache
-                                // usually we send only one transport request from the rest layer
-                                // it's still unclear which direction we should take (thick or thin REST layer?)
-                                ClearCachesAction.ClearCachesNodesRequest clearCache = new ClearCachesAction.ClearCachesNodesRequest();
-                                switch (type) {
-                                    case StoredFeature.TYPE:
-                                        clearCache.clearFeature(indexName, name);
-                                        break;
-                                    case StoredFeatureSet.TYPE:
-                                        clearCache.clearFeatureSet(indexName, name);
-                                        break;
-                                    case StoredLtrModel.TYPE:
-                                        clearCache.clearModel(indexName, name);
-                                        break;
-                                }
-                                client.execute(ClearCachesAction.INSTANCE, clearCache, ActionListener.wrap(
-                                        (r) -> restR.onResponse(deleteResponse),
-                                        // Is it good to fail the whole request if cache invalidation failed?
-                                        restR::onFailure
-                                ));
-                            },
-                            restR::onFailure
-                    ));
+            client.prepareDelete(indexName, id).setRouting(routing).execute(ActionListener.wrap((deleteResponse) -> {
+                // wrap the response so we can send another request to clear the cache
+                // usually we send only one transport request from the rest layer
+                // it's still unclear which direction we should take (thick or thin REST layer?)
+                ClearCachesAction.ClearCachesNodesRequest clearCache = new ClearCachesAction.ClearCachesNodesRequest();
+                switch (type) {
+                    case StoredFeature.TYPE:
+                        clearCache.clearFeature(indexName, name);
+                        break;
+                    case StoredFeatureSet.TYPE:
+                        clearCache.clearFeatureSet(indexName, name);
+                        break;
+                    case StoredLtrModel.TYPE:
+                        clearCache.clearModel(indexName, name);
+                        break;
+                }
+                client
+                    .execute(
+                        ClearCachesAction.INSTANCE,
+                        clearCache,
+                        ActionListener
+                            .wrap(
+                                (r) -> restR.onResponse(deleteResponse),
+                                // Is it good to fail the whole request if cache invalidation failed?
+                                restR::onFailure
+                            )
+                    );
+            }, restR::onFailure));
         };
     }
 
@@ -129,14 +133,12 @@ public class RestFeatureManager extends FeatureStoreBaseRestHandler {
         String name = request.param("name");
         String routing = request.param("routing");
         String id = generateId(type, name);
-        return (channel) -> client.prepareGet(indexName, id)
-                .setRouting(routing)
-                .execute(new RestToXContentListener<GetResponse>(channel) {
-                    @Override
-                    protected RestStatus getStatus(final GetResponse response) {
-                        return response.isExists() ? OK : NOT_FOUND;
-                    }
-                });
+        return (channel) -> client.prepareGet(indexName, id).setRouting(routing).execute(new RestToXContentListener<GetResponse>(channel) {
+            @Override
+            protected RestStatus getStatus(final GetResponse response) {
+                return response.isExists() ? OK : NOT_FOUND;
+            }
+        });
     }
 
     RestChannelConsumer addOrUpdate(NodeClient client, String type, String indexName, RestRequest request) throws IOException {
@@ -159,14 +161,17 @@ public class RestFeatureManager extends FeatureStoreBaseRestHandler {
         }
         if (request.method() == RestRequest.Method.POST && !elt.updatable()) {
             try {
-                throw new IllegalArgumentException("Element of type [" + elt.type() + "] are not updatable, " +
-                        "please create a new one instead.");
+                throw new IllegalArgumentException(
+                    "Element of type [" + elt.type() + "] are not updatable, " + "please create a new one instead."
+                );
             } catch (IllegalArgumentException iae) {
                 return (channel) -> channel.sendResponse(new BytesRestResponse(channel, RestStatus.METHOD_NOT_ALLOWED, iae));
             }
         }
         FeatureStoreAction.FeatureStoreRequestBuilder builder = new FeatureStoreAction.FeatureStoreRequestBuilder(
-                client, FeatureStoreAction.INSTANCE);
+            client,
+            FeatureStoreAction.INSTANCE
+        );
         if (request.method() == RestRequest.Method.PUT) {
             builder.request().setAction(FeatureStoreAction.FeatureStoreRequest.Action.CREATE);
         } else {

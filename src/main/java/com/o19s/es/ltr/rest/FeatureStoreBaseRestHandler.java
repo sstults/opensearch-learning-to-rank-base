@@ -16,9 +16,10 @@
 
 package com.o19s.es.ltr.rest;
 
-import com.o19s.es.ltr.feature.store.index.IndexFeatureStore;
 import org.opensearch.rest.BaseRestHandler;
 import org.opensearch.rest.RestRequest;
+
+import com.o19s.es.ltr.feature.store.index.IndexFeatureStore;
 
 public abstract class FeatureStoreBaseRestHandler extends BaseRestHandler {
 

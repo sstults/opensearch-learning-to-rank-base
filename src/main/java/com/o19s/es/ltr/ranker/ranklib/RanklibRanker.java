@@ -16,8 +16,9 @@
 
 package com.o19s.es.ltr.ranker.ranklib;
 
-import ciir.umass.edu.learning.Ranker;
 import com.o19s.es.ltr.ranker.LtrRanker;
+
+import ciir.umass.edu.learning.Ranker;
 
 public class RanklibRanker implements LtrRanker {
     private final Ranker ranker;

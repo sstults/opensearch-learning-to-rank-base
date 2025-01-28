@@ -16,25 +16,24 @@
 
 package com.o19s.es.ltr.ranker.parser;
 
-import com.o19s.es.ltr.feature.FeatureSet;
-import com.o19s.es.ltr.ranker.linear.LinearRanker;
-import org.opensearch.core.common.ParsingException;
-import org.opensearch.common.xcontent.LoggingDeprecationHandler;
-import org.opensearch.core.xcontent.XContentParser;
-import org.opensearch.common.xcontent.json.JsonXContent;
+import static org.opensearch.core.xcontent.NamedXContentRegistry.EMPTY;
 
 import java.io.IOException;
 
-import static org.opensearch.core.xcontent.NamedXContentRegistry.EMPTY;
+import org.opensearch.common.xcontent.LoggingDeprecationHandler;
+import org.opensearch.common.xcontent.json.JsonXContent;
+import org.opensearch.core.common.ParsingException;
+import org.opensearch.core.xcontent.XContentParser;
+
+import com.o19s.es.ltr.feature.FeatureSet;
+import com.o19s.es.ltr.ranker.linear.LinearRanker;
 
 public class LinearRankerParser implements LtrRankerParser {
     public static final String TYPE = "model/linear";
 
     @Override
     public LinearRanker parse(FeatureSet set, String model) {
-        try (XContentParser parser = JsonXContent.jsonXContent.createParser(EMPTY,
-                LoggingDeprecationHandler.INSTANCE, model)
-        ) {
+        try (XContentParser parser = JsonXContent.jsonXContent.createParser(EMPTY, LoggingDeprecationHandler.INSTANCE, model)) {
             return parse(parser, set);
         } catch (IOException e) {
             throw new IllegalArgumentException(e.getMessage(), e);
@@ -44,7 +43,7 @@ public class LinearRankerParser implements LtrRankerParser {
     private LinearRanker parse(XContentParser parser, FeatureSet set) throws IOException {
         float[] weights = new float[set.size()];
         if (parser.nextToken() != XContentParser.Token.START_OBJECT) {
-            throw new ParsingException(parser.getTokenLocation(), "Expected start object but found [" + parser.currentToken() +"]");
+            throw new ParsingException(parser.getTokenLocation(), "Expected start object but found [" + parser.currentToken() + "]");
         }
         while (parser.nextToken() == XContentParser.Token.FIELD_NAME) {
             String fname = parser.currentName();
@@ -52,7 +51,7 @@ public class LinearRankerParser implements LtrRankerParser {
                 throw new ParsingException(parser.getTokenLocation(), "Feature [" + fname + "] is unknown.");
             }
             if (parser.nextToken() != XContentParser.Token.VALUE_NUMBER) {
-                throw new ParsingException(parser.getTokenLocation(), "Expected a float but found [" + parser.currentToken() +"]");
+                throw new ParsingException(parser.getTokenLocation(), "Expected a float but found [" + parser.currentToken() + "]");
             }
             weights[set.featureOrdinal(fname)] = parser.floatValue();
         }

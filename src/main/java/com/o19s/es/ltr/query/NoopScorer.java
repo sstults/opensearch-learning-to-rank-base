@@ -15,17 +15,18 @@
  */
 package com.o19s.es.ltr.query;
 
+import java.io.IOException;
+
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.Weight;
-
-import java.io.IOException;
 
 /**
  * Created by doug on 2/3/17.
  */
 public class NoopScorer extends Scorer {
     private final DocIdSetIterator _noopIter;
+
     /**
      * Constructs a Scorer
      *

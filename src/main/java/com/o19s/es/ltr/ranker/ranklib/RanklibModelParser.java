@@ -16,11 +16,12 @@
 
 package com.o19s.es.ltr.ranker.ranklib;
 
-import ciir.umass.edu.learning.Ranker;
-import ciir.umass.edu.learning.RankerFactory;
 import com.o19s.es.ltr.feature.FeatureSet;
 import com.o19s.es.ltr.ranker.LtrRanker;
 import com.o19s.es.ltr.ranker.parser.LtrRankerParser;
+
+import ciir.umass.edu.learning.Ranker;
+import ciir.umass.edu.learning.RankerFactory;
 
 /**
  * Load a ranklib model from a script file, mostly a wrapper around the

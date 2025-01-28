@@ -16,6 +16,10 @@
 
 package com.o19s.es.ltr.feature;
 
+import java.io.IOException;
+import java.util.Map;
+import java.util.Objects;
+
 import org.opensearch.core.ParseField;
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.io.stream.StreamOutput;
@@ -26,10 +30,6 @@ import org.opensearch.core.xcontent.ToXContentObject;
 import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.core.xcontent.XContentParser;
 
-import java.io.IOException;
-import java.util.Map;
-import java.util.Objects;
-
 /**
  * Simple object to store the parameters needed to validate stored elements:
  * - The list of template params to replace
@@ -37,8 +37,10 @@ import java.util.Objects;
  */
 public class FeatureValidation implements Writeable, ToXContentObject {
     @SuppressWarnings("unchecked")
-    public static final ConstructingObjectParser<FeatureValidation, Void> PARSER = new ConstructingObjectParser<>("feature_validation",
-            (Object[] args) -> new FeatureValidation((String) args[0], (Map<String, Object>) args[1]));
+    public static final ConstructingObjectParser<FeatureValidation, Void> PARSER = new ConstructingObjectParser<>(
+        "feature_validation",
+        (Object[] args) -> new FeatureValidation((String) args[0], (Map<String, Object>) args[1])
+    );
 
     public static final ParseField INDEX = new ParseField("index");
 
@@ -46,8 +48,7 @@ public class FeatureValidation implements Writeable, ToXContentObject {
 
     static {
         PARSER.declareString(ConstructingObjectParser.constructorArg(), INDEX);
-        PARSER.declareField(ConstructingObjectParser.constructorArg(), XContentParser::map,
-                PARAMS, ObjectParser.ValueType.OBJECT);
+        PARSER.declareField(ConstructingObjectParser.constructorArg(), XContentParser::map, PARAMS, ObjectParser.ValueType.OBJECT);
     }
 
     private final String index;
@@ -79,11 +80,12 @@ public class FeatureValidation implements Writeable, ToXContentObject {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
         FeatureValidation that = (FeatureValidation) o;
-        return Objects.equals(index, that.index) &&
-                Objects.equals(params, that.params);
+        return Objects.equals(index, that.index) && Objects.equals(params, that.params);
     }
 
     @Override
@@ -93,9 +95,6 @@ public class FeatureValidation implements Writeable, ToXContentObject {
 
     @Override
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-        return builder.startObject()
-                .field(INDEX.getPreferredName(), index)
-                .field(PARAMS.getPreferredName(), this.params)
-                .endObject();
+        return builder.startObject().field(INDEX.getPreferredName(), index).field(PARAMS.getPreferredName(), this.params).endObject();
     }
 }

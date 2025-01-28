@@ -24,18 +24,18 @@ public class DenseLtrRankerTests extends LuceneTestCase {
         DummyDenseRanker ranker = new DummyDenseRanker(modelSize);
         DenseFeatureVector vector = ranker.newFeatureVector(null);
         assertNotNull(vector);
-        for(int i = 0; i < modelSize; i++) {
+        for (int i = 0; i < modelSize; i++) {
             assertEquals(0, vector.getFeatureScore(0), Math.ulp(0));
         }
         float[] points = vector.scores;
         assertEquals(points.length, 2);
 
-        for(int i = 0; i < modelSize; i++) {
+        for (int i = 0; i < modelSize; i++) {
             vector.setFeatureScore(0, random().nextFloat());
         }
         LtrRanker.FeatureVector vector2 = ranker.newFeatureVector(vector);
         assertSame(vector, vector2);
-        for(int i = 0; i < modelSize; i++) {
+        for (int i = 0; i < modelSize; i++) {
             assertEquals(0, vector.getFeatureScore(0), Math.ulp(0));
         }
     }

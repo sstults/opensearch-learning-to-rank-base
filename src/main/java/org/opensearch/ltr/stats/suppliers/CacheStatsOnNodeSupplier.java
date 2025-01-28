@@ -15,13 +15,14 @@
 
 package org.opensearch.ltr.stats.suppliers;
 
-import com.o19s.es.ltr.feature.store.index.Caches;
-import org.opensearch.common.cache.Cache;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
+
+import org.opensearch.common.cache.Cache;
+
+import com.o19s.es.ltr.feature.store.index.Caches;
 
 /**
  * Aggregate stats on the cache used by the plugin per node.

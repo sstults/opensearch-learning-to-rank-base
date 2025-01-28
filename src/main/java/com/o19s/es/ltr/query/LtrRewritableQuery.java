@@ -16,9 +16,9 @@
 
 package com.o19s.es.ltr.query;
 
-import org.apache.lucene.search.Query;
-
 import java.io.IOException;
+
+import org.apache.lucene.search.Query;
 
 public interface LtrRewritableQuery {
     /**

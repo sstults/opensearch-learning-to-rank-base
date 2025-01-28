@@ -15,17 +15,17 @@
 
 package org.opensearch.ltr.stats;
 
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import org.junit.Before;
+import org.junit.Test;
 
 public class LTRStatsTests {
 
@@ -72,8 +72,7 @@ public class LTRStatsTests {
         Set<LTRStat<?>> nodeStats = new HashSet<>(ltrStats.getNodeStats().values());
 
         for (LTRStat<?> stat : stats.values()) {
-            assertTrue((stat.isClusterLevel() && !nodeStats.contains(stat)) ||
-                    (!stat.isClusterLevel() && nodeStats.contains(stat)));
+            assertTrue((stat.isClusterLevel() && !nodeStats.contains(stat)) || (!stat.isClusterLevel() && nodeStats.contains(stat)));
         }
     }
 
@@ -83,8 +82,7 @@ public class LTRStatsTests {
         Set<LTRStat<?>> clusterStats = new HashSet<>(ltrStats.getClusterStats().values());
 
         for (LTRStat<?> stat : stats.values()) {
-            assertTrue((stat.isClusterLevel() && clusterStats.contains(stat)) ||
-                    (!stat.isClusterLevel() && !clusterStats.contains(stat)));
+            assertTrue((stat.isClusterLevel() && clusterStats.contains(stat)) || (!stat.isClusterLevel() && !clusterStats.contains(stat)));
         }
     }
 }

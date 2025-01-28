@@ -16,28 +16,29 @@
 
 package com.o19s.es.ltr.action;
 
-import com.o19s.es.ltr.action.FeatureStoreAction.FeatureStoreResponse;
-import com.o19s.es.ltr.feature.FeatureValidation;
-import com.o19s.es.ltr.feature.store.StorableElement;
-import com.o19s.es.ltr.feature.store.index.IndexFeatureStore;
-import org.opensearch.action.ActionRequest;
-import org.opensearch.action.ActionRequestBuilder;
-import org.opensearch.action.ActionRequestValidationException;
-import org.opensearch.core.action.ActionResponse;
-import org.opensearch.action.ActionType;
-import org.opensearch.action.index.IndexResponse;
-import org.opensearch.client.OpenSearchClient;
-import org.opensearch.core.common.io.stream.StreamInput;
-import org.opensearch.core.common.io.stream.StreamOutput;
-import org.opensearch.core.common.io.stream.Writeable.Reader;
-import org.opensearch.common.xcontent.StatusToXContentObject;
-import org.opensearch.core.xcontent.XContentBuilder;
-import org.opensearch.core.rest.RestStatus;
+import static org.opensearch.action.ValidateActions.addValidationError;
 
 import java.io.IOException;
 import java.util.Objects;
 
-import static org.opensearch.action.ValidateActions.addValidationError;
+import org.opensearch.action.ActionRequest;
+import org.opensearch.action.ActionRequestBuilder;
+import org.opensearch.action.ActionRequestValidationException;
+import org.opensearch.action.ActionType;
+import org.opensearch.action.index.IndexResponse;
+import org.opensearch.client.OpenSearchClient;
+import org.opensearch.common.xcontent.StatusToXContentObject;
+import org.opensearch.core.action.ActionResponse;
+import org.opensearch.core.common.io.stream.StreamInput;
+import org.opensearch.core.common.io.stream.StreamOutput;
+import org.opensearch.core.common.io.stream.Writeable.Reader;
+import org.opensearch.core.rest.RestStatus;
+import org.opensearch.core.xcontent.XContentBuilder;
+
+import com.o19s.es.ltr.action.FeatureStoreAction.FeatureStoreResponse;
+import com.o19s.es.ltr.feature.FeatureValidation;
+import com.o19s.es.ltr.feature.store.StorableElement;
+import com.o19s.es.ltr.feature.store.index.IndexFeatureStore;
 
 public class FeatureStoreAction extends ActionType<FeatureStoreResponse> {
     public static final String NAME = "cluster:admin/ltr/featurestore/data";
@@ -52,8 +53,7 @@ public class FeatureStoreAction extends ActionType<FeatureStoreResponse> {
         return FeatureStoreResponse::new;
     }
 
-    public static class FeatureStoreRequestBuilder
-            extends ActionRequestBuilder<FeatureStoreRequest, FeatureStoreResponse> {
+    public static class FeatureStoreRequestBuilder extends ActionRequestBuilder<FeatureStoreRequest, FeatureStoreResponse> {
         public FeatureStoreRequestBuilder(OpenSearchClient client, FeatureStoreAction action) {
             super(client, action, new FeatureStoreRequest());
         }
