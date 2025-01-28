@@ -16,20 +16,6 @@
 
 package com.o19s.es.ltr.feature.store.index;
 
-import com.o19s.es.ltr.feature.Feature;
-import com.o19s.es.ltr.feature.FeatureSet;
-import com.o19s.es.ltr.feature.store.CompiledLtrModel;
-import org.apache.lucene.util.Accountable;
-import org.apache.lucene.util.RamUsageEstimator;
-import org.opensearch.common.CheckedFunction;
-import org.opensearch.common.cache.Cache;
-import org.opensearch.common.cache.CacheBuilder;
-import org.opensearch.common.settings.Setting;
-import org.opensearch.common.settings.Settings;
-import org.opensearch.core.common.unit.ByteSizeValue;
-import org.opensearch.common.unit.TimeValue;
-import org.opensearch.monitor.jvm.JvmInfo;
-
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
@@ -41,58 +27,76 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 
+import org.apache.lucene.util.Accountable;
+import org.apache.lucene.util.RamUsageEstimator;
+import org.opensearch.common.CheckedFunction;
+import org.opensearch.common.cache.Cache;
+import org.opensearch.common.cache.CacheBuilder;
+import org.opensearch.common.settings.Setting;
+import org.opensearch.common.settings.Settings;
+import org.opensearch.common.unit.TimeValue;
+import org.opensearch.core.common.unit.ByteSizeValue;
+import org.opensearch.monitor.jvm.JvmInfo;
+
+import com.o19s.es.ltr.feature.Feature;
+import com.o19s.es.ltr.feature.FeatureSet;
+import com.o19s.es.ltr.feature.store.CompiledLtrModel;
+
 /**
  * Store various caches used by the plugin
  */
 public class Caches {
     public static final Setting<ByteSizeValue> LTR_CACHE_MEM_SETTING;
-    public static final Setting<TimeValue> LTR_CACHE_EXPIRE_AFTER_WRITE = Setting.timeSetting("ltr.caches.expire_after_write",
-            TimeValue.timeValueHours(1),
-            TimeValue.timeValueNanos(0),
-            Setting.Property.NodeScope);
-    public static final Setting<TimeValue> LTR_CACHE_EXPIRE_AFTER_READ = Setting.timeSetting("ltr.caches.expire_after_read",
-            TimeValue.timeValueHours(1),
-            TimeValue.timeValueNanos(0),
-            Setting.Property.NodeScope);
+    public static final Setting<TimeValue> LTR_CACHE_EXPIRE_AFTER_WRITE = Setting
+        .timeSetting("ltr.caches.expire_after_write", TimeValue.timeValueHours(1), TimeValue.timeValueNanos(0), Setting.Property.NodeScope);
+    public static final Setting<TimeValue> LTR_CACHE_EXPIRE_AFTER_READ = Setting
+        .timeSetting("ltr.caches.expire_after_read", TimeValue.timeValueHours(1), TimeValue.timeValueNanos(0), Setting.Property.NodeScope);
 
     private final Cache<CacheKey, Feature> featureCache;
     private final Cache<CacheKey, FeatureSet> featureSetCache;
     private final Cache<CacheKey, CompiledLtrModel> modelCache;
 
     static {
-        LTR_CACHE_MEM_SETTING = Setting.memorySizeSetting("ltr.caches.max_mem",
-                (s) -> new ByteSizeValue(Math.min(RamUsageEstimator.ONE_MB*10,
-                        JvmInfo.jvmInfo().getMem().getHeapMax().getBytes()/10)).toString(),
-                Setting.Property.NodeScope);
+        LTR_CACHE_MEM_SETTING = Setting
+            .memorySizeSetting(
+                "ltr.caches.max_mem",
+                (s) -> new ByteSizeValue(Math.min(RamUsageEstimator.ONE_MB * 10, JvmInfo.jvmInfo().getMem().getHeapMax().getBytes() / 10))
+                    .toString(),
+                Setting.Property.NodeScope
+            );
     }
     private final Map<String, PerStoreStats> perStoreStats = new ConcurrentHashMap<>();
     private final long maxWeight;
 
     public Caches(TimeValue expAfterWrite, TimeValue expAfterAccess, ByteSizeValue maxWeight) {
         this.featureCache = configCache(CacheBuilder.<CacheKey, Feature>builder(), expAfterWrite, expAfterAccess, maxWeight)
-                .weigher(Caches::weigther)
-                .removalListener((l) -> this.onRemove(l.getKey(), l.getValue()))
-                .build();
+            .weigher(Caches::weigther)
+            .removalListener((l) -> this.onRemove(l.getKey(), l.getValue()))
+            .build();
         this.featureSetCache = configCache(CacheBuilder.<CacheKey, FeatureSet>builder(), expAfterWrite, expAfterAccess, maxWeight)
-                .weigher(Caches::weigther)
-                .removalListener((l) -> this.onRemove(l.getKey(), l.getValue()))
-                .build();
+            .weigher(Caches::weigther)
+            .removalListener((l) -> this.onRemove(l.getKey(), l.getValue()))
+            .build();
         this.modelCache = configCache(CacheBuilder.<CacheKey, CompiledLtrModel>builder(), expAfterWrite, expAfterAccess, maxWeight)
-                .weigher((s, w) -> w.ramBytesUsed())
-                .removalListener((l) -> this.onRemove(l.getKey(), l.getValue()))
-                .build();
+            .weigher((s, w) -> w.ramBytesUsed())
+            .removalListener((l) -> this.onRemove(l.getKey(), l.getValue()))
+            .build();
         this.maxWeight = maxWeight.getBytes();
     }
 
     public static long weigther(CacheKey key, Object data) {
         if (data instanceof Accountable) {
-            return ((Accountable)data).ramBytesUsed();
+            return ((Accountable) data).ramBytesUsed();
         }
         return 1;
     }
 
-    private <K, V> CacheBuilder<K, V> configCache(CacheBuilder<K, V> builder, TimeValue expireAfterWrite,
-                                                  TimeValue expireAfterAccess, ByteSizeValue maxWeight) {
+    private <K, V> CacheBuilder<K, V> configCache(
+        CacheBuilder<K, V> builder,
+        TimeValue expireAfterWrite,
+        TimeValue expireAfterAccess,
+        ByteSizeValue maxWeight
+    ) {
         if (expireAfterWrite.nanos() > 0) {
             builder.setExpireAfterWrite(expireAfterWrite);
         }
@@ -104,9 +108,7 @@ public class Caches {
     }
 
     public Caches(Settings settings) {
-        this(LTR_CACHE_EXPIRE_AFTER_WRITE.get(settings),
-                LTR_CACHE_EXPIRE_AFTER_READ.get(settings),
-                LTR_CACHE_MEM_SETTING.get(settings));
+        this(LTR_CACHE_EXPIRE_AFTER_WRITE.get(settings), LTR_CACHE_EXPIRE_AFTER_READ.get(settings), LTR_CACHE_MEM_SETTING.get(settings));
     }
 
     private void onAdd(CacheKey k, Object acc) {
@@ -133,8 +135,7 @@ public class Caches {
         return cacheLoad(key, modelCache, loader);
     }
 
-    private <E> E cacheLoad(CacheKey key, Cache<CacheKey, E> cache,
-                                                CheckedFunction<String, E, IOException> loader) throws IOException {
+    private <E> E cacheLoad(CacheKey key, Cache<CacheKey, E> cache, CheckedFunction<String, E, IOException> loader) throws IOException {
         try {
             return cache.computeIfAbsent(key, (k) -> {
                 E elt = loader.apply(k.getId());
@@ -168,8 +169,8 @@ public class Caches {
 
     private void evict(String index, Cache<CacheKey, ?> cache) {
         Iterator<CacheKey> ite = cache.keys().iterator();
-        while(ite.hasNext()) {
-            if(ite.next().storeName.equals(index)) {
+        while (ite.hasNext()) {
+            if (ite.next().storeName.equals(index)) {
                 ite.remove();
             }
         }
@@ -226,12 +227,15 @@ public class Caches {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
 
             CacheKey cacheKey = (CacheKey) o;
 
-            if (!storeName.equals(cacheKey.storeName)) return false;
+            if (!storeName.equals(cacheKey.storeName))
+                return false;
             return id.equals(cacheKey.id);
         }
 
@@ -290,7 +294,7 @@ public class Caches {
             }
             long ramUsed = 1;
             if (elt instanceof Accountable) {
-                ramUsed = ((Accountable)elt).ramBytesUsed();
+                ramUsed = ((Accountable) elt).ramBytesUsed();
             }
 
             ram.addAndGet(factor * ramUsed);

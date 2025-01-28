@@ -16,10 +16,10 @@
 
 package com.o19s.es.ltr;
 
-import org.opensearch.index.query.QueryShardContext;
-
 import java.util.Collections;
 import java.util.Set;
+
+import org.opensearch.index.query.QueryShardContext;
 
 /**
  * LTR queryShardContext used to track information needed for building lucene queries
@@ -46,6 +46,6 @@ public class LtrQueryContext {
     }
 
     public Set<String> getActiveFeatures() {
-        return activeFeatures==null? Collections.emptySet(): Collections.unmodifiableSet(activeFeatures);
+        return activeFeatures == null ? Collections.emptySet() : Collections.unmodifiableSet(activeFeatures);
     }
 }

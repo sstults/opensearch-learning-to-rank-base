@@ -16,11 +16,12 @@
  */
 package com.o19s.es.ltr.ranker.ranklib;
 
-import ciir.umass.edu.learning.DataPoint;
-import ciir.umass.edu.utilities.RankLibError;
+import java.util.Arrays;
+
 import com.o19s.es.ltr.ranker.LtrRanker;
 
-import java.util.Arrays;
+import ciir.umass.edu.learning.DataPoint;
+import ciir.umass.edu.utilities.RankLibError;
 
 /**
  * Implements FeatureVector but without needing to pass in a stirng
@@ -28,20 +29,21 @@ import java.util.Arrays;
  */
 public class DenseProgramaticDataPoint extends DataPoint implements LtrRanker.FeatureVector {
     private static final int RANKLIB_FEATURE_INDEX_OFFSET = 1;
+
     public DenseProgramaticDataPoint(int numFeatures) {
-        this.fVals = new float[numFeatures+RANKLIB_FEATURE_INDEX_OFFSET]; // add 1 because RankLib features 1 based
+        this.fVals = new float[numFeatures + RANKLIB_FEATURE_INDEX_OFFSET]; // add 1 because RankLib features 1 based
     }
 
     public float getFeatureValue(int fid) {
-        if(fid > 0 && fid < this.fVals.length) {
-            return isUnknown(this.fVals[fid])?0.0F:this.fVals[fid];
+        if (fid > 0 && fid < this.fVals.length) {
+            return isUnknown(this.fVals[fid]) ? 0.0F : this.fVals[fid];
         } else {
             throw RankLibError.create("Error in DenseDataPoint::getFeatureValue(): requesting unspecified feature, fid=" + fid);
         }
     }
 
     public void setFeatureValue(int fid, float fval) {
-        if(fid > 0 && fid < this.fVals.length) {
+        if (fid > 0 && fid < this.fVals.length) {
             this.fVals[fid] = fval;
         } else {
             throw RankLibError.create("Error in DenseDataPoint::setFeatureValue(): feature (id=" + fid + ") not found.");
@@ -59,13 +61,13 @@ public class DenseProgramaticDataPoint extends DataPoint implements LtrRanker.Fe
     @Override
     public void setFeatureScore(int featureIdx, float score) {
         // add 1 because RankLib features 1 based
-        this.setFeatureValue(featureIdx+1, score);
+        this.setFeatureValue(featureIdx + 1, score);
     }
 
     @Override
     public float getFeatureScore(int featureIdx) {
         // add 1 because RankLib features 1 based
-        return this.getFeatureValue(featureIdx+1);
+        return this.getFeatureValue(featureIdx + 1);
     }
 
     public void reset() {

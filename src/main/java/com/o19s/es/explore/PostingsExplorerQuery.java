@@ -16,8 +16,12 @@
 
 package com.o19s.es.explore;
 
-import com.o19s.es.ltr.utils.CheckedBiFunction;
-import org.apache.lucene.index.IndexReaderContext;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Objects;
+import java.util.Set;
+
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.PostingsEnum;
 import org.apache.lucene.index.ReaderUtil;
@@ -25,21 +29,17 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.index.TermState;
 import org.apache.lucene.index.TermStates;
 import org.apache.lucene.index.TermsEnum;
+import org.apache.lucene.search.DocIdSetIterator;
+import org.apache.lucene.search.Explanation;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.QueryVisitor;
-import org.apache.lucene.search.Weight;
-import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.ScoreMode;
 import org.apache.lucene.search.Scorer;
-import org.apache.lucene.search.Explanation;
-import org.apache.lucene.search.DocIdSetIterator;
+import org.apache.lucene.search.Weight;
 import org.opensearch.ltr.settings.LTRSettings;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Objects;
-import java.util.Set;
+import com.o19s.es.ltr.utils.CheckedBiFunction;
 
 public class PostingsExplorerQuery extends Query {
     private final Term term;
@@ -67,8 +67,8 @@ public class PostingsExplorerQuery extends Query {
     @Override
     public boolean equals(Object obj) {
         return this.sameClassAs(obj)
-                && this.term.equals(((PostingsExplorerQuery) obj).term)
-                && this.type.equals(((PostingsExplorerQuery) obj).type);
+            && this.term.equals(((PostingsExplorerQuery) obj).term)
+            && this.type.equals(((PostingsExplorerQuery) obj).type);
     }
 
     @Override
@@ -77,16 +77,13 @@ public class PostingsExplorerQuery extends Query {
     }
 
     @Override
-    public Weight createWeight(IndexSearcher searcher, ScoreMode scoreMode, float boost)
-            throws IOException {
+    public Weight createWeight(IndexSearcher searcher, ScoreMode scoreMode, float boost) throws IOException {
         if (!LTRSettings.isLTRPluginEnabled()) {
             throw new IllegalStateException("LTR plugin is disabled. To enable, update ltr.plugin.enabled to true");
         }
 
         assert scoreMode.needsScores() : "Should not be used in filtering mode";
-        return new PostingsExplorerWeight(this, this.term, TermStates.build(searcher, this.term,
-                scoreMode.needsScores()),
-                this.type);
+        return new PostingsExplorerWeight(this, this.term, TermStates.build(searcher, this.term, scoreMode.needsScores()), this.type);
     }
 
     /**
@@ -130,16 +127,14 @@ public class PostingsExplorerQuery extends Query {
             Scorer scorer = this.scorer(context);
             int newDoc = scorer.iterator().advance(doc);
             if (newDoc == doc) {
-                return Explanation
-                        .match(scorer.score(), "weight(" + this.getQuery() + " in doc " + newDoc + ")");
+                return Explanation.match(scorer.score(), "weight(" + this.getQuery() + " in doc " + newDoc + ")");
             }
             return Explanation.noMatch("no matching term");
         }
 
         @Override
         public Scorer scorer(LeafReaderContext context) throws IOException {
-            assert this.termStates != null && this.termStates
-                    .wasBuiltFor(ReaderUtil.getTopLevelContext(context));
+            assert this.termStates != null && this.termStates.wasBuiltFor(ReaderUtil.getTopLevelContext(context));
             TermState state = this.termStates.get(context);
             if (state == null) {
                 return null;
@@ -205,6 +200,7 @@ public class PostingsExplorerQuery extends Query {
         TPScorer(Weight weight, PostingsEnum postingsEnum) {
             super(weight, postingsEnum);
         }
+
         @Override
         public float score() throws IOException {
             if (this.postingsEnum.freq() <= 0) {
@@ -212,23 +208,23 @@ public class PostingsExplorerQuery extends Query {
             }
 
             ArrayList<Float> positions = new ArrayList<Float>();
-            for (int i=0;i<this.postingsEnum.freq();i++){
+            for (int i = 0; i < this.postingsEnum.freq(); i++) {
                 positions.add((float) this.postingsEnum.nextPosition() + 1);
             }
 
             float retval;
-            switch(this.typeConditional) {
-                case("avg_raw_tp"):
+            switch (this.typeConditional) {
+                case ("avg_raw_tp"):
                     float sum = 0.0f;
                     for (float position : positions) {
                         sum += position;
                     }
                     retval = sum / positions.size();
                     break;
-                case("max_raw_tp"):
+                case ("max_raw_tp"):
                     retval = Collections.max(positions);
                     break;
-                case("min_raw_tp"):
+                case ("min_raw_tp"):
                     retval = Collections.min(positions);
                     break;
                 default:

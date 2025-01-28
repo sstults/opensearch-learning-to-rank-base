@@ -15,18 +15,18 @@
 
 package org.opensearch.ltr.stats.suppliers;
 
+import static org.mockito.Mockito.when;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.opensearch.ltr.stats.suppliers.utils.StoreUtils;
 import org.opensearch.test.OpenSearchTestCase;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
-import static org.mockito.Mockito.when;
 
 public class StoreStatsSupplierTests extends OpenSearchTestCase {
     private static final String STORE_NAME = ".ltrstore";

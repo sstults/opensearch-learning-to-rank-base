@@ -15,10 +15,10 @@
 
 package org.opensearch.ltr.settings;
 
+import static org.hamcrest.Matchers.containsString;
+
 import org.opensearch.client.ResponseException;
 import org.opensearch.ltr.LTRRestTestCase;
-
-import static org.hamcrest.Matchers.containsString;
 
 public class LTRSettingsTestIT extends LTRRestTestCase {
 

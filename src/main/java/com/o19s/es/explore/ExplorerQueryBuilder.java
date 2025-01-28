@@ -15,8 +15,9 @@
 
 package com.o19s.es.explore;
 
-import org.opensearch.ltr.stats.LTRStats;
-import org.opensearch.ltr.stats.StatName;
+import java.io.IOException;
+import java.util.Objects;
+
 import org.apache.lucene.search.Query;
 import org.opensearch.core.ParseField;
 import org.opensearch.core.common.ParsingException;
@@ -31,9 +32,8 @@ import org.opensearch.index.query.QueryBuilder;
 import org.opensearch.index.query.QueryRewriteContext;
 import org.opensearch.index.query.QueryShardContext;
 import org.opensearch.index.query.Rewriteable;
-
-import java.io.IOException;
-import java.util.Objects;
+import org.opensearch.ltr.stats.LTRStats;
+import org.opensearch.ltr.stats.StatName;
 
 public class ExplorerQueryBuilder extends AbstractQueryBuilder<ExplorerQueryBuilder> implements NamedWriteable {
     public static final String NAME = "match_explorer";
@@ -44,11 +44,7 @@ public class ExplorerQueryBuilder extends AbstractQueryBuilder<ExplorerQueryBuil
 
     static {
         PARSER = new ObjectParser<>(NAME, ExplorerQueryBuilder::new);
-        PARSER.declareObject(
-                ExplorerQueryBuilder::query,
-                (parser, context) -> parseInnerQueryBuilder(parser),
-                QUERY_NAME
-        );
+        PARSER.declareObject(ExplorerQueryBuilder::query, (parser, context) -> parseInnerQueryBuilder(parser), QUERY_NAME);
         PARSER.declareString(ExplorerQueryBuilder::statsType, TYPE_NAME);
         declareStandardFields(PARSER);
     }
@@ -57,9 +53,7 @@ public class ExplorerQueryBuilder extends AbstractQueryBuilder<ExplorerQueryBuil
     private String type;
     private LTRStats ltrStats;
 
-    public ExplorerQueryBuilder() {
-    }
-
+    public ExplorerQueryBuilder() {}
 
     public ExplorerQueryBuilder(StreamInput in, LTRStats ltrStats) throws IOException {
         super(in);
@@ -133,8 +127,7 @@ public class ExplorerQueryBuilder extends AbstractQueryBuilder<ExplorerQueryBuil
 
     @Override
     protected boolean doEquals(ExplorerQueryBuilder other) {
-        return Objects.equals(query, other.query)
-                && Objects.equals(type, other.type);
+        return Objects.equals(query, other.query) && Objects.equals(type, other.type);
     }
 
     @Override

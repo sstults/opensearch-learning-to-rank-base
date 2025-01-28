@@ -16,22 +16,23 @@
 
 package com.o19s.es.ltr.rest;
 
-import org.opensearch.ltr.settings.LTRSettings;
-import com.o19s.es.ltr.action.AddFeaturesToSetAction.AddFeaturesToSetRequestBuilder;
-import com.o19s.es.ltr.feature.FeatureValidation;
-import com.o19s.es.ltr.feature.store.StoredFeature;
-import org.opensearch.client.node.NodeClient;
-import org.opensearch.core.ParseField;
-import org.opensearch.core.xcontent.ObjectParser;
-import org.opensearch.core.xcontent.XContentParser;
-import org.opensearch.rest.RestRequest;
-import org.opensearch.rest.action.RestStatusToXContentListener;
+import static java.util.Arrays.asList;
+import static java.util.Collections.unmodifiableList;
 
 import java.io.IOException;
 import java.util.List;
 
-import static java.util.Arrays.asList;
-import static java.util.Collections.unmodifiableList;
+import org.opensearch.client.node.NodeClient;
+import org.opensearch.core.ParseField;
+import org.opensearch.core.xcontent.ObjectParser;
+import org.opensearch.core.xcontent.XContentParser;
+import org.opensearch.ltr.settings.LTRSettings;
+import org.opensearch.rest.RestRequest;
+import org.opensearch.rest.action.RestStatusToXContentListener;
+
+import com.o19s.es.ltr.action.AddFeaturesToSetAction.AddFeaturesToSetRequestBuilder;
+import com.o19s.es.ltr.feature.FeatureValidation;
+import com.o19s.es.ltr.feature.store.StoredFeature;
 
 public class RestAddFeatureToSet extends FeatureStoreBaseRestHandler {
 
@@ -42,12 +43,14 @@ public class RestAddFeatureToSet extends FeatureStoreBaseRestHandler {
 
     @Override
     public List<Route> routes() {
-        return unmodifiableList(asList(
+        return unmodifiableList(
+            asList(
                 new Route(RestRequest.Method.POST, "/_ltr/_featureset/{name}/_addfeatures/{query}"),
                 new Route(RestRequest.Method.POST, "/_ltr/{store}/_featureset/{name}/_addfeatures/{query}"),
                 new Route(RestRequest.Method.POST, "/_ltr/_featureset/{name}/_addfeatures"),
                 new Route(RestRequest.Method.POST, "/_ltr/{store}/_featureset/{name}/_addfeatures")
-        ));
+            )
+        );
     }
 
     @Override
@@ -74,13 +77,15 @@ public class RestAddFeatureToSet extends FeatureStoreBaseRestHandler {
             validation = featuresParser.validation;
         }
         if (featureQuery == null && (features == null || features.isEmpty())) {
-            throw new IllegalArgumentException("features must be provided as a query for the feature store " +
-                    "or in the body, none provided");
+            throw new IllegalArgumentException(
+                "features must be provided as a query for the feature store " + "or in the body, none provided"
+            );
         }
 
         if (featureQuery != null && (features != null && !features.isEmpty())) {
-            throw new IllegalArgumentException("features must be provided as a query for the feature store " +
-                    "or directly in the body not both");
+            throw new IllegalArgumentException(
+                "features must be provided as a query for the feature store " + "or directly in the body not both"
+            );
         }
 
         AddFeaturesToSetRequestBuilder builder = new AddFeaturesToSetRequestBuilder(client);
@@ -99,14 +104,13 @@ public class RestAddFeatureToSet extends FeatureStoreBaseRestHandler {
         private List<StoredFeature> features;
         private FeatureValidation validation;
         static {
-            PARSER.declareObjectArray(
+            PARSER
+                .declareObjectArray(
                     FeaturesParserState::setFeatures,
                     (parser, context) -> StoredFeature.parse(parser),
-                    new ParseField("features"));
-            PARSER.declareObject(
-                    FeaturesParserState::setValidation,
-                    FeatureValidation.PARSER::apply,
-                    new ParseField("validation"));
+                    new ParseField("features")
+                );
+            PARSER.declareObject(FeaturesParserState::setValidation, FeatureValidation.PARSER::apply, new ParseField("validation"));
         }
 
         public void parse(XContentParser parser) throws IOException {

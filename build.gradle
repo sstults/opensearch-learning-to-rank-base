@@ -34,6 +34,7 @@ plugins {
   id 'java'
   id 'idea'
   id 'maven-publish'
+  id 'com.diffplug.spotless' version '6.23.0'
 }
 
 group = 'org.opensearch'
@@ -251,4 +252,13 @@ tasks.named('dependencyLicenses') {
 
 thirdPartyAudit {
   ignoreViolations('org.conscrypt.Platform')
+}
+
+spotless {
+  java {
+    removeUnusedImports()
+    importOrder 'java', 'javax', 'org', 'com'
+
+    eclipse().configFile rootProject.file('.eclipseformat.xml')
+  }
 }

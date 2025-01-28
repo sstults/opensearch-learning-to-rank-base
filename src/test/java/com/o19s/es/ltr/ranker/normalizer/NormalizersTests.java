@@ -27,8 +27,10 @@ public class NormalizersTests extends LuceneTestCase {
     }
 
     public void testInvalidName() {
-        assertThat(expectThrows(IllegalArgumentException.class, () -> Normalizers.get("not_normalizer")).getMessage(),
-                CoreMatchers.containsString("is not a valid Normalizer"));
+        assertThat(
+            expectThrows(IllegalArgumentException.class, () -> Normalizers.get("not_normalizer")).getMessage(),
+            CoreMatchers.containsString("is not a valid Normalizer")
+        );
     }
 
     public void testExists() {

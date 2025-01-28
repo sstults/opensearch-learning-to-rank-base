@@ -16,15 +16,14 @@
 
 package com.o19s.es.ltr.query;
 
-import org.opensearch.ltr.stats.LTRStats;
-import org.opensearch.ltr.stats.StatName;
-import com.o19s.es.ltr.LtrQueryContext;
-import com.o19s.es.ltr.feature.FeatureSet;
-import com.o19s.es.ltr.feature.store.CompiledLtrModel;
-import com.o19s.es.ltr.feature.store.FeatureStore;
-import com.o19s.es.ltr.feature.store.index.IndexFeatureStore;
-import com.o19s.es.ltr.ranker.linear.LinearRanker;
-import com.o19s.es.ltr.utils.FeatureStoreLoader;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
 import org.opensearch.core.ParseField;
 import org.opensearch.core.common.ParsingException;
 import org.opensearch.core.common.io.stream.NamedWriteable;
@@ -35,14 +34,16 @@ import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.index.query.AbstractQueryBuilder;
 import org.opensearch.index.query.QueryShardContext;
+import org.opensearch.ltr.stats.LTRStats;
+import org.opensearch.ltr.stats.StatName;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import com.o19s.es.ltr.LtrQueryContext;
+import com.o19s.es.ltr.feature.FeatureSet;
+import com.o19s.es.ltr.feature.store.CompiledLtrModel;
+import com.o19s.es.ltr.feature.store.FeatureStore;
+import com.o19s.es.ltr.feature.store.index.IndexFeatureStore;
+import com.o19s.es.ltr.ranker.linear.LinearRanker;
+import com.o19s.es.ltr.utils.FeatureStoreLoader;
 
 /**
  * sltr query, build a ltr query based on a stored model.
@@ -84,7 +85,6 @@ public class StoredLtrQueryBuilder extends AbstractQueryBuilder<StoredLtrQueryBu
         this.storeLoader = storeLoader;
     }
 
-
     public StoredLtrQueryBuilder(FeatureStoreLoader storeLoader, StreamInput input, LTRStats ltrStats) throws IOException {
         super(input);
         this.storeLoader = Objects.requireNonNull(storeLoader);
@@ -98,9 +98,8 @@ public class StoredLtrQueryBuilder extends AbstractQueryBuilder<StoredLtrQueryBu
         this.ltrStats = ltrStats;
     }
 
-    public static StoredLtrQueryBuilder fromXContent(FeatureStoreLoader storeLoader,
-                                                     XContentParser parser,
-                                                     LTRStats ltrStats) throws IOException {
+    public static StoredLtrQueryBuilder fromXContent(FeatureStoreLoader storeLoader, XContentParser parser, LTRStats ltrStats)
+        throws IOException {
         storeLoader = Objects.requireNonNull(storeLoader);
         final StoredLtrQueryBuilder builder = new StoredLtrQueryBuilder(storeLoader);
         try {
@@ -175,8 +174,10 @@ public class StoredLtrQueryBuilder extends AbstractQueryBuilder<StoredLtrQueryBu
     private RankerQuery doToQueryInternal(QueryShardContext context) throws IOException {
         String indexName = storeName != null ? IndexFeatureStore.indexName(storeName) : IndexFeatureStore.DEFAULT_STORE;
         FeatureStore store = storeLoader.load(indexName, context::getClient);
-        LtrQueryContext ltrQueryContext = new LtrQueryContext(context,
-                activeFeatures == null ? Collections.emptySet() : new HashSet<>(activeFeatures));
+        LtrQueryContext ltrQueryContext = new LtrQueryContext(
+            context,
+            activeFeatures == null ? Collections.emptySet() : new HashSet<>(activeFeatures)
+        );
         if (modelName != null) {
             CompiledLtrModel model = store.loadModel(modelName);
             validateActiveFeatures(model.featureSet(), ltrQueryContext);
@@ -195,12 +196,12 @@ public class StoredLtrQueryBuilder extends AbstractQueryBuilder<StoredLtrQueryBu
 
     @Override
     protected boolean doEquals(StoredLtrQueryBuilder other) {
-        return Objects.equals(modelName, other.modelName) &&
-                Objects.equals(featureScoreCacheFlag, other.featureScoreCacheFlag) &&
-                Objects.equals(featureSetName, other.featureSetName) &&
-                Objects.equals(storeName, other.storeName) &&
-                Objects.equals(params, other.params) &&
-                Objects.equals(activeFeatures, other.activeFeatures);
+        return Objects.equals(modelName, other.modelName)
+            && Objects.equals(featureScoreCacheFlag, other.featureScoreCacheFlag)
+            && Objects.equals(featureSetName, other.featureSetName)
+            && Objects.equals(storeName, other.storeName)
+            && Objects.equals(params, other.params)
+            && Objects.equals(activeFeatures, other.activeFeatures);
     }
 
     @Override

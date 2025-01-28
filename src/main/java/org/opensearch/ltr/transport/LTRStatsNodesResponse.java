@@ -15,6 +15,10 @@
 
 package org.opensearch.ltr.transport;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+
 import org.opensearch.action.FailedNodeException;
 import org.opensearch.action.support.nodes.BaseNodesResponse;
 import org.opensearch.cluster.ClusterName;
@@ -22,10 +26,6 @@ import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.io.stream.StreamOutput;
 import org.opensearch.core.xcontent.ToXContent;
 import org.opensearch.core.xcontent.XContentBuilder;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
 
 public class LTRStatsNodesResponse extends BaseNodesResponse<LTRStatsNodeResponse> implements ToXContent {
     private static final String NODES_KEY = "nodes";
@@ -37,9 +37,11 @@ public class LTRStatsNodesResponse extends BaseNodesResponse<LTRStatsNodeRespons
     }
 
     public LTRStatsNodesResponse(
-            final ClusterName clusterName,
-            final List<LTRStatsNodeResponse> nodeResponses,
-            final List<FailedNodeException> failures, Map<String, Object> clusterStats) {
+        final ClusterName clusterName,
+        final List<LTRStatsNodeResponse> nodeResponses,
+        final List<FailedNodeException> failures,
+        Map<String, Object> clusterStats
+    ) {
         super(clusterName, nodeResponses, failures);
         this.clusterStats = clusterStats;
     }

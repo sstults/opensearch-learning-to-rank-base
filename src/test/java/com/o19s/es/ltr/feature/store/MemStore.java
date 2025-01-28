@@ -16,12 +16,12 @@
 
 package com.o19s.es.ltr.feature.store;
 
-import com.o19s.es.ltr.feature.Feature;
-import com.o19s.es.ltr.feature.FeatureSet;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+
+import com.o19s.es.ltr.feature.Feature;
+import com.o19s.es.ltr.feature.FeatureSet;
 
 /**
  * in memory test store

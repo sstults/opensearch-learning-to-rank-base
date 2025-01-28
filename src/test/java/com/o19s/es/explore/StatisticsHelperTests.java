@@ -18,14 +18,12 @@ package com.o19s.es.explore;
 import org.apache.lucene.tests.util.LuceneTestCase;
 
 public class StatisticsHelperTests extends LuceneTestCase {
-    private final float[] dataset = new float[] {
-      0.0f, -5.0f, 10.0f, 5.0f
-    };
+    private final float[] dataset = new float[] { 0.0f, -5.0f, 10.0f, 5.0f };
 
     public void testStats() throws Exception {
         StatisticsHelper stats = new StatisticsHelper();
 
-        for(float f : dataset) {
+        for (float f : dataset) {
             stats.add(f);
         }
 

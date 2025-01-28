@@ -16,22 +16,10 @@
 
 package com.o19s.es.ltr.feature.store;
 
-import com.github.mustachejava.Mustache;
-import com.o19s.es.ltr.LtrQueryContext;
-import com.o19s.es.ltr.feature.Feature;
-import com.o19s.es.ltr.feature.FeatureSet;
-import com.o19s.es.template.mustache.MustacheUtils;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.util.Accountable;
-import org.apache.lucene.util.RamUsageEstimator;
-import org.opensearch.core.common.ParsingException;
-import org.opensearch.common.xcontent.LoggingDeprecationHandler;
-import org.opensearch.common.xcontent.XContentFactory;
-import org.opensearch.core.xcontent.MediaTypeRegistry;
-import org.opensearch.core.xcontent.XContentParser;
-import org.opensearch.index.query.QueryBuilder;
-import org.opensearch.index.query.QueryShardException;
-import org.opensearch.index.query.Rewriteable;
+import static org.apache.lucene.util.RamUsageEstimator.NUM_BYTES_ARRAY_HEADER;
+import static org.apache.lucene.util.RamUsageEstimator.NUM_BYTES_OBJECT_HEADER;
+import static org.apache.lucene.util.RamUsageEstimator.NUM_BYTES_OBJECT_REF;
+import static org.opensearch.index.query.AbstractQueryBuilder.parseInnerQueryBuilder;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -39,10 +27,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.apache.lucene.util.RamUsageEstimator.NUM_BYTES_ARRAY_HEADER;
-import static org.apache.lucene.util.RamUsageEstimator.NUM_BYTES_OBJECT_HEADER;
-import static org.apache.lucene.util.RamUsageEstimator.NUM_BYTES_OBJECT_REF;
-import static org.opensearch.index.query.AbstractQueryBuilder.parseInnerQueryBuilder;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.util.Accountable;
+import org.apache.lucene.util.RamUsageEstimator;
+import org.opensearch.common.xcontent.LoggingDeprecationHandler;
+import org.opensearch.core.common.ParsingException;
+import org.opensearch.core.xcontent.MediaTypeRegistry;
+import org.opensearch.core.xcontent.XContentParser;
+import org.opensearch.index.query.QueryBuilder;
+import org.opensearch.index.query.QueryShardException;
+import org.opensearch.index.query.Rewriteable;
+
+import com.github.mustachejava.Mustache;
+import com.o19s.es.ltr.LtrQueryContext;
+import com.o19s.es.ltr.feature.Feature;
+import com.o19s.es.ltr.feature.FeatureSet;
+import com.o19s.es.template.mustache.MustacheUtils;
 
 public class PrecompiledTemplateFeature implements Feature, Accountable {
     private static final long BASE_RAM_USED = RamUsageEstimator.shallowSizeOfInstance(StoredFeature.class);
@@ -68,12 +68,10 @@ public class PrecompiledTemplateFeature implements Feature, Accountable {
 
     @Override
     public long ramBytesUsed() {
-        return BASE_RAM_USED +
-                (Character.BYTES * name.length()) + NUM_BYTES_ARRAY_HEADER +
-                queryParams.stream()
-                        .mapToLong(x -> (Character.BYTES * x.length()) +
-                                NUM_BYTES_OBJECT_REF + NUM_BYTES_OBJECT_HEADER + NUM_BYTES_ARRAY_HEADER).sum() +
-                (((Character.BYTES * templateString.length()) + NUM_BYTES_ARRAY_HEADER) * 2);
+        return BASE_RAM_USED + (Character.BYTES * name.length()) + NUM_BYTES_ARRAY_HEADER + queryParams
+            .stream()
+            .mapToLong(x -> (Character.BYTES * x.length()) + NUM_BYTES_OBJECT_REF + NUM_BYTES_OBJECT_HEADER + NUM_BYTES_ARRAY_HEADER)
+            .sum() + (((Character.BYTES * templateString.length()) + NUM_BYTES_ARRAY_HEADER) * 2);
     }
 
     @Override
@@ -83,9 +81,10 @@ public class PrecompiledTemplateFeature implements Feature, Accountable {
 
     @Override
     public Query doToQuery(LtrQueryContext context, FeatureSet set, Map<String, Object> params) {
-        List<String> missingParams = queryParams.stream()
-                .filter((x) -> params == null || !params.containsKey(x))
-                .collect(Collectors.toList());
+        List<String> missingParams = queryParams
+            .stream()
+            .filter((x) -> params == null || !params.containsKey(x))
+            .collect(Collectors.toList());
         if (!missingParams.isEmpty()) {
             String names = missingParams.stream().collect(Collectors.joining(","));
             throw new IllegalArgumentException("Missing required param(s): [" + names + "]");
@@ -93,9 +92,10 @@ public class PrecompiledTemplateFeature implements Feature, Accountable {
 
         String query = MustacheUtils.execute(template, params);
         try {
-            XContentParser parser = MediaTypeRegistry.xContent(query).xContent()
-                    .createParser(context.getQueryShardContext().getXContentRegistry(),
-                            LoggingDeprecationHandler.INSTANCE, query);
+            XContentParser parser = MediaTypeRegistry
+                .xContent(query)
+                .xContent()
+                .createParser(context.getQueryShardContext().getXContentRegistry(), LoggingDeprecationHandler.INSTANCE, query);
             QueryBuilder queryBuilder = parseInnerQueryBuilder(parser);
             // XXX: QueryShardContext extends QueryRewriteContext (for now)
             return Rewriteable.rewrite(queryBuilder, context.getQueryShardContext()).toQuery(context.getQueryShardContext());

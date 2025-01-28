@@ -16,18 +16,19 @@
 
 package com.o19s.es.ltr.feature.store;
 
-import com.o19s.es.ltr.feature.FeatureSet;
-import com.o19s.es.ltr.ranker.DenseFeatureVector;
-import com.o19s.es.ltr.ranker.LtrRanker;
-import org.apache.lucene.tests.util.LuceneTestCase;
-import org.opensearch.index.query.QueryBuilders;
+import static java.util.Collections.singletonList;
 
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import static java.util.Collections.singletonList;
+import org.apache.lucene.tests.util.LuceneTestCase;
+import org.opensearch.index.query.QueryBuilders;
+
+import com.o19s.es.ltr.feature.FeatureSet;
+import com.o19s.es.ltr.ranker.DenseFeatureVector;
+import com.o19s.es.ltr.ranker.LtrRanker;
 
 @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
 public class FeatureSupplierTests extends LuceneTestCase {
@@ -64,7 +65,7 @@ public class FeatureSupplierTests extends LuceneTestCase {
         assertNull(featureSupplier.get("bad_test"));
     }
 
-    public void testEntrySetWhenFeatureVectorNotSet(){
+    public void testEntrySetWhenFeatureVectorNotSet() {
         FeatureSupplier featureSupplier = new FeatureSupplier(getFeatureSet());
         Set<Map.Entry<String, Float>> entrySet = featureSupplier.entrySet();
         assertTrue(entrySet.isEmpty());
@@ -74,7 +75,7 @@ public class FeatureSupplierTests extends LuceneTestCase {
         assertEquals(0, entrySet.size());
     }
 
-    public void testEntrySetWhenFeatureVectorIsSet(){
+    public void testEntrySetWhenFeatureVectorIsSet() {
         FeatureSupplier featureSupplier = new FeatureSupplier(getFeatureSet());
         LtrRanker.FeatureVector featureVector = new DenseFeatureVector(1);
         featureVector.setFeatureScore(0, 10.0f);
@@ -85,10 +86,9 @@ public class FeatureSupplierTests extends LuceneTestCase {
         Iterator<Map.Entry<String, Float>> iterator = entrySet.iterator();
         assertTrue(iterator.hasNext());
         Map.Entry<String, Float> item = iterator.next();
-        assertEquals("test",item.getKey());
-        assertEquals(10.0f,item.getValue(), 0.0f);
+        assertEquals("test", item.getKey());
+        assertEquals(10.0f, item.getValue(), 0.0f);
         assertEquals(1, entrySet.size());
     }
 
 }
-

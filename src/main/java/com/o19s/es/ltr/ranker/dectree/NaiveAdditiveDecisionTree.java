@@ -16,13 +16,14 @@
 
 package com.o19s.es.ltr.ranker.dectree;
 
-import com.o19s.es.ltr.ranker.DenseFeatureVector;
-import com.o19s.es.ltr.ranker.DenseLtrRanker;
-import com.o19s.es.ltr.ranker.normalizer.Normalizer;
+import java.util.Objects;
+
 import org.apache.lucene.util.Accountable;
 import org.apache.lucene.util.RamUsageEstimator;
 
-import java.util.Objects;
+import com.o19s.es.ltr.ranker.DenseFeatureVector;
+import com.o19s.es.ltr.ranker.DenseLtrRanker;
+import com.o19s.es.ltr.ranker.normalizer.Normalizer;
 
 /**
  * Naive implementation of additive decision tree.
@@ -64,7 +65,7 @@ public class NaiveAdditiveDecisionTree extends DenseLtrRanker implements Account
         float sum = 0;
         float[] scores = vector.scores;
         for (int i = 0; i < trees.length; i++) {
-            sum += weights[i]*trees[i].eval(scores);
+            sum += weights[i] * trees[i].eval(scores);
         }
         return normalizer.normalize(sum);
     }
@@ -79,13 +80,13 @@ public class NaiveAdditiveDecisionTree extends DenseLtrRanker implements Account
      */
     @Override
     public long ramBytesUsed() {
-        return BASE_RAM_USED + RamUsageEstimator.sizeOf(weights)
-                + RamUsageEstimator.sizeOf(trees);
+        return BASE_RAM_USED + RamUsageEstimator.sizeOf(weights) + RamUsageEstimator.sizeOf(trees);
     }
 
     public interface Node extends Accountable {
-         boolean isLeaf();
-         float eval(float[] scores);
+        boolean isLeaf();
+
+        float eval(float[] scores);
     }
 
     public static class Split implements Node {

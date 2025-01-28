@@ -16,15 +16,7 @@
 
 package com.o19s.es.ltr.feature.store;
 
-import com.o19s.es.ltr.LtrQueryContext;
-import com.o19s.es.ltr.feature.Feature;
-import com.o19s.es.ltr.feature.FeatureSet;
-import com.o19s.es.ltr.query.DerivedExpressionQuery;
-import com.o19s.es.ltr.utils.Scripting;
-import org.apache.lucene.expressions.Expression;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.util.Accountable;
-import org.apache.lucene.util.RamUsageEstimator;
+import static org.apache.lucene.util.RamUsageEstimator.NUM_BYTES_ARRAY_HEADER;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -36,7 +28,16 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.apache.lucene.util.RamUsageEstimator.NUM_BYTES_ARRAY_HEADER;
+import org.apache.lucene.expressions.Expression;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.util.Accountable;
+import org.apache.lucene.util.RamUsageEstimator;
+
+import com.o19s.es.ltr.LtrQueryContext;
+import com.o19s.es.ltr.feature.Feature;
+import com.o19s.es.ltr.feature.FeatureSet;
+import com.o19s.es.ltr.query.DerivedExpressionQuery;
+import com.o19s.es.ltr.utils.Scripting;
 
 public class PrecompiledExpressionFeature implements Feature, Accountable {
 
@@ -64,9 +65,8 @@ public class PrecompiledExpressionFeature implements Feature, Accountable {
 
     @Override
     public long ramBytesUsed() {
-        return BASE_RAM_USED +
-                (Character.BYTES * name.length()) + NUM_BYTES_ARRAY_HEADER +
-                (((Character.BYTES * expression.sourceText.length()) + NUM_BYTES_ARRAY_HEADER) * 2);
+        return BASE_RAM_USED + (Character.BYTES * name.length()) + NUM_BYTES_ARRAY_HEADER + (((Character.BYTES * expression.sourceText
+            .length()) + NUM_BYTES_ARRAY_HEADER) * 2);
     }
 
     @Override
@@ -76,9 +76,10 @@ public class PrecompiledExpressionFeature implements Feature, Accountable {
 
     @Override
     public Query doToQuery(LtrQueryContext context, FeatureSet set, Map<String, Object> params) {
-        List<String> missingParams = queryParams.stream()
-                .filter((x) -> params == null || !params.containsKey(x))
-                .collect(Collectors.toList());
+        List<String> missingParams = queryParams
+            .stream()
+            .filter((x) -> params == null || !params.containsKey(x))
+            .collect(Collectors.toList());
         if (!missingParams.isEmpty()) {
             String names = missingParams.stream().collect(Collectors.joining(","));
             throw new IllegalArgumentException("Missing required param(s): [" + names + "]");
@@ -87,7 +88,6 @@ public class PrecompiledExpressionFeature implements Feature, Accountable {
         Map<String, Double> queryParamValues = getQueryParamValues(params);
         return new DerivedExpressionQuery(set, expression, queryParamValues);
     }
-
 
     private Map<String, Double> getQueryParamValues() {
         return getQueryParamValues();
@@ -126,9 +126,9 @@ public class PrecompiledExpressionFeature implements Feature, Accountable {
         PrecompiledExpressionFeature that = (PrecompiledExpressionFeature) o;
 
         return Objects.equals(name, that.name)
-                && Objects.equals(expression, that.expression)
-                && Objects.equals(queryParams, that.queryParams)
-                && Objects.equals(expressionVariables, that.expressionVariables);
+            && Objects.equals(expression, that.expression)
+            && Objects.equals(queryParams, that.queryParams)
+            && Objects.equals(expressionVariables, that.expressionVariables);
     }
 
     @Override
@@ -140,12 +140,14 @@ public class PrecompiledExpressionFeature implements Feature, Accountable {
     public void validate(FeatureSet set) {
         for (String var : expression.variables) {
             if (!set.hasFeature(var) && !queryParams.contains(var)) {
-                throw new IllegalArgumentException("Derived feature [" + this.name + "] refers " +
-                        "to unknown feature or parameter: [" + var + "]");
+                throw new IllegalArgumentException(
+                    "Derived feature [" + this.name + "] refers " + "to unknown feature or parameter: [" + var + "]"
+                );
             }
-            if(set.hasFeature(var) && queryParams.contains(var)){
-                throw new IllegalArgumentException("Duplicate name " + var + " . " +
-                        "Cannot be used as both feature name and query parameter name");
+            if (set.hasFeature(var) && queryParams.contains(var)) {
+                throw new IllegalArgumentException(
+                    "Duplicate name " + var + " . " + "Cannot be used as both feature name and query parameter name"
+                );
             }
         }
     }

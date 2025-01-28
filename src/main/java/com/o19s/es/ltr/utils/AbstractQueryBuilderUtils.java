@@ -15,13 +15,13 @@
  */
 package com.o19s.es.ltr.utils;
 
-import org.opensearch.core.common.io.stream.StreamInput;
-import org.opensearch.core.common.io.stream.StreamOutput;
-import org.opensearch.index.query.QueryBuilder;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.opensearch.core.common.io.stream.StreamInput;
+import org.opensearch.core.common.io.stream.StreamOutput;
+import org.opensearch.index.query.QueryBuilder;
 
 /**
  * Contains a few methods copied from the AbstractQueryBuilder class. These methods are not accessible from sub classes
@@ -48,6 +48,5 @@ public class AbstractQueryBuilderUtils {
         }
         return queries;
     }
-
 
 }

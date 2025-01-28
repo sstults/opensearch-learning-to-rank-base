@@ -15,19 +15,22 @@
  */
 package com.o19s.es.ltr;
 
+import static org.opensearch.client.RestClientBuilder.DEFAULT_MAX_CONN_PER_ROUTE;
+import static org.opensearch.client.RestClientBuilder.DEFAULT_MAX_CONN_TOTAL;
+
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManager;
-import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder;
-import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder;
-import org.apache.hc.core5.http.Header;
-import org.apache.hc.core5.http.HttpHost;
 import org.apache.hc.client5.http.auth.AuthScope;
 import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
 import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider;
+import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManager;
+import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder;
+import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder;
 import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
+import org.apache.hc.core5.http.Header;
+import org.apache.hc.core5.http.HttpHost;
 import org.apache.hc.core5.http.message.BasicHeader;
 import org.apache.hc.core5.http.nio.ssl.TlsStrategy;
 import org.apache.hc.core5.ssl.SSLContextBuilder;
@@ -49,9 +52,6 @@ import org.opensearch.test.rest.yaml.OpenSearchClientYamlSuiteTestCase;
 
 import com.carrotsearch.randomizedtesting.annotations.Name;
 import com.carrotsearch.randomizedtesting.annotations.ParametersFactory;
-
-import static org.opensearch.client.RestClientBuilder.DEFAULT_MAX_CONN_PER_ROUTE;
-import static org.opensearch.client.RestClientBuilder.DEFAULT_MAX_CONN_TOTAL;
 
 /**
  * Created by doug on 12/30/16.
@@ -147,19 +147,19 @@ public class LtrQueryClientYamlTestSuiteIT extends OpenSearchClientYamlSuiteTest
                 .ofNullable(System.getProperty("password"))
                 .orElseThrow(() -> new RuntimeException("password is missing"));
             BasicCredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-            credentialsProvider.setCredentials(new AuthScope(null, -1),new UsernamePasswordCredentials(userName, password.toCharArray()));
+            credentialsProvider.setCredentials(new AuthScope(null, -1), new UsernamePasswordCredentials(userName, password.toCharArray()));
             try {
                 final TlsStrategy tlsStrategy = ClientTlsStrategyBuilder
-                        .create()
-                        .setHostnameVerifier(NoopHostnameVerifier.INSTANCE)
-                        .setSslContext(SSLContextBuilder.create().loadTrustMaterial(null, (chains, authType) -> true).build())
-                        .build();
+                    .create()
+                    .setHostnameVerifier(NoopHostnameVerifier.INSTANCE)
+                    .setSslContext(SSLContextBuilder.create().loadTrustMaterial(null, (chains, authType) -> true).build())
+                    .build();
                 final PoolingAsyncClientConnectionManager connectionManager = PoolingAsyncClientConnectionManagerBuilder
-                        .create()
-                        .setMaxConnPerRoute(DEFAULT_MAX_CONN_PER_ROUTE)
-                        .setMaxConnTotal(DEFAULT_MAX_CONN_TOTAL)
-                        .setTlsStrategy(tlsStrategy)
-                        .build();
+                    .create()
+                    .setMaxConnPerRoute(DEFAULT_MAX_CONN_PER_ROUTE)
+                    .setMaxConnTotal(DEFAULT_MAX_CONN_TOTAL)
+                    .setTlsStrategy(tlsStrategy)
+                    .build();
                 return httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider).setConnectionManager(connectionManager);
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -169,7 +169,8 @@ public class LtrQueryClientYamlTestSuiteIT extends OpenSearchClientYamlSuiteTest
         final String socketTimeoutString = settings.get(CLIENT_SOCKET_TIMEOUT);
         final TimeValue socketTimeout = TimeValue
             .parseTimeValue(socketTimeoutString == null ? "60s" : socketTimeoutString, CLIENT_SOCKET_TIMEOUT);
-        builder.setRequestConfigCallback(conf -> conf.setResponseTimeout(Timeout.ofMilliseconds(Math.toIntExact(socketTimeout.getMillis()))));
+        builder
+            .setRequestConfigCallback(conf -> conf.setResponseTimeout(Timeout.ofMilliseconds(Math.toIntExact(socketTimeout.getMillis()))));
         if (settings.hasValue(CLIENT_PATH_PREFIX)) {
             builder.setPathPrefix(settings.get(CLIENT_PATH_PREFIX));
         }

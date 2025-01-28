@@ -15,12 +15,12 @@
 
 package org.opensearch.ltr.stats;
 
-import org.junit.Test;
-import org.opensearch.ltr.stats.suppliers.CounterSupplier;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+
+import org.junit.Test;
+import org.opensearch.ltr.stats.suppliers.CounterSupplier;
 
 public class LTRStatTests {
     @Test
@@ -52,7 +52,7 @@ public class LTRStatTests {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testThrowExceptionIncrementNonCounterSupplier(){
+    public void testThrowExceptionIncrementNonCounterSupplier() {
         LTRStat<String> nonIncStat = new LTRStat<>(false, () -> "test");
         nonIncStat.increment();
     }

@@ -16,14 +16,18 @@
 
 package com.o19s.es.ltr.action;
 
-import com.o19s.es.ltr.action.ListStoresAction.ListStoresActionResponse;
-import com.o19s.es.ltr.feature.store.index.IndexFeatureStore;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
 import org.opensearch.action.ActionRequestBuilder;
 import org.opensearch.action.ActionRequestValidationException;
-import org.opensearch.core.action.ActionResponse;
 import org.opensearch.action.ActionType;
 import org.opensearch.action.support.master.MasterNodeReadRequest;
 import org.opensearch.client.OpenSearchClient;
+import org.opensearch.core.action.ActionResponse;
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.io.stream.StreamOutput;
 import org.opensearch.core.common.io.stream.Writeable;
@@ -32,11 +36,8 @@ import org.opensearch.core.xcontent.ToXContent;
 import org.opensearch.core.xcontent.ToXContentObject;
 import org.opensearch.core.xcontent.XContentBuilder;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
+import com.o19s.es.ltr.action.ListStoresAction.ListStoresActionResponse;
+import com.o19s.es.ltr.feature.store.index.IndexFeatureStore;
 
 public class ListStoresAction extends ActionType<ListStoresActionResponse> {
     public static final String NAME = "cluster:admin/ltr/featurestore/list";
@@ -80,9 +81,7 @@ public class ListStoresAction extends ActionType<ListStoresActionResponse> {
 
         @Override
         public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-            return builder.startObject()
-                    .field("stores", stores)
-                    .endObject();
+            return builder.startObject().field("stores", stores).endObject();
         }
 
         @Override
@@ -107,6 +106,7 @@ public class ListStoresAction extends ActionType<ListStoresActionResponse> {
             this.version = version;
             this.counts = counts;
         }
+
         public IndexStoreInfo(StreamInput in) throws IOException {
             storeName = in.readString();
             indexName = in.readString();
@@ -124,7 +124,8 @@ public class ListStoresAction extends ActionType<ListStoresActionResponse> {
 
         @Override
         public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-            return builder.startObject()
+            return builder
+                .startObject()
                 .field("store", storeName)
                 .field("index", indexName)
                 .field("version", version)
@@ -149,9 +150,8 @@ public class ListStoresAction extends ActionType<ListStoresActionResponse> {
         }
     }
 
-    public static class ListStoresActionBuilder extends
-        ActionRequestBuilder<ListStoresActionRequest, ListStoresActionResponse> {
-        public ListStoresActionBuilder(OpenSearchClient client){
+    public static class ListStoresActionBuilder extends ActionRequestBuilder<ListStoresActionRequest, ListStoresActionResponse> {
+        public ListStoresActionBuilder(OpenSearchClient client) {
             super(client, INSTANCE, new ListStoresActionRequest());
         }
     }

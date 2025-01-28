@@ -16,10 +16,10 @@
 
 package com.o19s.es.ltr.feature.store;
 
+import java.io.IOException;
+
 import com.o19s.es.ltr.feature.Feature;
 import com.o19s.es.ltr.feature.FeatureSet;
-
-import java.io.IOException;
 
 /**
  * A feature store

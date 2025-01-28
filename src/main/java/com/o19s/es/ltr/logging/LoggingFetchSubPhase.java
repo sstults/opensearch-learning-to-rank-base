@@ -16,9 +16,14 @@
 
 package com.o19s.es.ltr.logging;
 
-import com.o19s.es.ltr.feature.FeatureSet;
-import com.o19s.es.ltr.query.RankerQuery;
-import com.o19s.es.ltr.ranker.LogLtrRanker;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
@@ -36,13 +41,9 @@ import org.opensearch.search.fetch.FetchSubPhaseProcessor;
 import org.opensearch.search.rescore.QueryRescorer;
 import org.opensearch.search.rescore.RescoreContext;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import com.o19s.es.ltr.feature.FeatureSet;
+import com.o19s.es.ltr.query.RankerQuery;
+import com.o19s.es.ltr.ranker.LogLtrRanker;
 
 public class LoggingFetchSubPhase implements FetchSubPhase {
     @Override
@@ -55,7 +56,6 @@ public class LoggingFetchSubPhase implements FetchSubPhase {
         BooleanQuery.Builder builder = new BooleanQuery.Builder();
         List<HitLogConsumer> loggers = new ArrayList<>();
         Map<String, Query> namedQueries = context.parsedQuery().namedFilters();
-
 
         if (namedQueries.size() > 0) {
             ext.logSpecsStream().filter((l) -> l.getNamedQuery() != null).forEach((l) -> {
@@ -71,45 +71,72 @@ public class LoggingFetchSubPhase implements FetchSubPhase {
             });
         }
 
-
-
         Weight w = context.searcher().rewrite(builder.build()).createWeight(context.searcher(), ScoreMode.COMPLETE, 1.0F);
 
         return new LoggingFetchSubPhaseProcessor(w, loggers);
     }
 
-    private Tuple<RankerQuery, HitLogConsumer> extractQuery(LoggingSearchExtBuilder.LogSpec
-                                                                    logSpec, Map<String, Query> namedQueries) {
+    private Tuple<RankerQuery, HitLogConsumer> extractQuery(LoggingSearchExtBuilder.LogSpec logSpec, Map<String, Query> namedQueries) {
         Query q = namedQueries.get(logSpec.getNamedQuery());
         if (q == null) {
             throw new IllegalArgumentException("No query named [" + logSpec.getNamedQuery() + "] found");
         }
-        return toLogger(logSpec, inspectQuery(q)
-                .orElseThrow(() -> new IllegalArgumentException("Query named [" + logSpec.getNamedQuery() +
-                        "] must be a [sltr] query [" +
-                        ((q instanceof BoostQuery) ? ((BoostQuery) q).getQuery().getClass().getSimpleName(
+        return toLogger(
+            logSpec,
+            inspectQuery(q)
+                .orElseThrow(
+                    () -> new IllegalArgumentException(
+                        "Query named ["
+                            + logSpec.getNamedQuery()
+                            + "] must be a [sltr] query ["
+                            + ((q instanceof BoostQuery) ? ((BoostQuery) q).getQuery().getClass().getSimpleName(
 
-                        ) : q.getClass().getSimpleName()) +
-                        "] found")));
+                            ) : q.getClass().getSimpleName())
+                            + "] found"
+                    )
+                )
+        );
     }
 
-    private Tuple<RankerQuery, HitLogConsumer> extractRescore(LoggingSearchExtBuilder.LogSpec logSpec,
-                                                              List<RescoreContext> contexts) {
+    private Tuple<RankerQuery, HitLogConsumer> extractRescore(LoggingSearchExtBuilder.LogSpec logSpec, List<RescoreContext> contexts) {
         if (logSpec.getRescoreIndex() >= contexts.size()) {
-            throw new IllegalArgumentException("rescore index [" + logSpec.getRescoreIndex() + "] is out of bounds, only " +
-                    "[" + contexts.size() + "] rescore context(s) are available");
+            throw new IllegalArgumentException(
+                "rescore index ["
+                    + logSpec.getRescoreIndex()
+                    + "] is out of bounds, only "
+                    + "["
+                    + contexts.size()
+                    + "] rescore context(s) are available"
+            );
         }
         RescoreContext context = contexts.get(logSpec.getRescoreIndex());
         if (!(context instanceof QueryRescorer.QueryRescoreContext)) {
-            throw new IllegalArgumentException("Expected a [QueryRescoreContext] but found a " +
-                    "[" + context.getClass().getSimpleName() + "] " +
-                    "at index [" + logSpec.getRescoreIndex() + "]");
+            throw new IllegalArgumentException(
+                "Expected a [QueryRescoreContext] but found a "
+                    + "["
+                    + context.getClass().getSimpleName()
+                    + "] "
+                    + "at index ["
+                    + logSpec.getRescoreIndex()
+                    + "]"
+            );
         }
         QueryRescorer.QueryRescoreContext qrescore = (QueryRescorer.QueryRescoreContext) context;
-        return toLogger(logSpec, inspectQuery(qrescore.query())
-                .orElseThrow(() -> new IllegalArgumentException("Expected a [sltr] query but found a " +
-                        "[" + qrescore.query().getClass().getSimpleName() + "] " +
-                        "at index [" + logSpec.getRescoreIndex() + "]")));
+        return toLogger(
+            logSpec,
+            inspectQuery(qrescore.query())
+                .orElseThrow(
+                    () -> new IllegalArgumentException(
+                        "Expected a [sltr] query but found a "
+                            + "["
+                            + qrescore.query().getClass().getSimpleName()
+                            + "] "
+                            + "at index ["
+                            + logSpec.getRescoreIndex()
+                            + "]"
+                    )
+                )
+        );
     }
 
     private Optional<RankerQuery> inspectQuery(Query q) {
@@ -126,6 +153,7 @@ public class LoggingFetchSubPhase implements FetchSubPhase {
         query = query.toLoggerQuery(consumer);
         return new Tuple<>(query, consumer);
     }
+
     static class LoggingFetchSubPhaseProcessor implements FetchSubPhaseProcessor {
         private final Weight weight;
         private final List<HitLogConsumer> loggers;
@@ -135,7 +163,6 @@ public class LoggingFetchSubPhase implements FetchSubPhase {
             this.weight = weight;
             this.loggers = loggers;
         }
-
 
         @Override
         public void setNextReader(LeafReaderContext readerContext) throws IOException {
@@ -160,18 +187,17 @@ public class LoggingFetchSubPhase implements FetchSubPhase {
         private final boolean missingAsZero;
 
         // [
-        //      {
-        //          "name": "featureName",
-        //          "value": 1.33
-        //      },
-        //      {
-        //          "name": "otherFeatureName",
-        //      }
+        // {
+        // "name": "featureName",
+        // "value": 1.33
+        // },
+        // {
+        // "name": "otherFeatureName",
+        // }
         // ]
         private List<Map<String, Object>> currentLog;
         private SearchHit currentHit;
         private Map<String, Object> extraLogging;
-
 
         HitLogConsumer(String name, FeatureSet set, boolean missingAsZero) {
             this.name = name;

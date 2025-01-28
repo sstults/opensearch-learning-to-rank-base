@@ -16,43 +16,60 @@
 
 package com.o19s.es.ltr.action;
 
-import com.o19s.es.ltr.action.CachesStatsAction.CachesStatsNodeResponse;
-import com.o19s.es.ltr.action.CachesStatsAction.CachesStatsNodesRequest;
-import com.o19s.es.ltr.action.CachesStatsAction.CachesStatsNodesResponse;
-import com.o19s.es.ltr.feature.store.index.Caches;
+import java.io.IOException;
+import java.util.List;
+
 import org.opensearch.action.FailedNodeException;
 import org.opensearch.action.support.ActionFilters;
 import org.opensearch.action.support.nodes.TransportNodesAction;
 import org.opensearch.cluster.metadata.IndexNameExpressionResolver;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.inject.Inject;
-import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.common.settings.Settings;
+import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.threadpool.ThreadPool;
 import org.opensearch.transport.TransportRequest;
 import org.opensearch.transport.TransportService;
 
-import java.io.IOException;
-import java.util.List;
+import com.o19s.es.ltr.action.CachesStatsAction.CachesStatsNodeResponse;
+import com.o19s.es.ltr.action.CachesStatsAction.CachesStatsNodesRequest;
+import com.o19s.es.ltr.action.CachesStatsAction.CachesStatsNodesResponse;
+import com.o19s.es.ltr.feature.store.index.Caches;
 
-public class TransportCacheStatsAction extends TransportNodesAction<CachesStatsNodesRequest, CachesStatsNodesResponse,
-        TransportCacheStatsAction.CachesStatsNodeRequest, CachesStatsNodeResponse> {
+public class TransportCacheStatsAction extends
+    TransportNodesAction<CachesStatsNodesRequest, CachesStatsNodesResponse, TransportCacheStatsAction.CachesStatsNodeRequest, CachesStatsNodeResponse> {
     private final Caches caches;
 
     @Inject
-    public TransportCacheStatsAction(Settings settings, ThreadPool threadPool,
-                                        ClusterService clusterService, TransportService transportService,
-                                        ActionFilters actionFilters, IndexNameExpressionResolver indexNameExpressionResolver,
-                                        Caches caches) {
-        super(CachesStatsAction.NAME, threadPool, clusterService, transportService,
-            actionFilters, CachesStatsNodesRequest::new, CachesStatsNodeRequest::new,
-            ThreadPool.Names.MANAGEMENT, CachesStatsAction.CachesStatsNodeResponse.class);
+    public TransportCacheStatsAction(
+        Settings settings,
+        ThreadPool threadPool,
+        ClusterService clusterService,
+        TransportService transportService,
+        ActionFilters actionFilters,
+        IndexNameExpressionResolver indexNameExpressionResolver,
+        Caches caches
+    ) {
+        super(
+            CachesStatsAction.NAME,
+            threadPool,
+            clusterService,
+            transportService,
+            actionFilters,
+            CachesStatsNodesRequest::new,
+            CachesStatsNodeRequest::new,
+            ThreadPool.Names.MANAGEMENT,
+            CachesStatsAction.CachesStatsNodeResponse.class
+        );
         this.caches = caches;
     }
 
     @Override
-    protected CachesStatsNodesResponse newResponse(CachesStatsNodesRequest request, List<CachesStatsNodeResponse> responses,
-                                                   List<FailedNodeException> failures) {
+    protected CachesStatsNodesResponse newResponse(
+        CachesStatsNodesRequest request,
+        List<CachesStatsNodeResponse> responses,
+        List<FailedNodeException> failures
+    ) {
         return new CachesStatsNodesResponse(clusterService.getClusterName(), responses, failures);
     }
 

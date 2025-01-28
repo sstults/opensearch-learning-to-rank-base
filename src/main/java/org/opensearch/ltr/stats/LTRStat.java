@@ -15,9 +15,9 @@
 
 package org.opensearch.ltr.stats;
 
-import org.opensearch.ltr.stats.suppliers.CounterSupplier;
-
 import java.util.function.Supplier;
+
+import org.opensearch.ltr.stats.suppliers.CounterSupplier;
 
 /**
  * Class represents a stat the plugin keeps track of
@@ -60,8 +60,7 @@ public class LTRStat<T> {
      */
     public void increment() {
         if (!(supplier instanceof CounterSupplier)) {
-            throw new UnsupportedOperationException(
-                    "cannot increment the supplier: " + supplier.getClass().getName());
+            throw new UnsupportedOperationException("cannot increment the supplier: " + supplier.getClass().getName());
         }
         ((CounterSupplier) supplier).increment();
     }

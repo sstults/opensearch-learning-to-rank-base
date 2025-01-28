@@ -15,13 +15,8 @@
 
 package org.opensearch.ltr.rest;
 
-import org.opensearch.client.node.NodeClient;
-import org.opensearch.ltr.stats.LTRStats;
-import org.opensearch.ltr.transport.LTRStatsAction;
-import org.opensearch.ltr.transport.LTRStatsRequest;
-import org.opensearch.rest.BaseRestHandler;
-import org.opensearch.rest.RestRequest;
-import org.opensearch.rest.action.RestActions;
+import static com.o19s.es.ltr.LtrQueryParserPlugin.LTR_BASE_URI;
+import static com.o19s.es.ltr.LtrQueryParserPlugin.LTR_LEGACY_BASE_URI;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -30,8 +25,13 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.o19s.es.ltr.LtrQueryParserPlugin.LTR_BASE_URI;
-import static com.o19s.es.ltr.LtrQueryParserPlugin.LTR_LEGACY_BASE_URI;
+import org.opensearch.client.node.NodeClient;
+import org.opensearch.ltr.stats.LTRStats;
+import org.opensearch.ltr.transport.LTRStatsAction;
+import org.opensearch.ltr.transport.LTRStatsRequest;
+import org.opensearch.rest.BaseRestHandler;
+import org.opensearch.rest.RestRequest;
+import org.opensearch.rest.action.RestActions;
 
 /**
  * Provide an API to get information on the plugin usage and
@@ -62,41 +62,40 @@ public class RestStatsLTRAction extends BaseRestHandler {
 
     @Override
     public List<ReplacedRoute> replacedRoutes() {
-        return List.of(
+        return List
+            .of(
                 new ReplacedRoute(
-                        RestRequest.Method.GET,
-                        String.format(Locale.ROOT, "%s%s", LTR_BASE_URI, "/{nodeId}/stats/"),
-                        RestRequest.Method.GET,
-                        String.format(Locale.ROOT, "%s%s", LTR_LEGACY_BASE_URI, "/{nodeId}/stats/")
+                    RestRequest.Method.GET,
+                    String.format(Locale.ROOT, "%s%s", LTR_BASE_URI, "/{nodeId}/stats/"),
+                    RestRequest.Method.GET,
+                    String.format(Locale.ROOT, "%s%s", LTR_LEGACY_BASE_URI, "/{nodeId}/stats/")
                 ),
                 new ReplacedRoute(
-                        RestRequest.Method.GET,
-                        String.format(Locale.ROOT, "%s%s", LTR_BASE_URI, "/{nodeId}/stats/{stat}"),
-                        RestRequest.Method.GET,
-                        String.format(Locale.ROOT, "%s%s", LTR_LEGACY_BASE_URI, "/{nodeId}/stats/{stat}")
+                    RestRequest.Method.GET,
+                    String.format(Locale.ROOT, "%s%s", LTR_BASE_URI, "/{nodeId}/stats/{stat}"),
+                    RestRequest.Method.GET,
+                    String.format(Locale.ROOT, "%s%s", LTR_LEGACY_BASE_URI, "/{nodeId}/stats/{stat}")
                 ),
                 new ReplacedRoute(
-                        RestRequest.Method.GET,
-                        String.format(Locale.ROOT, "%s%s", LTR_BASE_URI, "/stats/"),
-                        RestRequest.Method.GET,
-                        String.format(Locale.ROOT, "%s%s", LTR_LEGACY_BASE_URI, "/stats/")
+                    RestRequest.Method.GET,
+                    String.format(Locale.ROOT, "%s%s", LTR_BASE_URI, "/stats/"),
+                    RestRequest.Method.GET,
+                    String.format(Locale.ROOT, "%s%s", LTR_LEGACY_BASE_URI, "/stats/")
                 ),
                 new ReplacedRoute(
-                        RestRequest.Method.GET,
-                        String.format(Locale.ROOT, "%s%s", LTR_BASE_URI, "/stats/{stat}"),
-                        RestRequest.Method.GET,
-                        String.format(Locale.ROOT, "%s%s", LTR_LEGACY_BASE_URI, "/stats/{stat}")
+                    RestRequest.Method.GET,
+                    String.format(Locale.ROOT, "%s%s", LTR_BASE_URI, "/stats/{stat}"),
+                    RestRequest.Method.GET,
+                    String.format(Locale.ROOT, "%s%s", LTR_LEGACY_BASE_URI, "/stats/{stat}")
                 )
-        );
+            );
     }
 
     @Override
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     protected RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) throws IOException {
         final LTRStatsRequest ltrStatsRequest = getRequest(request);
-        return (channel) -> client.execute(LTRStatsAction.INSTANCE,
-                ltrStatsRequest,
-                new RestActions.NodesResponseRestListener(channel));
+        return (channel) -> client.execute(LTRStatsAction.INSTANCE, ltrStatsRequest, new RestActions.NodesResponseRestListener(channel));
     }
 
     /**
@@ -106,9 +105,7 @@ public class RestStatsLTRAction extends BaseRestHandler {
      * @return LTRStatsRequest
      */
     private LTRStatsRequest getRequest(final RestRequest request) {
-        final LTRStatsRequest ltrStatsRequest = new LTRStatsRequest(
-                splitCommaSeparatedParam(request, "nodeId")
-        );
+        final LTRStatsRequest ltrStatsRequest = new LTRStatsRequest(splitCommaSeparatedParam(request, "nodeId"));
         ltrStatsRequest.timeout(request.param("timeout"));
 
         final List<String> requestedStats = List.of(splitCommaSeparatedParam(request, "stat"));
@@ -125,31 +122,26 @@ public class RestStatsLTRAction extends BaseRestHandler {
         return ltrStatsRequest;
     }
 
-    private Set<String> getStatsToBeRetrieved(
-            final RestRequest request,
-            final Set<String> validStats,
-            final List<String> requestedStats) {
+    private Set<String> getStatsToBeRetrieved(final RestRequest request, final Set<String> validStats, final List<String> requestedStats) {
 
         if (requestedStats.contains(LTRStatsRequest.ALL_STATS_KEY)) {
-            throw new IllegalArgumentException(String.format(Locale.ROOT, "Request %s contains both %s and individual stats",
-                    request.path(), LTRStatsRequest.ALL_STATS_KEY));
+            throw new IllegalArgumentException(
+                String
+                    .format(Locale.ROOT, "Request %s contains both %s and individual stats", request.path(), LTRStatsRequest.ALL_STATS_KEY)
+            );
         }
 
-        final Set<String> invalidStats = requestedStats.stream()
-                .filter(s -> !validStats.contains(s))
-                .collect(Collectors.toSet());
+        final Set<String> invalidStats = requestedStats.stream().filter(s -> !validStats.contains(s)).collect(Collectors.toSet());
 
         if (!invalidStats.isEmpty()) {
-            throw new IllegalArgumentException(
-                    unrecognized(request, invalidStats, new HashSet<>(requestedStats), "stat"));
+            throw new IllegalArgumentException(unrecognized(request, invalidStats, new HashSet<>(requestedStats), "stat"));
         }
 
         return new HashSet<>(requestedStats);
     }
 
     private boolean isAllStatsRequested(final List<String> requestedStats) {
-        return requestedStats.isEmpty()
-                || (requestedStats.size() == 1 && requestedStats.contains(LTRStatsRequest.ALL_STATS_KEY));
+        return requestedStats.isEmpty() || (requestedStats.size() == 1 && requestedStats.contains(LTRStatsRequest.ALL_STATS_KEY));
     }
 
     private String[] splitCommaSeparatedParam(final RestRequest request, final String paramName) {

@@ -16,8 +16,11 @@
 
 package com.o19s.es.ltr.feature.store;
 
-import com.o19s.es.ltr.feature.FeatureSet;
-import com.o19s.es.ltr.ranker.normalizer.Normalizer;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.opensearch.OpenSearchException;
 import org.opensearch.core.ParseField;
 import org.opensearch.core.common.io.stream.StreamInput;
@@ -27,13 +30,10 @@ import org.opensearch.core.xcontent.ToXContent;
 import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.core.xcontent.XContentParser;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.o19s.es.ltr.feature.FeatureSet;
+import com.o19s.es.ltr.ranker.normalizer.Normalizer;
 
 public class StoredFeatureNormalizers {
-
 
     public enum Type {
         STANDARD,
@@ -49,13 +49,12 @@ public class StoredFeatureNormalizers {
         PARSER = (XContentParser p, Void c, String featureName) -> {
             // this seems really intended for switching on the key (here featureName) and making
             // a decision, when in reality, we want to look a layer deeper and switch on that
-            ObjectParser<FeatureNormConsumer, String> parser = new ObjectParser<>("feature_normalizers",
-                                                                                  FeatureNormConsumer::new);
+            ObjectParser<FeatureNormConsumer, String> parser = new ObjectParser<>("feature_normalizers", FeatureNormConsumer::new);
 
             parser.declareObject(FeatureNormConsumer::setFtrNormDefn, StandardFeatureNormDefinition.PARSER, STANDARD);
             parser.declareObject(FeatureNormConsumer::setFtrNormDefn, MinMaxFeatureNormDefinition.PARSER, MIN_MAX);
 
-            FeatureNormConsumer parsedNorm  = parser.parse(p, featureName);
+            FeatureNormConsumer parsedNorm = parser.parse(p, featureName);
             return parsedNorm.ftrNormDefn;
 
         };
@@ -66,8 +65,7 @@ public class StoredFeatureNormalizers {
     private static class FeatureNormConsumer {
         FeatureNormDefinition ftrNormDefn;
 
-        FeatureNormConsumer() {
-        }
+        FeatureNormConsumer() {}
 
         public FeatureNormDefinition getFtrNormDefn() {
             return this.ftrNormDefn;
@@ -81,7 +79,6 @@ public class StoredFeatureNormalizers {
         }
     }
 
-
     private final Map<String, FeatureNormDefinition> featureNormalizers;
 
     public StoredFeatureNormalizers() {
@@ -90,7 +87,7 @@ public class StoredFeatureNormalizers {
 
     public StoredFeatureNormalizers(final List<FeatureNormDefinition> ftrNormDefs) {
         this.featureNormalizers = new HashMap<>();
-        for (FeatureNormDefinition ftrNorm: ftrNormDefs) {
+        for (FeatureNormDefinition ftrNorm : ftrNormDefs) {
             this.featureNormalizers.put(ftrNorm.featureName(), ftrNorm);
         }
     }
@@ -110,7 +107,7 @@ public class StoredFeatureNormalizers {
 
     public XContentBuilder toXContent(XContentBuilder builder, ToXContent.Params params) throws IOException {
         builder.startObject(); // begin feature norms
-        for (Map.Entry<String, FeatureNormDefinition> ftrNormDefEntry: featureNormalizers.entrySet()) {
+        for (Map.Entry<String, FeatureNormDefinition> ftrNormDefEntry : featureNormalizers.entrySet()) {
             builder.field(ftrNormDefEntry.getKey());
             ftrNormDefEntry.getValue().toXContent(builder, params);
         }
@@ -121,13 +118,12 @@ public class StoredFeatureNormalizers {
     public Map<Integer, Normalizer> compileOrdToNorms(FeatureSet featureSet) {
         Map<Integer, Normalizer> ftrNorms = new HashMap<>();
 
-        for (Map.Entry<String, FeatureNormDefinition> ftrNormDefEntry: featureNormalizers.entrySet()) {
+        for (Map.Entry<String, FeatureNormDefinition> ftrNormDefEntry : featureNormalizers.entrySet()) {
             String featureName = ftrNormDefEntry.getValue().featureName();
             Normalizer ftrNorm = ftrNormDefEntry.getValue().createFeatureNorm();
 
             if (!featureSet.hasFeature(featureName)) {
-                throw new OpenSearchException("Feature " + featureName +
-                                                 " not found in feature set " + featureSet.name());
+                throw new OpenSearchException("Feature " + featureName + " not found in feature set " + featureSet.name());
             }
 
             int ord = featureSet.featureOrdinal(featureName);
@@ -138,8 +134,10 @@ public class StoredFeatureNormalizers {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof StoredFeatureNormalizers)) return false;
+        if (this == o)
+            return true;
+        if (!(o instanceof StoredFeatureNormalizers))
+            return false;
         StoredFeatureNormalizers that = (StoredFeatureNormalizers) o;
 
         return that.featureNormalizers.equals(this.featureNormalizers);
@@ -154,8 +152,7 @@ public class StoredFeatureNormalizers {
         return this.featureNormalizers.size();
     }
 
-
-    private  FeatureNormDefinition createFromStreamInput(StreamInput input) throws IOException {
+    private FeatureNormDefinition createFromStreamInput(StreamInput input) throws IOException {
         Type normType = input.readEnum(Type.class);
         if (normType == Type.STANDARD) {
             return new StandardFeatureNormDefinition(input);

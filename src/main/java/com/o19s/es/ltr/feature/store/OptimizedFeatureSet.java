@@ -16,21 +16,22 @@
 
 package com.o19s.es.ltr.feature.store;
 
-import com.o19s.es.ltr.LtrQueryContext;
-import com.o19s.es.ltr.feature.Feature;
-import com.o19s.es.ltr.feature.FeatureSet;
-import org.apache.lucene.search.MatchNoDocsQuery;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.util.Accountable;
-import org.apache.lucene.util.RamUsageEstimator;
+import static org.apache.lucene.util.RamUsageEstimator.NUM_BYTES_ARRAY_HEADER;
+import static org.apache.lucene.util.RamUsageEstimator.NUM_BYTES_OBJECT_HEADER;
+import static org.apache.lucene.util.RamUsageEstimator.NUM_BYTES_OBJECT_REF;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.lucene.util.RamUsageEstimator.NUM_BYTES_ARRAY_HEADER;
-import static org.apache.lucene.util.RamUsageEstimator.NUM_BYTES_OBJECT_HEADER;
-import static org.apache.lucene.util.RamUsageEstimator.NUM_BYTES_OBJECT_REF;
+import org.apache.lucene.search.MatchNoDocsQuery;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.util.Accountable;
+import org.apache.lucene.util.RamUsageEstimator;
+
+import com.o19s.es.ltr.LtrQueryContext;
+import com.o19s.es.ltr.feature.Feature;
+import com.o19s.es.ltr.feature.FeatureSet;
 
 public class OptimizedFeatureSet implements FeatureSet, Accountable {
     private final long BASE_RAM_USED = RamUsageEstimator.shallowSizeOfInstance(StoredFeatureSet.class);
@@ -53,8 +54,8 @@ public class OptimizedFeatureSet implements FeatureSet, Accountable {
     @Override
     public List<Query> toQueries(LtrQueryContext context, Map<String, Object> params) {
         List<Query> queries = new ArrayList<>(features.size());
-        for(Feature feature : features) {
-            if(context.isFeatureActive(feature.name())) {
+        for (Feature feature : features) {
+            if (context.isFeatureActive(feature.name())) {
                 queries.add(feature.doToQuery(context, this, params));
             } else {
                 queries.add(new MatchNoDocsQuery("Feature " + feature.name() + " deactivated"));
@@ -101,12 +102,15 @@ public class OptimizedFeatureSet implements FeatureSet, Accountable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
 
         OptimizedFeatureSet that = (OptimizedFeatureSet) o;
 
-        if (!name.equals(that.name)) return false;
+        if (!name.equals(that.name))
+            return false;
         return features.equals(that.features);
     }
 
@@ -122,8 +126,9 @@ public class OptimizedFeatureSet implements FeatureSet, Accountable {
      */
     @Override
     public long ramBytesUsed() {
-        return BASE_RAM_USED +
-                featureMap.size() * NUM_BYTES_OBJECT_REF + NUM_BYTES_OBJECT_HEADER + NUM_BYTES_ARRAY_HEADER +
-                features.stream().mapToLong((f) -> f instanceof Accountable ? ((Accountable)f).ramBytesUsed() : 1).sum();
+        return BASE_RAM_USED + featureMap.size() * NUM_BYTES_OBJECT_REF + NUM_BYTES_OBJECT_HEADER + NUM_BYTES_ARRAY_HEADER + features
+            .stream()
+            .mapToLong((f) -> f instanceof Accountable ? ((Accountable) f).ramBytesUsed() : 1)
+            .sum();
     }
 }

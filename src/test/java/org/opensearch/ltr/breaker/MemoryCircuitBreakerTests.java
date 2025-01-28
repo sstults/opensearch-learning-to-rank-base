@@ -15,16 +15,16 @@
 
 package org.opensearch.ltr.breaker;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.mockito.Mockito.when;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.opensearch.monitor.jvm.JvmService;
 import org.opensearch.monitor.jvm.JvmStats;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.mockito.Mockito.when;
 
 public class MemoryCircuitBreakerTests {
 

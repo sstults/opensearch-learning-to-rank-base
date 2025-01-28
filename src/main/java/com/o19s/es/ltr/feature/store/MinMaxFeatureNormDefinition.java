@@ -16,15 +16,16 @@
 
 package com.o19s.es.ltr.feature.store;
 
-import com.o19s.es.ltr.ranker.normalizer.MinMaxFeatureNormalizer;
-import com.o19s.es.ltr.ranker.normalizer.Normalizer;
+import java.io.IOException;
+
 import org.opensearch.core.ParseField;
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.io.stream.StreamOutput;
 import org.opensearch.core.xcontent.ObjectParser;
 import org.opensearch.core.xcontent.XContentBuilder;
 
-import java.io.IOException;
+import com.o19s.es.ltr.ranker.normalizer.MinMaxFeatureNormalizer;
+import com.o19s.es.ltr.ranker.normalizer.Normalizer;
 
 /**
  * Parsing and serialization for a min/max normalizer
@@ -112,16 +113,20 @@ public class MinMaxFeatureNormDefinition implements FeatureNormDefinition {
         return builder;
     }
 
-
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof MinMaxFeatureNormDefinition)) return false;
+        if (this == o)
+            return true;
+        if (!(o instanceof MinMaxFeatureNormDefinition))
+            return false;
         MinMaxFeatureNormDefinition that = (MinMaxFeatureNormDefinition) o;
 
-        if (!this.featureName.equals(that.featureName)) return false;
-        if (this.minimum != that.minimum) return false;
-        if (this.maximum != that.maximum) return false;
+        if (!this.featureName.equals(that.featureName))
+            return false;
+        if (this.minimum != that.minimum)
+            return false;
+        if (this.maximum != that.maximum)
+            return false;
 
         return true;
     }

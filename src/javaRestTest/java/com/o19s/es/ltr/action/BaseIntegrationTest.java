@@ -16,15 +16,22 @@
 
 package com.o19s.es.ltr.action;
 
-import com.o19s.es.ltr.LtrQueryParserPlugin;
-import com.o19s.es.ltr.action.FeatureStoreAction.FeatureStoreRequestBuilder;
-import com.o19s.es.ltr.action.FeatureStoreAction.FeatureStoreResponse;
-import com.o19s.es.ltr.feature.FeatureValidation;
-import com.o19s.es.ltr.feature.store.StorableElement;
-import com.o19s.es.ltr.feature.store.index.IndexFeatureStore;
-import com.o19s.es.ltr.ranker.parser.LtrRankerParserFactory;
-import com.o19s.es.ltr.ranker.ranklib.RankLibScriptEngine;
+import static com.o19s.es.ltr.feature.store.ScriptFeature.EXTRA_LOGGING;
+import static com.o19s.es.ltr.feature.store.ScriptFeature.FEATURE_VECTOR;
+
+import java.io.IOException;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.function.Supplier;
+
 import org.apache.lucene.index.LeafReaderContext;
+import org.junit.Before;
 import org.opensearch.action.DocWriteResponse;
 import org.opensearch.action.admin.indices.create.CreateIndexAction;
 import org.opensearch.action.admin.indices.create.CreateIndexResponse;
@@ -38,21 +45,15 @@ import org.opensearch.script.ScriptContext;
 import org.opensearch.script.ScriptEngine;
 import org.opensearch.test.OpenSearchSingleNodeTestCase;
 import org.opensearch.test.TestGeoShapeFieldMapperPlugin;
-import org.junit.Before;
 
-import java.io.IOException;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.function.Supplier;
-
-import static com.o19s.es.ltr.feature.store.ScriptFeature.EXTRA_LOGGING;
-import static com.o19s.es.ltr.feature.store.ScriptFeature.FEATURE_VECTOR;
+import com.o19s.es.ltr.LtrQueryParserPlugin;
+import com.o19s.es.ltr.action.FeatureStoreAction.FeatureStoreRequestBuilder;
+import com.o19s.es.ltr.action.FeatureStoreAction.FeatureStoreResponse;
+import com.o19s.es.ltr.feature.FeatureValidation;
+import com.o19s.es.ltr.feature.store.StorableElement;
+import com.o19s.es.ltr.feature.store.index.IndexFeatureStore;
+import com.o19s.es.ltr.ranker.parser.LtrRankerParserFactory;
+import com.o19s.es.ltr.ranker.ranklib.RankLibScriptEngine;
 
 public abstract class BaseIntegrationTest extends OpenSearchSingleNodeTestCase {
 
@@ -61,8 +62,8 @@ public abstract class BaseIntegrationTest extends OpenSearchSingleNodeTestCase {
     @Override
     // TODO: Remove the TestGeoShapeFieldMapperPlugin once upstream has completed the migration.
     protected Collection<Class<? extends Plugin>> getPlugins() {
-        return Arrays.asList(LtrQueryParserPlugin.class, NativeScriptPlugin.class, InjectionScriptPlugin.class,
-                TestGeoShapeFieldMapperPlugin.class);
+        return Arrays
+            .asList(LtrQueryParserPlugin.class, NativeScriptPlugin.class, InjectionScriptPlugin.class, TestGeoShapeFieldMapperPlugin.class);
     }
 
     public void createStore(String name) throws Exception {
@@ -89,8 +90,8 @@ public abstract class BaseIntegrationTest extends OpenSearchSingleNodeTestCase {
         createStore(IndexFeatureStore.DEFAULT_STORE);
     }
 
-    public FeatureStoreResponse addElement(StorableElement element,
-                                           FeatureValidation validation) throws ExecutionException, InterruptedException {
+    public FeatureStoreResponse addElement(StorableElement element, FeatureValidation validation) throws ExecutionException,
+        InterruptedException {
         return addElement(element, validation, IndexFeatureStore.DEFAULT_STORE);
     }
 
@@ -114,11 +115,10 @@ public abstract class BaseIntegrationTest extends OpenSearchSingleNodeTestCase {
         return getInstanceFromNode(LtrRankerParserFactory.class);
     }
 
-    public FeatureStoreResponse addElement(StorableElement element,
-                                           @Nullable FeatureValidation validation,
-                                           String store) throws ExecutionException, InterruptedException {
-        FeatureStoreRequestBuilder builder =
-            new FeatureStoreRequestBuilder(client(), FeatureStoreAction.INSTANCE);
+    public FeatureStoreResponse addElement(StorableElement element, @Nullable FeatureValidation validation, String store)
+        throws ExecutionException,
+        InterruptedException {
+        FeatureStoreRequestBuilder builder = new FeatureStoreRequestBuilder(client(), FeatureStoreAction.INSTANCE);
         builder.request().setStorableElement(element);
         builder.request().setAction(FeatureStoreAction.FeatureStoreRequest.Action.CREATE);
         builder.request().setStore(store);
@@ -160,38 +160,40 @@ public abstract class BaseIntegrationTest extends OpenSearchSingleNodeTestCase {
                  */
                 @SuppressWarnings("unchecked")
                 @Override
-                public <FactoryType> FactoryType compile(String scriptName, String scriptSource,
-                                                         ScriptContext<FactoryType> context, Map<String, String> params) {
+                public <FactoryType> FactoryType compile(
+                    String scriptName,
+                    String scriptSource,
+                    ScriptContext<FactoryType> context,
+                    Map<String, String> params
+                ) {
                     if (!context.equals(ScoreScript.CONTEXT) && (!context.equals(AGGS_CONTEXT))) {
-                        throw new IllegalArgumentException(getType() + " scripts cannot be used for context [" + context.name
-                                + "]");
+                        throw new IllegalArgumentException(getType() + " scripts cannot be used for context [" + context.name + "]");
                     }
                     // we use the script "source" as the script identifier
-                    ScoreScript.Factory factory = (p, lookup, searcher) ->
-                            new ScoreScript.LeafFactory() {
+                    ScoreScript.Factory factory = (p, lookup, searcher) -> new ScoreScript.LeafFactory() {
+                        @Override
+                        public ScoreScript newInstance(LeafReaderContext ctx) throws IOException {
+                            return new ScoreScript(p, lookup, searcher, ctx) {
                                 @Override
-                                public ScoreScript newInstance(LeafReaderContext ctx) throws IOException {
-                                    return new ScoreScript(p, lookup, searcher, ctx) {
-                                        @Override
-                                        public double execute(ExplanationHolder explainationHolder) {
-                                            // For testing purposes just look for the "terms" key and see if stats were injected
-                                            if(p.containsKey("termStats")) {
-                                                Supplier<AbstractMap<String, ArrayList<Float>>> termStats = (Supplier<AbstractMap<String,
-                                                        ArrayList<Float>>>) p.get("termStats");
-                                                ArrayList<Float> dfStats = termStats.get().get("df");
-                                                return dfStats.size() > 0 ? dfStats.get(0) : 0.0;
-                                            } else {
-                                                return 0.0;
-                                            }
-                                        }
-                                    };
-                                }
-
-                                @Override
-                                public boolean needs_score() {
-                                    return false;
+                                public double execute(ExplanationHolder explainationHolder) {
+                                    // For testing purposes just look for the "terms" key and see if stats were injected
+                                    if (p.containsKey("termStats")) {
+                                        Supplier<AbstractMap<String, ArrayList<Float>>> termStats =
+                                            (Supplier<AbstractMap<String, ArrayList<Float>>>) p.get("termStats");
+                                        ArrayList<Float> dfStats = termStats.get().get("df");
+                                        return dfStats.size() > 0 ? dfStats.get(0) : 0.0;
+                                    } else {
+                                        return 0.0;
+                                    }
                                 }
                             };
+                        }
+
+                        @Override
+                        public boolean needs_score() {
+                            return false;
+                        }
+                    };
 
                     return context.factoryClazz.cast(factory);
                 }
@@ -203,7 +205,6 @@ public abstract class BaseIntegrationTest extends OpenSearchSingleNodeTestCase {
             };
         }
     }
-
 
     public static class NativeScriptPlugin extends Plugin implements ScriptPlugin {
         public static final String FEATURE_EXTRACTOR = "feature_extractor";
@@ -231,94 +232,94 @@ public abstract class BaseIntegrationTest extends OpenSearchSingleNodeTestCase {
                  */
                 @SuppressWarnings("unchecked")
                 @Override
-                public <FactoryType> FactoryType compile(String scriptName, String scriptSource,
-                                                         ScriptContext<FactoryType> context, Map<String, String> params) {
+                public <FactoryType> FactoryType compile(
+                    String scriptName,
+                    String scriptSource,
+                    ScriptContext<FactoryType> context,
+                    Map<String, String> params
+                ) {
                     if (!context.equals(ScoreScript.CONTEXT) && (!context.equals(AGGS_CONTEXT))) {
-                        throw new IllegalArgumentException(getType() + " scripts cannot be used for context [" + context.name
-                                + "]");
+                        throw new IllegalArgumentException(getType() + " scripts cannot be used for context [" + context.name + "]");
                     }
                     // we use the script "source" as the script identifier
                     if (FEATURE_EXTRACTOR.equals(scriptSource)) {
-                        ScoreScript.Factory factory = (p, lookup, searcher) ->
-                                new ScoreScript.LeafFactory() {
-                                    final Map<String, Float> featureSupplier;
-                                    final String dependentFeature;
-                                    double extraMultiplier = 0.0d;
+                        ScoreScript.Factory factory = (p, lookup, searcher) -> new ScoreScript.LeafFactory() {
+                            final Map<String, Float> featureSupplier;
+                            final String dependentFeature;
+                            double extraMultiplier = 0.0d;
 
-                                    public static final String DEPENDENT_FEATURE = "dependent_feature";
-                                    public static final String EXTRA_SCRIPT_PARAM = "extra_multiplier";
+                            public static final String DEPENDENT_FEATURE = "dependent_feature";
+                            public static final String EXTRA_SCRIPT_PARAM = "extra_multiplier";
 
-                                    {
-                                        if (!p.containsKey(FEATURE_VECTOR)) {
-                                            throw new IllegalArgumentException("Missing parameter [" + FEATURE_VECTOR + "]");
-                                        }
-                                        if (!p.containsKey(EXTRA_LOGGING)) {
-                                            throw new IllegalArgumentException("Missing parameter [" + EXTRA_LOGGING + "]");
-                                        }
-                                        if (!p.containsKey(DEPENDENT_FEATURE)) {
-                                            throw new IllegalArgumentException("Missing parameter [depdendent_feature ]");
-                                        }
-                                        if (p.containsKey(EXTRA_SCRIPT_PARAM)) {
-                                            extraMultiplier = Double.valueOf(p.get(EXTRA_SCRIPT_PARAM).toString());
-                                        }
-                                        featureSupplier = (Map<String, Float>) p.get(FEATURE_VECTOR);
-                                        dependentFeature = p.get(DEPENDENT_FEATURE).toString();
-                                    }
+                            {
+                                if (!p.containsKey(FEATURE_VECTOR)) {
+                                    throw new IllegalArgumentException("Missing parameter [" + FEATURE_VECTOR + "]");
+                                }
+                                if (!p.containsKey(EXTRA_LOGGING)) {
+                                    throw new IllegalArgumentException("Missing parameter [" + EXTRA_LOGGING + "]");
+                                }
+                                if (!p.containsKey(DEPENDENT_FEATURE)) {
+                                    throw new IllegalArgumentException("Missing parameter [depdendent_feature ]");
+                                }
+                                if (p.containsKey(EXTRA_SCRIPT_PARAM)) {
+                                    extraMultiplier = Double.valueOf(p.get(EXTRA_SCRIPT_PARAM).toString());
+                                }
+                                featureSupplier = (Map<String, Float>) p.get(FEATURE_VECTOR);
+                                dependentFeature = p.get(DEPENDENT_FEATURE).toString();
+                            }
 
+                            @Override
+                            public ScoreScript newInstance(LeafReaderContext ctx) throws IOException {
+                                return new ScoreScript(p, lookup, searcher, ctx) {
                                     @Override
-                                    public ScoreScript newInstance(LeafReaderContext ctx) throws IOException {
-                                        return new ScoreScript(p, lookup, searcher, ctx) {
-                                            @Override
-                                            public double execute(ExplanationHolder explainationHolder ) {
-                                                return extraMultiplier == 0.0d ?
-                                                        featureSupplier.get(dependentFeature) * 10 :
-                                                        featureSupplier.get(dependentFeature) * extraMultiplier;
-                                            }
-                                        };
-                                    }
-
-                                    @Override
-                                    public boolean needs_score() {
-                                        return false;
+                                    public double execute(ExplanationHolder explainationHolder) {
+                                        return extraMultiplier == 0.0d
+                                            ? featureSupplier.get(dependentFeature) * 10
+                                            : featureSupplier.get(dependentFeature) * extraMultiplier;
                                     }
                                 };
+                            }
+
+                            @Override
+                            public boolean needs_score() {
+                                return false;
+                            }
+                        };
 
                         return context.factoryClazz.cast(factory);
-                    }
-                    else if (scriptSource.equals(FEATURE_EXTRACTOR + "_extra_logging")) {
-                        ScoreScript.Factory factory = (p, lookup, searcher) ->
-                                new ScoreScript.LeafFactory() {
-                                    {
-                                        if (!p.containsKey(FEATURE_VECTOR)) {
-                                            throw new IllegalArgumentException("Missing parameter [" + FEATURE_VECTOR + "]");
-                                        }
-                                        if (!p.containsKey(EXTRA_LOGGING)) {
-                                            throw new IllegalArgumentException("Missing parameter [" + EXTRA_LOGGING + "]");
-                                        }
-                                    }
+                    } else if (scriptSource.equals(FEATURE_EXTRACTOR + "_extra_logging")) {
+                        ScoreScript.Factory factory = (p, lookup, searcher) -> new ScoreScript.LeafFactory() {
+                            {
+                                if (!p.containsKey(FEATURE_VECTOR)) {
+                                    throw new IllegalArgumentException("Missing parameter [" + FEATURE_VECTOR + "]");
+                                }
+                                if (!p.containsKey(EXTRA_LOGGING)) {
+                                    throw new IllegalArgumentException("Missing parameter [" + EXTRA_LOGGING + "]");
+                                }
+                            }
+
+                            @Override
+                            public ScoreScript newInstance(LeafReaderContext ctx) throws IOException {
+                                return new ScoreScript(p, lookup, searcher, ctx) {
 
                                     @Override
-                                    public ScoreScript newInstance(LeafReaderContext ctx) throws IOException {
-                                        return new ScoreScript(p, lookup, searcher, ctx) {
-
-                                            @Override
-                                            public double execute(ExplanationHolder explanation) {
-                                                Map<String,Object> extraLoggingMap = ((Supplier<Map<String,Object>>) getParams()
-                                                        .get(EXTRA_LOGGING)).get();
-                                                if (extraLoggingMap != null) {
-                                                    extraLoggingMap.put("extra_float", 10.0f);
-                                                    extraLoggingMap.put("extra_string", "additional_info");
-                                                }
-                                                return 1.0d;
-                                            }
-                                        };
-                                    }
-
-                                    @Override
-                                    public boolean needs_score() {
-                                        return false;
+                                    public double execute(ExplanationHolder explanation) {
+                                        Map<String, Object> extraLoggingMap = ((Supplier<Map<String, Object>>) getParams()
+                                            .get(EXTRA_LOGGING)).get();
+                                        if (extraLoggingMap != null) {
+                                            extraLoggingMap.put("extra_float", 10.0f);
+                                            extraLoggingMap.put("extra_string", "additional_info");
+                                        }
+                                        return 1.0d;
                                     }
                                 };
+                            }
+
+                            @Override
+                            public boolean needs_score() {
+                                return false;
+                            }
+                        };
 
                         return context.factoryClazz.cast(factory);
                     }
