@@ -15,7 +15,7 @@ __pycache__/
 RankLib.jar
 tmdb.json
 model.txt
-
+.DS_Store
 
 .idea/
 .gradle/
