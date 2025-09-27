@@ -169,10 +169,11 @@ public class RankerQuery extends Query {
         LTRStats ltrStats
     ) {
         List<Query> queries = features.toQueries(context, params);
-        Map<Integer, float[]> featureScoreCache = null;
-        if (null != featureScoreCacheFlag && featureScoreCacheFlag) {
-            featureScoreCache = new HashMap<>();
-        }
+        // Option C: default to enabling per-doc feature score cache during query-phase scoring
+        // to allow fetch-phase render without rescoring. Respect an explicit `false` to disable.
+        Map<Integer, float[]> featureScoreCache = (featureScoreCacheFlag != null && !featureScoreCacheFlag)
+            ? null
+            : new HashMap<>();
         return new RankerQuery(queries, features, ranker, featureScoreCache, ltrStats);
     }
 
@@ -259,6 +260,14 @@ public class RankerQuery extends Query {
      */
     public Map<Query, Weight> getPerRequestWeightCache() {
         return perRequestWeightCache;
+    }
+
+    /**
+     * Exposes the per-document feature score cache populated during query-phase scoring.
+     * Keys are absolute per-shard doc IDs (leaf doc ID + leaf docBase).
+     */
+    public Map<Integer, float[]> getFeatureScoreCache() {
+        return featureScoreCache;
     }
 
     @Override

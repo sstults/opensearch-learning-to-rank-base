@@ -75,6 +75,21 @@ public class LoggingFetchSubPhase implements FetchSubPhase {
             });
         }
 
+        // Option C: If query-phase feature caches are present for all RankerQueries,
+        // render logs directly from caches without rebuilding Weights or rescoring.
+        List<Map<Integer, float[]>> featureCaches = new ArrayList<>();
+        boolean useCachedRender = !rankerQueries.isEmpty();
+        for (RankerQuery rq : rankerQueries) {
+            Map<Integer, float[]> fc = rq.getFeatureScoreCache();
+            if (fc == null || fc.isEmpty()) {
+                useCachedRender = false;
+            }
+            featureCaches.add(fc);
+        }
+        if (useCachedRender) {
+            return new CachedLoggingFetchSubPhaseProcessor(loggers, featureCaches);
+        }
+
         IndexSearcher searcher = context.searcher();
         Query combined = builder.build();
         Query rewritten = searcher.rewrite(combined);
@@ -207,6 +222,51 @@ public class LoggingFetchSubPhase implements FetchSubPhase {
         }
     }
 
+    /**
+     * Option C: Cached render-only processor. Uses feature vectors computed during query-phase to render logs in fetch.
+     * No Weights or Scorers are created, preserving DFS/global stats consistency and avoiding rescoring.
+     */
+    static class CachedLoggingFetchSubPhaseProcessor implements FetchSubPhaseProcessor {
+        private final List<HitLogConsumer> loggers;
+        private final List<Map<Integer, float[]>> featureCaches;
+        private int docBase;
+
+        CachedLoggingFetchSubPhaseProcessor(List<HitLogConsumer> loggers, List<Map<Integer, float[]>> featureCaches) {
+            this.loggers = loggers;
+            this.featureCaches = featureCaches;
+        }
+
+        @Override
+        public void setNextReader(LeafReaderContext readerContext) {
+            this.docBase = readerContext.docBase;
+        }
+
+        @Override
+        public void process(HitContext hitContext) throws IOException {
+            int absDocId = docBase + hitContext.docId();
+
+            // All caches were verified non-empty in getProcessor(). Render logs from caches.
+            for (int i = 0; i < loggers.size(); i++) {
+                HitLogConsumer consumer = loggers.get(i);
+                Map<Integer, float[]> cache = featureCaches.get(i);
+                float[] vec = (cache != null) ? cache.get(absDocId) : null;
+                if (vec == null) {
+                    // If a doc is unexpectedly missing from cache, skip silently (best-effort).
+                    // We intentionally do NOT fallback to rescoring here to avoid DFS mismatch.
+                    continue;
+                }
+                consumer.nextDoc(hitContext.hit());
+                int limit = Math.min(vec.length, consumer.featureCount());
+                for (int ord = 0; ord < limit; ord++) {
+                    float v = vec[ord];
+                    if (!Float.isNaN(v)) {
+                        consumer.accept(ord, v);
+                    }
+                }
+            }
+        }
+    }
+
     static class HitLogConsumer implements LogLtrRanker.LogConsumer {
         private static final String FIELD_NAME = "_ltrlog";
         private static final String EXTRA_LOGGING_NAME = "extra_logging";
@@ -272,6 +332,10 @@ public class LoggingFetchSubPhase implements FetchSubPhase {
                 currentLog.add(logEntry);
             }
             return extraLogging;
+        }
+
+        int featureCount() {
+            return set.size();
         }
 
         void nextDoc(SearchHit hit) {
