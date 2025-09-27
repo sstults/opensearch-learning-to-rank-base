@@ -203,9 +203,7 @@ public class RankerQuery extends Query {
             rewritten |= rewrittenQuery != query;
             rewrittenQueries.add(rewrittenQuery);
         }
-        return rewritten
-            ? new RankerQuery(rewrittenQueries, features, ranker, featureScoreCache, ltrStats, perRequestWeightCache)
-            : this;
+        return rewritten ? new RankerQuery(rewrittenQueries, features, ranker, featureScoreCache, ltrStats, perRequestWeightCache) : this;
     }
 
     @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")

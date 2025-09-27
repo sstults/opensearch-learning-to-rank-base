@@ -44,8 +44,8 @@ import org.apache.lucene.search.QueryVisitor;
 import org.apache.lucene.search.ScoreMode;
 import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.ScorerSupplier;
-import org.apache.lucene.search.Weight;
 import org.apache.lucene.search.TermStatistics;
+import org.apache.lucene.search.Weight;
 import org.opensearch.common.lucene.search.function.LeafScoreFunction;
 import org.opensearch.common.lucene.search.function.ScriptScoreFunction;
 import org.opensearch.common.xcontent.LoggingDeprecationHandler;
@@ -384,15 +384,8 @@ public class ScriptFeature implements Feature {
                     CURRENT_TERM_STATS.set(termStatSupplier);
                     // Do the terms magic if the user asked for it
                     if (terms.size() > 0) {
-                        termStatSupplier.bumpPrecomputed(
-                            context,
-                            docID(),
-                            terms,
-                            scoreMode,
-                            termContexts,
-                            termStatisticsMap,
-                            fieldDocCounts
-                        );
+                        termStatSupplier
+                            .bumpPrecomputed(context, docID(), terms, scoreMode, termContexts, termStatisticsMap, fieldDocCounts);
                     }
 
                     float score = (float) leafScoreFunction.score(iterator.docID(), 0F);
