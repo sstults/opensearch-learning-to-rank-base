@@ -1,17 +1,9 @@
 /*
- * Copyright [2017] Wikimedia Foundation
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
  */
 
 /*
@@ -20,24 +12,16 @@
  */
 package com.o19s.es.ltr.logging;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.instanceOf;
-
 import java.util.*;
-import java.util.stream.Collectors;
 
 import org.apache.lucene.tests.util.TestUtil;
-import org.opensearch.ExceptionsHelper;
 import org.opensearch.action.index.IndexResponse;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.action.search.SearchType;
-import org.opensearch.common.lucene.search.function.FieldValueFactorFunction;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.index.query.QueryBuilder;
 import org.opensearch.index.query.QueryBuilders;
 import org.opensearch.index.query.WrapperQueryBuilder;
-import org.opensearch.index.query.functionscore.FieldValueFactorFunctionBuilder;
-import org.opensearch.index.query.functionscore.FunctionScoreQueryBuilder;
 import org.opensearch.search.SearchHit;
 import org.opensearch.search.SearchHits;
 import org.opensearch.search.builder.SearchSourceBuilder;
@@ -73,7 +57,7 @@ public class LoggingDfsConsistencyIT extends BaseIntegrationTest {
         List<StoredFeature> features = new ArrayList<>(1);
         features.add(new StoredFeature(
             FEATURE_NAME,
-            Arrays.asList("query"), // not used by the inject script, but preserved for parity with existing tests
+            List.of("query"), // not used by the inject script, but preserved for parity with existing tests
             ScriptFeature.TEMPLATE_LANGUAGE,
             "{\"lang\": \"inject\", \"source\": \"df\", \"params\": {\"term_stat\": { "
                 + "\"analyzer\": \"!standard\", "
@@ -84,20 +68,20 @@ public class LoggingDfsConsistencyIT extends BaseIntegrationTest {
         addElement(set);
     }
 
-    private static class Doc {
+    private static class TestDoc {
         String id;
         String field1;
         float scorefield1;
 
-        Doc(String field1, float scorefield1) {
+        TestDoc(String field1, float scorefield1) {
             this.field1 = field1;
             this.scorefield1 = scorefield1;
         }
     }
 
-    private String indexDocWithRouting(String index, String routing, Doc d) {
+    private String indexDocWithRouting(String routing, TestDoc d) {
         IndexResponse resp = client()
-            .prepareIndex(index)
+            .prepareIndex(LoggingDfsConsistencyIT.INDEX)
             .setRouting(routing)
             .setSource(FIELD, d.field1, "scorefield1", d.scorefield1)
             .get();
@@ -110,7 +94,7 @@ public class LoggingDfsConsistencyIT extends BaseIntegrationTest {
      * - shard 0: 1 document contains TERM
      * - shard 1: multiple documents contain TERM
      */
-    private Map<String, Doc> buildTwoShardIndexWithDfSkew() {
+    private Map<String, TestDoc> buildTwoShardIndexWithDfSkew() {
         client().admin().indices().prepareCreate(INDEX)
             .setSettings(Settings.builder()
                 .put("index.number_of_shards", 2)
@@ -122,24 +106,24 @@ public class LoggingDfsConsistencyIT extends BaseIntegrationTest {
                 + "}}")
             .get();
 
-        Map<String, Doc> docs = new HashMap<>();
+        Map<String, TestDoc> docs = new HashMap<>();
         // Shard 0: routing "r0"
-        Doc docShard0 = new Doc(TERM + " common", Math.abs(random().nextFloat()));
-        String id0 = indexDocWithRouting(INDEX, "r0", docShard0);
-        docs.put(id0, docShard0);
+        TestDoc testDocShard0 = new TestDoc(TERM + " common", Math.abs(random().nextFloat()));
+        String id0 = indexDocWithRouting("r0", testDocShard0);
+        docs.put(id0, testDocShard0);
 
         // Add one extra doc on shard 0 without TERM (to keep shard size non-trivial)
-        Doc docShard0NoTerm = new Doc("common only", Math.abs(random().nextFloat()));
-        indexDocWithRouting(INDEX, "r0", docShard0NoTerm);
+        TestDoc testDocShard0NoTerm = new TestDoc("common only", Math.abs(random().nextFloat()));
+        indexDocWithRouting("r0", testDocShard0NoTerm);
 
         // Shard 1: routing "r1" with multiple docs containing TERM to skew DF
         int extra = TestUtil.nextInt(random(), 3, 6);
-        Doc docShard1 = new Doc(TERM + " common", Math.abs(random().nextFloat()));
-        String id1 = indexDocWithRouting(INDEX, "r1", docShard1);
-        docs.put(id1, docShard1);
+        TestDoc testDocShard1 = new TestDoc(TERM + " common", Math.abs(random().nextFloat()));
+        String id1 = indexDocWithRouting("r1", testDocShard1);
+        docs.put(id1, testDocShard1);
         for (int i = 0; i < extra; i++) {
-            Doc d = new Doc(TERM + " filler", Math.abs(random().nextFloat()));
-            indexDocWithRouting(INDEX, "r1", d);
+            TestDoc d = new TestDoc(TERM + " filler", Math.abs(random().nextFloat()));
+            indexDocWithRouting("r1", d);
         }
 
         client().admin().indices().prepareRefresh(INDEX).get();
@@ -151,7 +135,7 @@ public class LoggingDfsConsistencyIT extends BaseIntegrationTest {
         prepareDfFeature();
 
         // Build index with 2 shards and asymmetrical DF
-        Map<String, Doc> docs = buildTwoShardIndexWithDfSkew();
+        Map<String, TestDoc> docs = buildTwoShardIndexWithDfSkew();
         List<String> ids = new ArrayList<>(docs.keySet());
         Collections.sort(ids);
         String idOnShard0 = ids.get(0);
@@ -201,32 +185,30 @@ public class LoggingDfsConsistencyIT extends BaseIntegrationTest {
             .get();
 
         // Extract logged feature values
-        float v0 = getLoggedFeatureValue(resp0, LOGGER, FEATURE_NAME);
-        float v1 = getLoggedFeatureValue(resp1, LOGGER, FEATURE_NAME);
+        float v0 = getLoggedFeatureValue(resp0);
+        float v1 = getLoggedFeatureValue(resp1);
 
         // Assertion: with global stats applied during logging, df-based feature values should be identical.
-        // This test will fail under current shard-local logging behavior and pass after the fix.
         assertEquals("Logged feature value should be consistent across shards with dfs_query_then_fetch", v0, v1, 0.0f);
     }
 
-    @SuppressWarnings("unchecked")
-    private float getLoggedFeatureValue(SearchResponse resp, String loggerName, String featureName) {
+    private float getLoggedFeatureValue(SearchResponse resp) {
         SearchHits hits = resp.getHits();
         assertEquals(1, hits.getHits().length);
         SearchHit hit = hits.getAt(0);
         assertTrue(hit.getFields().containsKey("_ltrlog"));
         Map<String, List<Map<String, Object>>> logs = hit.getFields().get("_ltrlog").getValue();
-        assertTrue("Missing logger: " + loggerName, logs.containsKey(loggerName));
-        List<Map<String, Object>> log = logs.get(loggerName);
+        assertTrue("Missing logger: " + LoggingDfsConsistencyIT.LOGGER, logs.containsKey(LoggingDfsConsistencyIT.LOGGER));
+        List<Map<String, Object>> log = logs.get(LoggingDfsConsistencyIT.LOGGER);
         for (Map<String, Object> entry : log) {
             Object n = entry.get("name");
-            if (featureName.equals(n)) {
+            if (LoggingDfsConsistencyIT.FEATURE_NAME.equals(n)) {
                 Object v = entry.get("value");
-                assertTrue("Feature value missing for " + featureName, v instanceof Float);
+                assertTrue("Feature value missing for " + LoggingDfsConsistencyIT.FEATURE_NAME, v instanceof Float);
                 return (Float) v;
             }
         }
-        fail("Feature " + featureName + " not found in logs");
+        fail("Feature " + LoggingDfsConsistencyIT.FEATURE_NAME + " not found in logs");
         return Float.NaN;
     }
 }
