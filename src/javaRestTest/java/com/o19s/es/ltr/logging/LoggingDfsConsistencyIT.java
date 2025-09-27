@@ -55,15 +55,22 @@ public class LoggingDfsConsistencyIT extends BaseIntegrationTest {
         // Define a single script feature that extracts df/idf using the "inject" script infrastructure.
         // We will use "df" via the TermStat pipeline; expression is embedded in the script engine.
         List<StoredFeature> features = new ArrayList<>(1);
-        features.add(new StoredFeature(
-            FEATURE_NAME,
-            List.of("query"), // not used by the inject script, but preserved for parity with existing tests
-            ScriptFeature.TEMPLATE_LANGUAGE,
-            "{\"lang\": \"inject\", \"source\": \"df\", \"params\": {\"term_stat\": { "
-                + "\"analyzer\": \"!standard\", "
-                + "\"terms\": [\"" + TERM + "\"], "
-                + "\"fields\": [\"" + FIELD + "\"] } } }"
-        ));
+        features
+            .add(
+                new StoredFeature(
+                    FEATURE_NAME,
+                    List.of("query"), // not used by the inject script, but preserved for parity with existing tests
+                    ScriptFeature.TEMPLATE_LANGUAGE,
+                    "{\"lang\": \"inject\", \"source\": \"df\", \"params\": {\"term_stat\": { "
+                        + "\"analyzer\": \"!standard\", "
+                        + "\"terms\": [\""
+                        + TERM
+                        + "\"], "
+                        + "\"fields\": [\""
+                        + FIELD
+                        + "\"] } } }"
+                )
+            );
         StoredFeatureSet set = new StoredFeatureSet(FEATURE_SET, features);
         addElement(set);
     }
@@ -95,15 +102,12 @@ public class LoggingDfsConsistencyIT extends BaseIntegrationTest {
      * - shard 1: multiple documents contain TERM
      */
     private Map<String, TestDoc> buildTwoShardIndexWithDfSkew() {
-        client().admin().indices().prepareCreate(INDEX)
-            .setSettings(Settings.builder()
-                .put("index.number_of_shards", 2)
-                .put("index.number_of_replicas", 0)
-            )
-            .setMapping("{\"properties\":{"
-                + "\"scorefield1\": {\"type\": \"float\"}, "
-                + "\"" + FIELD + "\": {\"type\": \"text\"}"
-                + "}}")
+        client()
+            .admin()
+            .indices()
+            .prepareCreate(INDEX)
+            .setSettings(Settings.builder().put("index.number_of_shards", 2).put("index.number_of_replicas", 0))
+            .setMapping("{\"properties\":{" + "\"scorefield1\": {\"type\": \"float\"}, " + "\"" + FIELD + "\": {\"type\": \"text\"}" + "}}")
             .get();
 
         Map<String, TestDoc> docs = new HashMap<>();
@@ -160,11 +164,7 @@ public class LoggingDfsConsistencyIT extends BaseIntegrationTest {
             .size(1)
             .ext(Collections.singletonList(new LoggingSearchExtBuilder().addQueryLogging(LOGGER, "test", false)));
 
-        SearchResponse resp0 = client()
-            .prepareSearch(INDEX)
-            .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-            .setSource(sourceBuilder0)
-            .get();
+        SearchResponse resp0 = client().prepareSearch(INDEX).setSearchType(SearchType.DFS_QUERY_THEN_FETCH).setSource(sourceBuilder0).get();
 
         // Search 2: filter to doc on shard 1
         QueryBuilder query1 = QueryBuilders
@@ -178,11 +178,7 @@ public class LoggingDfsConsistencyIT extends BaseIntegrationTest {
             .size(1)
             .ext(Collections.singletonList(new LoggingSearchExtBuilder().addQueryLogging(LOGGER, "test", false)));
 
-        SearchResponse resp1 = client()
-            .prepareSearch(INDEX)
-            .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-            .setSource(sourceBuilder1)
-            .get();
+        SearchResponse resp1 = client().prepareSearch(INDEX).setSearchType(SearchType.DFS_QUERY_THEN_FETCH).setSource(sourceBuilder1).get();
 
         // Extract logged feature values
         float v0 = getLoggedFeatureValue(resp0);

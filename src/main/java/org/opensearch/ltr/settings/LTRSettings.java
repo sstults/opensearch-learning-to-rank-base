@@ -110,7 +110,6 @@ public class LTRSettings {
         return LTRSettings.getInstance().getSettingValue(LTRSettings.LTR_BREAKER_ENABLED);
     }
 
-
     public void init(ClusterService clusterService) {
         this.clusterService = clusterService;
         setSettingsUpdateConsumers();

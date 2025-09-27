@@ -34,8 +34,8 @@ import org.apache.lucene.search.QueryVisitor;
 import org.apache.lucene.search.ScoreMode;
 import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.ScorerSupplier;
-import org.apache.lucene.search.Weight;
 import org.apache.lucene.search.TermStatistics;
+import org.apache.lucene.search.Weight;
 import org.opensearch.ltr.settings.LTRSettings;
 
 import com.o19s.es.explore.StatisticsHelper;
