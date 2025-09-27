@@ -45,6 +45,7 @@ public class LTRSettings {
      */
     public static final String LTR_PLUGIN_ENABLED = "ltr.plugin.enabled";
     public static final String LTR_BREAKER_ENABLED = "ltr.breaker.enabled";
+    public static final String LTR_LOGGING_USE_GLOBAL_STATS = "ltr.logging.use_global_stats";
 
     private final Map<String, Setting<?>> settings = unmodifiableMap(new HashMap<String, Setting<?>>() {
         {
@@ -57,6 +58,10 @@ public class LTRSettings {
              * LTR breaker enable/disable setting
              */
             put(LTR_BREAKER_ENABLED, Setting.boolSetting(LTR_BREAKER_ENABLED, true, NodeScope, Dynamic));
+            /**
+             * Use global collection/term stats for logging (DFS-like priming in fetch)
+             */
+            put(LTR_LOGGING_USE_GLOBAL_STATS, Setting.boolSetting(LTR_LOGGING_USE_GLOBAL_STATS, true, NodeScope, Dynamic));
         }
     });
 
@@ -108,6 +113,10 @@ public class LTRSettings {
 
     public static boolean isLTRBreakerEnabled() {
         return LTRSettings.getInstance().getSettingValue(LTRSettings.LTR_BREAKER_ENABLED);
+    }
+
+    public static boolean isLTRLoggingUseGlobalStats() {
+        return LTRSettings.getInstance().getSettingValue(LTR_LOGGING_USE_GLOBAL_STATS);
     }
 
     public void init(ClusterService clusterService) {

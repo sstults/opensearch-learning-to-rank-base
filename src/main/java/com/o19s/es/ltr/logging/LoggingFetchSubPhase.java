@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.IdentityHashMap;
 
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.search.BooleanClause;
@@ -46,6 +47,7 @@ import org.opensearch.search.fetch.FetchSubPhase;
 import org.opensearch.search.fetch.FetchSubPhaseProcessor;
 import org.opensearch.search.rescore.QueryRescorer;
 import org.opensearch.search.rescore.RescoreContext;
+import org.opensearch.ltr.settings.LTRSettings;
 
 import com.o19s.es.ltr.feature.FeatureSet;
 import com.o19s.es.ltr.query.RankerQuery;
@@ -81,21 +83,29 @@ public class LoggingFetchSubPhase implements FetchSubPhase {
         Query combined = builder.build();
         Query rewritten = searcher.rewrite(combined);
 
-        // Prime DFS stats so feature logging uses global collection/term stats (dfs_query_then_fetch)
-        Set<Term> terms = new HashSet<>();
-        rewritten.visit(QueryVisitor.termCollector(terms));
-        for (Term t : terms) {
-            TermStates ts = TermStates.build(searcher, t, true);
-            if (ts != null && ts.docFreq() > 0) {
-                // Trigger collection and term statistics to ensure DFS-aware weighting
-                searcher.collectionStatistics(t.field());
-                searcher.termStatistics(t, ts.docFreq(), ts.totalTermFreq());
+        if (LTRSettings.isLTRLoggingUseGlobalStats()) {
+            // Prime DFS stats so feature logging uses global collection/term stats (dfs_query_then_fetch)
+            Set<Term> terms = new HashSet<>();
+            rewritten.visit(QueryVisitor.termCollector(terms));
+            for (Term t : terms) {
+                TermStates ts = TermStates.build(searcher, t, true);
+                if (ts != null && ts.docFreq() > 0) {
+                    // Trigger collection and term statistics to ensure DFS-aware weighting
+                    searcher.collectionStatistics(t.field());
+                    searcher.termStatistics(t, ts.docFreq(), ts.totalTermFreq());
+                }
             }
         }
 
-        Weight w = rewritten.createWeight(searcher, ScoreMode.COMPLETE, 1.0F);
-
-        return new LoggingFetchSubPhaseProcessor(w, loggers);
+        // Per-request caching of per-feature Weights during fetch logging
+        Map<Query, Weight> perRequestWeightCache = new IdentityHashMap<>();
+        RankerQuery.setPerRequestWeightCache(perRequestWeightCache);
+        try {
+            Weight w = rewritten.createWeight(searcher, ScoreMode.COMPLETE, 1.0F);
+            return new LoggingFetchSubPhaseProcessor(w, loggers);
+        } finally {
+            RankerQuery.clearPerRequestWeightCache();
+        }
     }
 
     private Tuple<RankerQuery, HitLogConsumer> extractQuery(LoggingSearchExtBuilder.LogSpec logSpec, Map<String, Query> namedQueries) {

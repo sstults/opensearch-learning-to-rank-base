@@ -75,6 +75,15 @@ public class RankerQuery extends Query {
      * </ul>
      */
     private static final ThreadLocal<LtrRanker.FeatureVector> CURRENT_VECTOR = new ThreadLocal<>();
+    private static final ThreadLocal<Map<Query, Weight>> PER_REQUEST_WEIGHT_CACHE = new ThreadLocal<>();
+
+    public static void setPerRequestWeightCache(Map<Query, Weight> cache) {
+        PER_REQUEST_WEIGHT_CACHE.set(cache);
+    }
+
+    public static void clearPerRequestWeightCache() {
+        PER_REQUEST_WEIGHT_CACHE.remove();
+    }
 
     private final LTRStats ltrStats;
     private final List<Query> queries;
@@ -161,7 +170,8 @@ public class RankerQuery extends Query {
 
     public RankerQuery toLoggerQuery(LogLtrRanker.LogConsumer consumer) {
         NullRanker newRanker = new NullRanker(features.size());
-        return new RankerQuery(queries, features, new LogLtrRanker(newRanker, consumer), featureScoreCache, ltrStats);
+        Map<Integer, float[]> cache = featureScoreCache != null ? featureScoreCache : new HashMap<>();
+        return new RankerQuery(queries, features, new LogLtrRanker(newRanker, consumer), cache, ltrStats);
     }
 
     @Override
@@ -272,7 +282,17 @@ public class RankerQuery extends Query {
             if (q instanceof LtrRewritableQuery) {
                 q = ((LtrRewritableQuery) q).ltrRewrite(context);
             }
-            weights.add(searcher.createWeight(q, ScoreMode.COMPLETE, boost));
+            Map<Query, Weight> cache = PER_REQUEST_WEIGHT_CACHE.get();
+            if (cache != null) {
+                Weight cw = cache.get(q);
+                if (cw == null) {
+                    cw = searcher.createWeight(q, ScoreMode.COMPLETE, boost);
+                    cache.put(q, cw);
+                }
+                weights.add(cw);
+            } else {
+                weights.add(searcher.createWeight(q, ScoreMode.COMPLETE, boost));
+            }
         }
         return new RankerWeight(this, weights, ltrRankerWrapper, features, featureScoreCache);
     }
