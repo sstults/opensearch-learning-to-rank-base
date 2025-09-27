@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -57,6 +56,7 @@ public class LoggingFetchSubPhase implements FetchSubPhase {
 
         BooleanQuery.Builder builder = new BooleanQuery.Builder();
         List<HitLogConsumer> loggers = new ArrayList<>();
+        List<RankerQuery> rankerQueries = new ArrayList<>();
         Map<String, Query> namedQueries = context.parsedQuery().namedFilters();
 
         if (namedQueries.size() > 0) {
@@ -64,12 +64,14 @@ public class LoggingFetchSubPhase implements FetchSubPhase {
                 Tuple<RankerQuery, HitLogConsumer> query = extractQuery(l, namedQueries);
                 builder.add(new BooleanClause(query.v1(), BooleanClause.Occur.MUST));
                 loggers.add(query.v2());
+                rankerQueries.add(query.v1());
             });
 
             ext.logSpecsStream().filter((l) -> l.getRescoreIndex() != null).forEach((l) -> {
                 Tuple<RankerQuery, HitLogConsumer> query = extractRescore(l, context.rescore());
                 builder.add(new BooleanClause(query.v1(), BooleanClause.Occur.MUST));
                 loggers.add(query.v2());
+                rankerQueries.add(query.v1());
             });
         }
 
@@ -77,14 +79,28 @@ public class LoggingFetchSubPhase implements FetchSubPhase {
         Query combined = builder.build();
         Query rewritten = searcher.rewrite(combined);
 
-        // Per-request caching of per-feature Weights during fetch logging
-        Map<Query, Weight> perRequestWeightCache = new IdentityHashMap<>();
-        RankerQuery.setPerRequestWeightCache(perRequestWeightCache);
+        // Bridge DFS-aware Weights from the query phase into fetch via ThreadLocal:
+        // merge per-request caches from all RankerQueries involved in logging and set them
+        // so that RankerQuery#createWeightInternal reuses DFS-built Weights rather than creating new ones.
+        Map<Query, Weight> mergedCache = new HashMap<>();
+        for (RankerQuery rq : rankerQueries) {
+            Map<Query, Weight> c = rq.getPerRequestWeightCache();
+            if (c != null && !c.isEmpty()) {
+                mergedCache.putAll(c);
+            }
+        }
+        boolean setCache = false;
+        if (!mergedCache.isEmpty()) {
+            RankerQuery.setPerRequestWeightCache(mergedCache);
+            setCache = true;
+        }
         try {
             Weight w = rewritten.createWeight(searcher, ScoreMode.COMPLETE, 1.0F);
             return new LoggingFetchSubPhaseProcessor(w, loggers);
         } finally {
-            RankerQuery.clearPerRequestWeightCache();
+            if (setCache) {
+                RankerQuery.clearPerRequestWeightCache();
+            }
         }
     }
 

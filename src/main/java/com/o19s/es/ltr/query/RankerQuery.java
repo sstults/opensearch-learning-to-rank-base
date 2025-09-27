@@ -85,11 +85,18 @@ public class RankerQuery extends Query {
         PER_REQUEST_WEIGHT_CACHE.remove();
     }
 
+    public static boolean hasPerRequestWeightCache() {
+        return PER_REQUEST_WEIGHT_CACHE.get() != null;
+    }
+
     private final LTRStats ltrStats;
     private final List<Query> queries;
     private final FeatureSet features;
     private final LtrRanker ranker;
     private final Map<Integer, float[]> featureScoreCache;
+    // Per-request cache of Weights for feature queries.
+    // Filled during the query phase (DFS-aware) and reused later (e.g., for logging in fetch).
+    private final Map<Query, Weight> perRequestWeightCache;
 
     private RankerQuery(
         List<Query> queries,
@@ -98,11 +105,23 @@ public class RankerQuery extends Query {
         Map<Integer, float[]> featureScoreCache,
         LTRStats ltrStats
     ) {
+        this(queries, features, ranker, featureScoreCache, ltrStats, new HashMap<>());
+    }
+
+    private RankerQuery(
+        List<Query> queries,
+        FeatureSet features,
+        LtrRanker ranker,
+        Map<Integer, float[]> featureScoreCache,
+        LTRStats ltrStats,
+        Map<Query, Weight> perRequestWeightCache
+    ) {
         this.queries = Objects.requireNonNull(queries);
         this.features = Objects.requireNonNull(features);
         this.ranker = Objects.requireNonNull(ranker);
         this.featureScoreCache = featureScoreCache;
         this.ltrStats = ltrStats;
+        this.perRequestWeightCache = Objects.requireNonNull(perRequestWeightCache);
     }
 
     /**
@@ -171,7 +190,8 @@ public class RankerQuery extends Query {
     public RankerQuery toLoggerQuery(LogLtrRanker.LogConsumer consumer) {
         NullRanker newRanker = new NullRanker(features.size());
         Map<Integer, float[]> cache = featureScoreCache != null ? featureScoreCache : new HashMap<>();
-        return new RankerQuery(queries, features, new LogLtrRanker(newRanker, consumer), cache, ltrStats);
+        // Preserve the per-request Weight cache so fetch can reuse DFS-built Weights from query phase.
+        return new RankerQuery(queries, features, new LogLtrRanker(newRanker, consumer), cache, ltrStats, perRequestWeightCache);
     }
 
     @Override
@@ -183,7 +203,9 @@ public class RankerQuery extends Query {
             rewritten |= rewrittenQuery != query;
             rewrittenQueries.add(rewrittenQuery);
         }
-        return rewritten ? new RankerQuery(rewrittenQueries, features, ranker, featureScoreCache, ltrStats) : this;
+        return rewritten
+            ? new RankerQuery(rewrittenQueries, features, ranker, featureScoreCache, ltrStats, perRequestWeightCache)
+            : this;
     }
 
     @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
@@ -234,6 +256,13 @@ public class RankerQuery extends Query {
         return features;
     }
 
+    /**
+     * Exposes the per-request Weight cache for reuse across phases (e.g., in fetch).
+     */
+    public Map<Query, Weight> getPerRequestWeightCache() {
+        return perRequestWeightCache;
+    }
+
     @Override
     public Weight createWeight(IndexSearcher searcher, ScoreMode scoreMode, float boost) throws IOException {
         if (!LTRSettings.isLTRPluginEnabled()) {
@@ -282,17 +311,21 @@ public class RankerQuery extends Query {
             if (q instanceof LtrRewritableQuery) {
                 q = ((LtrRewritableQuery) q).ltrRewrite(context);
             }
+            // Rewrite the feature query with the IndexSearcher to derive a stable key across phases
+            // (avoids cache misses when fetch pre-rewrites the RankerQuery).
+            Query rq = q.rewrite(searcher);
+            // Prefer a thread-local cache if present (can be set from fetch using the query-phase cache),
+            // otherwise fall back to the instance-scoped cache captured during query-phase scoring.
             Map<Query, Weight> cache = PER_REQUEST_WEIGHT_CACHE.get();
-            if (cache != null) {
-                Weight cw = cache.get(q);
-                if (cw == null) {
-                    cw = searcher.createWeight(q, ScoreMode.COMPLETE, boost);
-                    cache.put(q, cw);
-                }
-                weights.add(cw);
-            } else {
-                weights.add(searcher.createWeight(q, ScoreMode.COMPLETE, boost));
+            if (cache == null) {
+                cache = perRequestWeightCache;
             }
+            Weight cw = cache.get(rq);
+            if (cw == null) {
+                cw = searcher.createWeight(rq, ScoreMode.COMPLETE, boost);
+                cache.put(rq, cw);
+            }
+            weights.add(cw);
         }
         return new RankerWeight(this, weights, ltrRankerWrapper, features, featureScoreCache);
     }
@@ -325,8 +358,7 @@ public class RankerQuery extends Query {
 
         public void extractTerms(Set<Term> terms) {
             for (Weight w : weights) {
-                // w.extractTerms(terms);
-                QueryVisitor.termCollector(terms);
+                w.getQuery().visit(QueryVisitor.termCollector(terms));
             }
         }
 
