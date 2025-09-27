@@ -34,11 +34,6 @@ import org.apache.lucene.search.ScoreMode;
 import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.Weight;
 import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.QueryVisitor;
-import org.apache.lucene.index.Term;
-import org.apache.lucene.index.TermStates;
-import java.util.Set;
-import java.util.HashSet;
 import org.opensearch.common.collect.Tuple;
 import org.opensearch.common.document.DocumentField;
 import org.opensearch.search.SearchHit;
@@ -81,18 +76,6 @@ public class LoggingFetchSubPhase implements FetchSubPhase {
         IndexSearcher searcher = context.searcher();
         Query combined = builder.build();
         Query rewritten = searcher.rewrite(combined);
-
-        // Prime DFS stats so feature logging uses global collection/term stats (dfs_query_then_fetch)
-        Set<Term> terms = new HashSet<>();
-        rewritten.visit(QueryVisitor.termCollector(terms));
-        for (Term t : terms) {
-            TermStates ts = TermStates.build(searcher, t, true);
-            if (ts != null && ts.docFreq() > 0) {
-                // Trigger collection and term statistics to ensure DFS-aware weighting
-                searcher.collectionStatistics(t.field());
-                searcher.termStatistics(t, ts.docFreq(), ts.totalTermFreq());
-            }
-        }
 
         // Per-request caching of per-feature Weights during fetch logging
         Map<Query, Weight> perRequestWeightCache = new IdentityHashMap<>();

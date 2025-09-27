@@ -35,6 +35,7 @@ import org.apache.lucene.search.ScoreMode;
 import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.ScorerSupplier;
 import org.apache.lucene.search.Weight;
+import org.apache.lucene.search.TermStatistics;
 import org.opensearch.ltr.settings.LTRSettings;
 
 import com.o19s.es.explore.StatisticsHelper;
@@ -117,6 +118,8 @@ public class TermStatQuery extends Query {
         private final AggrType posAggr;
         private final Set<Term> terms;
         private final Map<Term, TermStates> termContexts;
+        private final Map<Term, TermStatistics> termStatisticsMap;
+        private final Map<String, Long> fieldDocCounts;
 
         TermStatWeight(IndexSearcher searcher, TermStatQuery tsq, Set<Term> terms, ScoreMode scoreMode, AggrType aggr, AggrType posAggr)
             throws IOException {
@@ -128,18 +131,22 @@ public class TermStatQuery extends Query {
             this.aggr = aggr;
             this.posAggr = posAggr;
             this.termContexts = new HashMap<>();
+            this.termStatisticsMap = new HashMap<>();
+            this.fieldDocCounts = new HashMap<>();
 
             // This is needed for proper DFS_QUERY_THEN_FETCH support
             if (scoreMode.needsScores()) {
                 for (Term t : terms) {
                     TermStates ctx = TermStates.build(searcher, t, true);
-
-                    if (ctx != null && ctx.docFreq() > 0) {
-                        searcher.collectionStatistics(t.field());
-                        searcher.termStatistics(t, ctx.docFreq(), ctx.totalTermFreq());
-                    }
-
                     termContexts.put(t, ctx);
+                    if (ctx != null && ctx.docFreq() > 0) {
+                        // Capture DFS-aggregated stats (when available) during weight construction
+                        TermStatistics ts = searcher.termStatistics(t, ctx.docFreq(), ctx.totalTermFreq());
+                        if (ts != null) {
+                            termStatisticsMap.put(t, ts);
+                        }
+                        fieldDocCounts.putIfAbsent(t.field(), searcher.collectionStatistics(t.field()).docCount());
+                    }
                 }
             }
         }
@@ -159,7 +166,18 @@ public class TermStatQuery extends Query {
         }
 
         public Scorer getScorer(LeafReaderContext context) throws IOException {
-            return new TermStatScorer(this, searcher, context, expression, terms, scoreMode, aggr, posAggr, termContexts);
+            return new TermStatScorer(
+                this,
+                context,
+                expression,
+                terms,
+                scoreMode,
+                aggr,
+                posAggr,
+                termContexts,
+                termStatisticsMap,
+                fieldDocCounts
+            );
         }
 
         @Override
