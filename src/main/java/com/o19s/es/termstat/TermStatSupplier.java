@@ -276,13 +276,13 @@ public class TermStatSupplier extends AbstractMap<String, ArrayList<Float>> {
                             case 0:
                                 return new SimpleImmutableEntry<>("df", df_stats.getData());
                             case 1:
-                                return new SimpleImmutableEntry<>("idf", df_stats.getData());
+                                return new SimpleImmutableEntry<>("idf", idf_stats.getData());
                             case 2:
-                                return new SimpleImmutableEntry<>("tf", df_stats.getData());
+                                return new SimpleImmutableEntry<>("tf", tf_stats.getData());
                             case 3:
-                                return new SimpleImmutableEntry<>("ttf", df_stats.getData());
+                                return new SimpleImmutableEntry<>("ttf", ttf_stats.getData());
                             case 4:
-                                return new SimpleImmutableEntry<>("tp", df_stats.getData());
+                                return new SimpleImmutableEntry<>("tp", tp_stats.getData());
 
                             default:
                                 return null;

@@ -95,7 +95,7 @@ public class TermStatQuery extends Query {
 
     @Override
     public String toString(String field) {
-        return null;
+        return "TermStatQuery(expr=" + expr.sourceText + ", aggr=" + aggr + ", posAggr=" + posAggr + ", terms=" + terms + ")";
     }
 
     @Override
@@ -151,8 +151,8 @@ public class TermStatQuery extends Query {
             }
         }
 
-        public void extractTerms(Set<Term> terms) {
-            terms.addAll(terms);
+        public void extractTerms(Set<Term> out) {
+            out.addAll(this.terms);
         }
 
         @Override
