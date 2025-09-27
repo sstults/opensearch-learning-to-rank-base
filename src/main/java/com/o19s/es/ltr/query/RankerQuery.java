@@ -171,9 +171,7 @@ public class RankerQuery extends Query {
         List<Query> queries = features.toQueries(context, params);
         // Option C: default to enabling per-doc feature score cache during query-phase scoring
         // to allow fetch-phase render without rescoring. Respect an explicit `false` to disable.
-        Map<Integer, float[]> featureScoreCache = (featureScoreCacheFlag != null && !featureScoreCacheFlag)
-            ? null
-            : new HashMap<>();
+        Map<Integer, float[]> featureScoreCache = (featureScoreCacheFlag != null && !featureScoreCacheFlag) ? null : new HashMap<>();
         return new RankerQuery(queries, features, ranker, featureScoreCache, ltrStats);
     }
 
