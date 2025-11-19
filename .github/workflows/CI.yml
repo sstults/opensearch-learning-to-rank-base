@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [21, 24]
+        java: [21, 25]
     steps:
       - name: Checkout LTR
         uses: actions/checkout@v4
@@ -36,7 +36,7 @@ jobs:
     needs: [Get-CI-Image-Tag, spotless]
     strategy:
       matrix:
-        java: [21, 24]
+        java: [21, 25]
 
     name: Build and Test LTR Plugin on Linux
     if: github.repository == 'opensearch-project/opensearch-learning-to-rank-base'
@@ -76,7 +76,7 @@ jobs:
   Build-ltr-windows:
     strategy:
       matrix:
-        java: [21 , 24]
+        java: [21 , 25]
     name: Build and Test LTR Plugin on Windows
     if: github.repository == 'opensearch-project/opensearch-learning-to-rank-base'
     needs: [spotless]
