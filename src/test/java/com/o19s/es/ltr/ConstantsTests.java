@@ -8,18 +8,17 @@ package com.o19s.es.ltr;
 import static org.junit.Assert.*;
 
 import org.junit.Test;
-import org.opensearch.LegacyESVersion;
 import org.opensearch.Version;
 
 public class ConstantsTests {
 
     private static Version getLegacyVersion(int major, int minor, int revision, int build) {
-        return Version.fromId(Version.computeLegacyID(major, minor, revision, build));
+        return Version.fromId(Constants.computeLegacyID(major, minor, revision, build));
     }
 
     @Test
     public void testVersionCreation() {
-        Version v7_7_0 = getLegacyVersion(7, 7, 0, 99);
+        Version v7_7_0 = Constants.getLegacyVersion(7, 7, 0, 99);
         assertEquals(7, v7_7_0.major);
         assertEquals(7, v7_7_0.minor);
         assertEquals(0, v7_7_0.revision);
@@ -29,7 +28,6 @@ public class ConstantsTests {
     @Test
     public void testVersionEquality() {
         Version v7_2_0_created = getLegacyVersion(7, 2, 0, 99);
-        assertEquals(LegacyESVersion.V_7_2_0, v7_2_0_created);
         assertEquals(7020099, v7_2_0_created.id);
     }
 
