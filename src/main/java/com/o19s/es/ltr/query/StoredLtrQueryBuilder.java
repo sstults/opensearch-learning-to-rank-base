@@ -32,6 +32,7 @@ import org.opensearch.core.common.io.stream.StreamOutput;
 import org.opensearch.core.xcontent.ObjectParser;
 import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.core.xcontent.XContentParser;
+import org.opensearch.Version;
 import org.opensearch.index.query.AbstractQueryBuilder;
 import org.opensearch.index.query.QueryShardContext;
 import org.opensearch.ltr.stats.LTRStats;
@@ -95,7 +96,7 @@ public class StoredLtrQueryBuilder extends AbstractQueryBuilder<StoredLtrQueryBu
         }
         featureSetName = input.readOptionalString();
         params = input.readMap();
-        if (input.getVersion().onOrAfter(Constants.LEGACY_V_7_0_0)) {
+        if (input.getVersion().onOrAfter(Constants.VERSION_2_19_0)) {
             String[] activeFeat = input.readOptionalStringArray();
             activeFeatures = activeFeat == null ? null : Arrays.asList(activeFeat);
         }
@@ -130,7 +131,7 @@ public class StoredLtrQueryBuilder extends AbstractQueryBuilder<StoredLtrQueryBu
         }
         out.writeOptionalString(featureSetName);
         out.writeMap(params);
-        if (out.getVersion().onOrAfter(Constants.LEGACY_V_7_0_0)) {
+        if (out.getVersion().onOrAfter(Constants.VERSION_2_19_0)) {
             out.writeOptionalStringArray(activeFeatures != null ? activeFeatures.toArray(new String[0]) : null);
         }
         out.writeOptionalString(storeName);
