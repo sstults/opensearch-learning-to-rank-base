@@ -17,7 +17,11 @@ public class Constants {
     public static final Version LEGACY_V_7_0_0 = getLegacyVersion(7, 0, 0, RELEASE_BUILD);
     public static final Version LEGACY_V_7_7_0 = getLegacyVersion(7, 7, 0, RELEASE_BUILD);
 
-    private static Version getLegacyVersion(int major, int minor, int revision, int build) {
-        return Version.fromId(Version.computeLegacyID(major, minor, revision, build));
+    protected static int computeLegacyID(int major, int minor, int revision, int build) {
+        return Version.computeID(major, minor, revision, build);
+    }
+
+    protected static Version getLegacyVersion(int major, int minor, int revision, int build) {
+        return Version.fromId(computeLegacyID(major, minor, revision, build));
     }
 }
