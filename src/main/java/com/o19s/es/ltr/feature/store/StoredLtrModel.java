@@ -35,7 +35,6 @@ import org.opensearch.core.xcontent.ObjectParser;
 import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.core.xcontent.XContentParser;
 
-import com.o19s.es.ltr.Constants;
 import com.o19s.es.ltr.feature.FeatureSet;
 import com.o19s.es.ltr.ranker.LtrRanker;
 import com.o19s.es.ltr.ranker.normalizer.FeatureNormalizingRanker;
@@ -91,11 +90,7 @@ public class StoredLtrModel implements StorableElement {
         rankingModelType = input.readString();
         rankingModel = input.readString();
         modelAsString = input.readBoolean();
-        if (input.getVersion().onOrAfter(Constants.LEGACY_V_7_7_0)) {
-            this.parsedFtrNorms = new StoredFeatureNormalizers(input);
-        } else {
-            this.parsedFtrNorms = new StoredFeatureNormalizers();
-        }
+        this.parsedFtrNorms = new StoredFeatureNormalizers(input);
     }
 
     @Override
@@ -106,9 +101,7 @@ public class StoredLtrModel implements StorableElement {
         out.writeString(rankingModelType);
         out.writeString(rankingModel);
         out.writeBoolean(modelAsString);
-        if (streamOutputVersion.onOrAfter(Constants.LEGACY_V_7_7_0)) {
-            parsedFtrNorms.writeTo(out);
-        }
+        parsedFtrNorms.writeTo(out);
     }
 
     public static StoredLtrModel parse(XContentParser parser) {
@@ -287,11 +280,7 @@ public class StoredLtrModel implements StorableElement {
             type = in.readString();
             definition = in.readString();
             modelAsString = in.readBoolean();
-            if (in.getVersion().onOrAfter(Constants.LEGACY_V_7_7_0)) {
-                this.featureNormalizers = new StoredFeatureNormalizers(in);
-            } else {
-                this.featureNormalizers = new StoredFeatureNormalizers();
-            }
+            this.featureNormalizers = new StoredFeatureNormalizers(in);
         }
 
         @Override
@@ -299,9 +288,7 @@ public class StoredLtrModel implements StorableElement {
             out.writeString(type);
             out.writeString(definition);
             out.writeBoolean(modelAsString);
-            if (out.getVersion().onOrAfter(Constants.LEGACY_V_7_7_0)) {
-                this.featureNormalizers.writeTo(out);
-            }
+            this.featureNormalizers.writeTo(out);
         }
 
         private void setType(String type) {
