@@ -17,6 +17,7 @@
 package com.o19s.es.template.mustache;
 
 import java.io.IOException;
+import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URLEncoder;
@@ -35,7 +36,6 @@ import java.util.regex.Pattern;
 import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.core.xcontent.XContentBuilder;
 
-import com.fasterxml.jackson.core.io.JsonStringEncoder;
 import com.github.mustachejava.Code;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.DefaultMustacheVisitor;
@@ -46,6 +46,8 @@ import com.github.mustachejava.TemplateContext;
 import com.github.mustachejava.codes.DefaultMustache;
 import com.github.mustachejava.codes.IterableCode;
 import com.github.mustachejava.codes.WriteCode;
+
+import tools.jackson.core.io.JsonStringEncoder;
 
 /**
  * XXX: shamelessly copied from the mustache module
@@ -88,6 +90,11 @@ public class CustomMustacheFactory extends DefaultMustacheFactory {
         } catch (IOException e) {
             throw new MustacheException("Unable to encode value", e);
         }
+    }
+
+    @Override
+    public Reader getReader(String resourceName) {
+        throw new MustacheException("Partial templates are not supported in OpenSearch Mustache scripts: [" + resourceName + "]");
     }
 
     static Encoder createEncoder(String mimeType) {
@@ -356,7 +363,9 @@ public class CustomMustacheFactory extends DefaultMustacheFactory {
 
         @Override
         public void encode(String s, Writer writer) throws IOException {
-            writer.write(JsonStringEncoder.getInstance().quoteAsString(s));
+            StringBuilder sb = new StringBuilder();
+            JsonStringEncoder.getInstance().quoteAsString(s, sb);
+            writer.write(sb.toString());
         }
     }
 
